@@ -1,0 +1,11 @@
+{
+  "name": "naruve-pronunciation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bump": "node scripts/bump.mjs",
+    "serve": "npx --yes serve docs -l 5173",
+    "ship": "node scripts/bump.mjs && git add -A && git commit -m \"build\" && git push"
+  }
+}

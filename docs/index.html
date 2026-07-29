@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBFAF6">
+<title>Korean Pronunciation</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+<div class="phone">
+
+  <header class="topbar">
+    <div class="brand"><div class="seal-mark">말</div><span>Pronunciation</span></div>
+    <div class="credits"><b id="credits">27</b> checks left</div>
+  </header>
+
+  <div class="strip">
+    <div class="where"><b id="curCol">Drama</b><span class="dot"></span><span class="set" id="curSet">Reactions</span></div>
+    <div style="display:flex;gap:7px;flex:none">
+      <button class="browse-btn" id="l1Btn">EN</button>
+      <button class="browse-btn" id="openBrowse">Browse</button>
+    </div>
+  </div>
+
+  <main class="stage">
+    <div class="tiles" id="tiles"></div>
+    <div class="meta-row" id="metaRow"></div>
+    <div class="romanized" id="roman"></div>
+    <div class="gloss" id="gloss"></div>
+    <div class="toneHint" id="toneHint"></div>
+
+    <button class="pair-link" id="pairLink">
+      <div class="pl-lab" id="plLab"></div>
+      <div class="pl-txt" id="plTxt"></div>
+    </button>
+
+    <button class="listen" id="listen">
+      <span class="tri"></span>
+      <span class="bars"><i></i><i></i><i></i></span>
+      <span id="listenLabel">Hear it spoken</span>
+    </button>
+    <div class="audio-note" id="audioNote"></div>
+
+    <section class="result" id="result" aria-live="polite">
+      <div class="score-row">
+        <div class="score-num" id="scoreNum">0</div>
+        <div class="score-meta">
+          <div class="score-label">Your score</div>
+          <div class="score-verdict" id="verdict">—</div>
+        </div>
+      </div>
+      <p class="note" id="note"></p>
+      <div class="l1box" id="l1box">
+        <div class="l1-lab" id="l1Lab">Why this happens</div>
+        <div id="l1Body"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="share">Share card</button>
+        <button class="btn primary" id="next">Next sentence</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="record-zone">
+    <button class="seal-btn" id="rec" aria-label="Record your voice">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 10.8a6.5 6.5 0 0 0 13 0"/>
+        <line x1="12" y1="17.3" x2="12" y2="21"/><line x1="8.6" y1="21" x2="15.4" y2="21"/>
+      </svg>
+    </button>
+    <div class="hint" id="hint">Tap and read it aloud</div>
+  </div>
+
+  <div class="sim">
+    <span class="sim-label">Simulate</span>
+    <button class="sim-btn on" data-lv="native">Native</button>
+    <button class="sim-btn" data-lv="advanced">Advanced</button>
+    <button class="sim-btn" data-lv="intermediate">Intermediate</button>
+    <button class="sim-btn" data-lv="beginner">Beginner</button>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab" aria-selected="true"><span class="ico">말</span>Practice</button>
+    <button class="tab" aria-selected="false"><span class="ico">높</span>Honorifics</button>
+    <button class="tab" aria-selected="false"><span class="ico">나</span>You</button>
+  </nav>
+
+  <section class="browse" id="browse" aria-hidden="true">
+    <div class="b-head">
+      <div class="b-title">Browse</div>
+      <button class="b-close" id="closeBrowse" aria-label="Close">×</button>
+    </div>
+    <div class="b-cols" id="bCols"></div>
+    <div class="b-blurb" id="bBlurb"></div>
+    <div class="b-list" id="bList"></div>
+  </section>
+
+</div>
+
+<div class="buildtag" id="buildTag">v—</div>
+
+<script src="./js/data.js"></script>
+<script src="./js/phonemes.js"></script>
+<script src="./js/app.js"></script>
+<script src="./js/boot.js"></script>
+</body>
+</html>
