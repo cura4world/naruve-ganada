@@ -6,13 +6,14 @@
    skipWaiting + clients.claim means a new build takes over on the next launch,
    without the user having to close every tab.                                  */
 
-const BUILD = '0.1.5';           // replaced by scripts/bump.mjs on every push
+const BUILD = '0.1.6';           // replaced by scripts/bump.mjs on every push
 const CACHE = 'naruve-' + BUILD;
 
 const PRECACHE = [
   './',
   './index.html',
   './css/app.css',
+  './js/ui.js',
   './js/data.js',
   './js/phonemes.js',
   './js/app.js',
