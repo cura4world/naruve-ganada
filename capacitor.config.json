@@ -1,5 +1,10 @@
 {
   "appId": "app.naruve.ganada",
   "appName": "Ganada",
-  "webDir": "docs"
+  "webDir": "docs",
+  "server": {
+    "url": "https://cura4world.github.io/naruve-ganada/",
+    "androidScheme": "https",
+    "cleartext": false
+  }
 }
