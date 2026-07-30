@@ -9,12 +9,12 @@
 ### 1. GitHub 저장소 만들기
 
 ```bash
-cd naruve-pronunciation
+cd naruve-ganada
 git init
 git add -A
 git commit -m "first"
 git branch -M main
-git remote add origin https://github.com/<아이디>/naruve-pronunciation.git
+git remote add origin https://github.com/<아이디>/naruve-ganada.git
 git push -u origin main
 ```
 
@@ -29,7 +29,7 @@ git push -u origin main
 1~2분 뒤 주소가 나온다:
 
 ```
-https://<아이디>.github.io/naruve-pronunciation/
+https://<아이디>.github.io/naruve-ganada/
 ```
 
 ### 3. 폰에 설치
@@ -112,7 +112,7 @@ scripts/bump.mjs          빌드 번호 올리기
 ## 규칙
 
 **경로는 반드시 상대경로(`./`)로 쓴다.**
-지금은 `github.io/naruve-pronunciation/` 하위에 있지만 나중에 `app.naruve.app` 루트로 옮긴다. 절대경로로 쓰면 그때 전부 깨진다.
+지금은 `github.io/naruve-ganada/` 하위에 있지만 나중에 `app.naruve.app` 루트로 옮긴다. 절대경로로 쓰면 그때 전부 깨진다.
 
 **푸시 전에 항상 `npm run ship`을 쓴다.**
 그냥 `git push`만 하면 캐시 이름이 안 바뀌어서 폰이 옛 파일을 계속 붙들고 있는다. PWA에서 가장 흔한 사고다.
