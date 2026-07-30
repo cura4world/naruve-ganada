@@ -6,9 +6,63 @@
 
 ## 절대 규칙
 - 경로는 반드시 상대경로(./)로 쓴다. 나중에 도메인 루트로 옮길 때 깨진다.
-- 푸시는 항상 `npm run ship`. git push만 하면 서비스워커 캐시가 안 갱신돼 폰에 반영되지 않는다.
+- main에 직접 푸시하지 않는다. 작업이 끝나면 항상 브랜치를 만들고 PR을 연다.
+- docs/ 안 파일을 고쳤으면 커밋 전에 반드시 빌드번호를 올린다. 아래 "빌드번호" 항목 참조.
 - 파일 수정은 부분 패치가 아니라 해당 파일 전체를 다시 써서 교체한다.
 - 근거 없는 수치를 쓰지 않는다. 추정이면 추정이라고 밝힌다.
+
+## 배포 경로
+이 저장소는 GitHub Pages로 배포된다. 소스는 main 브랜치의 /docs 폴더다.
+따라서 main에 들어간 docs/ 내용이 곧 폰에서 보이는 화면이다. 빌드 단계가 따로 없다.
+docs/ 밖의 파일(scripts/, android/, .github/ 등)은 배포물에 포함되지 않는다.
+
+## 브랜치와 PR
+main에 직접 푸시하지 않는다. 작업은 항상 브랜치에서 하고 끝나면 PR을 연다.
+
+```
+git checkout -b <작업이름>
+# 수정 → npm run bump → git add -A → git commit
+git push -u origin <작업이름>
+gh pr create --fill
+```
+
+.github/workflows/auto-merge.yml이 이 저장소 안에서 만들어진 브랜치의 PR을
+열리는 즉시 squash 병합하고 브랜치를 지운다. 그래서 PR을 여는 것으로 배포까지 끝난다.
+포크에서 온 PR은 병합하지 않는다.
+
+주의할 점:
+- 리뷰도 체크도 없이 바로 main에 들어간다. 잘못 연 PR도 그대로 배포된다.
+- 이미 열려 있는 PR은 자동 병합되지 않는다. 워크플로는 opened/synchronize에만 반응하므로
+  그 브랜치에 커밋을 하나 더 푸시하거나 `gh pr merge`로 직접 병합해야 한다.
+
+`npm run ship`은 현재 브랜치를 그대로 푸시하는 스크립트다. main에서 실행하면
+main 직접 푸시가 되므로 쓰지 않는다. bump는 `npm run bump`로 따로 돌린다.
+
+## 빌드번호 (캐시 무효화)
+docs/ 안의 파일을 하나라도 수정했으면, 그 변경을 커밋할 때 빌드번호를 같이 올린다.
+빼먹으면 서비스워커 캐시 이름이 그대로라 폰에서 변경이 보이지 않는다.
+
+올리는 방법은 하나뿐이다. 손으로 숫자를 고치지 말고 스크립트를 돌린다.
+
+```
+npm run bump      # = node scripts/bump.mjs
+```
+
+이 스크립트가 바꾸는 파일 두 개:
+- docs/version.json  {"build":"0.1.2","date":"..."} — patch 자리 +1, 날짜 갱신
+- docs/sw.js         const BUILD = '0.1.2'  — 같은 값으로 치환, 캐시 이름이 바뀜
+
+docs/js/boot.js에는 번호가 없다. boot.js는 version.json을 fetch해서 화면에 표시만 한다.
+따라서 빌드번호를 올리려고 boot.js를 여는 것은 잘못이다.
+
+작업 순서:
+1. docs/ 안 파일 수정
+2. `npm run bump`
+3. `git add -A` — 수정한 파일 + docs/version.json + docs/sw.js를 한 커밋에 함께 넣는다
+4. 푸시하고 PR을 연다
+
+예외: docs/ 밖만 고친 경우(scripts/, android/, .github/, capacitor.config.json, README 등)는
+올리지 않는다. 폰에 배포되는 내용이 아니라 캐시와 무관하다.
 
 ## 파일 담당
 - docs/js/data.js      문장 라이브러리 (여기만 열어서 문장 추가)
@@ -16,7 +70,10 @@
 - docs/js/app.js       화면 제어·채점
 - docs/js/boot.js      서비스워커 등록, 빌드 번호 표시
 - docs/css/app.css     색·글꼴·여백
-- docs/sw.js           캐시 전략 (건드릴 일 거의 없음)
+- docs/sw.js           캐시 전략 (건드릴 일 거의 없음. BUILD 줄은 bump.mjs가 고친다)
+- docs/version.json    빌드번호·날짜 (bump.mjs가 고친다. 손으로 고치지 않는다)
+- scripts/bump.mjs     빌드번호 올리는 스크립트
+- .github/workflows/auto-merge.yml  PR 자동 병합
 
 ## 설계 원칙
 - 학습앱이 아니라 점수앱. 첫 화면이 곧 기능이다. 로그인·온보딩·레벨테스트를 앞에 두지 않는다.
