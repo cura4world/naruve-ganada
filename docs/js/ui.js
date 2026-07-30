@@ -76,6 +76,12 @@ var UI = {
 
     /* "크롬에서 열어라"는 인앱 브라우저에서만 옳다. 설치된 앱 안에서는
        열 크롬이 없다. audio.js가 상황을 가려 셋 중 하나만 보낸다. */
+    micDenied:'마이크 권한이 필요해요. 설정에서 허용해 주세요.',
+    micNoSpeech:'소리가 들리지 않았어요. 다시 눌러서 읽어 주세요.',
+    micNoMic:'마이크를 찾지 못했어요.',
+    micUnsupported:'이 환경에서는 녹음할 수 없어요.',
+    micFailed:'녹음에 실패했어요. 다시 시도해 주세요.',
+
     audioInApp:'인앱 브라우저에서는 소리가 막혀요. 브라우저로 열어 주세요.',
     audioUnavailable:'이 기기에서는 예시 음성을 재생할 수 없어요.',
     audioFailed:'재생에 실패했어요. 미디어 음량을 확인해 주세요.',
@@ -141,6 +147,12 @@ var UI = {
     simAdvanced:'Advanced',
     simIntermediate:'Intermediate',
     simBeginner:'Beginner',
+
+    micDenied:'Microphone access is needed. Allow it in settings.',
+    micNoSpeech:'Nothing was heard. Tap and read it aloud again.',
+    micNoMic:'No microphone found.',
+    micUnsupported:'Recording is not available here.',
+    micFailed:'Recording failed. Try again.',
 
     audioInApp:'In-app browsers block audio. Open this in your browser.',
     audioUnavailable:'Example audio is not available on this device.',

@@ -81,6 +81,12 @@
       </svg>
     </button>
     <div class="hint" id="hint">Tap and read it aloud</div>
+    <!-- A-4: live proof the mic is receiving sound. CSS hides it unless body.dev -->
+    <div class="micdev" id="micDev" aria-hidden="true">
+      <div class="micdev-bar"><i id="micLevel"></i></div>
+      <div class="micdev-txt" id="micStat">—</div>
+      <div class="micdev-txt" id="micOut"></div>
+    </div>
   </div>
 
   <!-- the row stays even when SIMULATE is hidden: buildtag lives here and it
@@ -114,6 +120,8 @@
 
 <script src="./js/ui.js"></script>
 <script src="./js/audio.js"></script>
+<script src="./js/mic.js"></script>
+<script src="./js/score.js"></script>
 <script src="./js/data.js"></script>
 <script src="./js/phonemes.js"></script>
 <script src="./js/app.js"></script>

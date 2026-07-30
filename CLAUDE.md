@@ -122,6 +122,30 @@ SIMULATE 컨트롤은 기본으로 숨어 있다. 헤더의 말 인장을 3초 �
 `.sim` 행 자체는 절대 숨기지 않는다. 빌드번호가 그 안에 있고,
 그게 폰에서 배포를 확인하는 유일한 수단이다. 숨기는 것은 .sim-label과 .sim-btn뿐이다.
 
+## 녹음과 채점
+녹음은 docs/js/mic.js의 `Mic.record()`, 채점은 docs/js/score.js의
+`Score.evaluate(문장, 캡처, 콜백)` 하나로만 들어간다. app.js는 버튼 상태만 다룬다.
+
+**녹음에 네이티브 플러그인은 필요 없다.** Capacitor의 BridgeWebChromeClient가
+WebView의 AUDIO_CAPTURE 요청을 받아 RECORD_AUDIO 런타임 권한을 대신 요청한다.
+그래서 `getUserMedia()`를 부르는 것만으로 APK에서 권한 팝업이 정상적으로 뜬다.
+페이지가 https라 보안 컨텍스트 조건도 충족한다.
+
+원가 방어는 처음부터 mic.js 안에 있다. 나중에 붙이면 잊는다.
+- 한 번의 녹음은 10초를 넘지 않는다 (`MIC.maxMs`)
+- 말이 끝나고 약 0.9초 조용하면 스스로 멈춘다 (`MIC.silenceMs`)
+- 앞뒤 무음은 기기에서 잘라낸 뒤 내보낸다. 업로드에는 발화만 담긴다
+- 소리가 없는 take는 채점기까지 가지 않고 크레딧도 차감하지 않는다
+- 같은 오디오를 다시 제출하면 캐시가 답한다. 다시 말하면 새 take다
+
+`Score.evaluate`가 돌려주는 결과에는 `engine`과 `measured`가 들어 있다.
+지금 엔진은 `placeholder`이고 `measured:false`다 — 오디오에서 나온 값이
+하나도 없다는 뜻이다. 개발 모드 표시에도 "측정 아님"이라고 찍힌다.
+**이 표시를 지우기 전에 실제 측정 엔진을 붙여라.**
+
+엔진 도착 순서: placeholder → intonation(F0, 무료) → recognition(네이티브)
+→ cloud(유료 정밀 모드). 교체는 score.js 안에서만 일어난다.
+
 ## 예시 음성
 재생 요청은 docs/js/audio.js의 `Example.play()` 하나로만 들어간다.
 app.js는 버튼 상태만 관리하고 무엇이 소리를 내는지는 모른다. 순서는 이렇다.
@@ -230,6 +254,8 @@ docs/js/boot.js에는 번호가 없다. boot.js는 version.json을 fetch해서 �
 ## 파일 담당
 - docs/js/ui.js        UI 문구 표 (한국어가 마스터본, 언어 추가는 열 하나 추가)
 - docs/js/audio.js     예시 음성 재생 (파일 → 네이티브 TTS → Web Speech 순)
+- docs/js/mic.js       마이크 녹음·무음 절단·상한 (Mic.record)
+- docs/js/score.js     채점 경계 (Score.evaluate, 엔진 교체 지점)
 - docs/js/data.js      문장 라이브러리 (여기만 열어서 문장 추가)
 - docs/js/phonemes.js  모국어 설명 표 (음소 기준, 언어 추가는 열 하나 추가)
 - docs/js/app.js       화면 제어·채점·언어 전환
