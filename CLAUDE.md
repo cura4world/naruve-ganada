@@ -36,6 +36,13 @@ capacitor.config.json의 server 블록을 제거한다.
 원격 URL만 띄우는 앱은 플레이 심사에서 반려될 수 있다.
 제거 후에는 docs/ 내용이 APK에 번들되며, 웹 수정 시 APK 재빌드가 필요하다.
 
+## 아이콘 재생성 시 함정
+capacitor-assets generate를 그냥 실행하면 adaptive 레이어가 192px로 깨진다.
+icon 단계가 adaptive-icon 단계의 432px 출력을 같은 파일명에 덮어쓴다.
+재생성할 때는 assets/icon-foreground.png와 assets/icon-background.png를
+임시로 다른 이름으로 옮긴 뒤 실행해야 한다.
+올바른 결과: 레이어 108/162/216/324/432, 레거시 48/72/96/144/192.
+
 ## 현재 상태
 문장 50개 (Standard 15 / Everyday 15 / Drama 12 / Sounds 8)
 채점은 아직 가짜 값. 마이크를 켜지 않는다.
