@@ -76,6 +76,14 @@ var UI = {
 
     /* "크롬에서 열어라"는 인앱 브라우저에서만 옳다. 설치된 앱 안에서는
        열 크롬이 없다. audio.js가 상황을 가려 셋 중 하나만 보낸다. */
+    /* 억양 피드백은 무엇이 틀렸는지까지 말한다. "틀렸습니다"로 끝내지 않는다. */
+    intoRiseGood:'끝을 올렸습니다 — 좋습니다.',
+    intoRiseFlat:'의문문인데 끝이 평평합니다. 마지막 음절을 올리세요.',
+    intoRiseFell:'의문문인데 끝을 내렸습니다. 마지막 음절을 올리세요.',
+    intoFallGood:'끝을 내렸습니다 — 좋습니다.',
+    intoFallFlat:'끝이 평평합니다. 마지막 음절을 내리세요.',
+    intoFallRose:'평서문인데 끝을 올렸습니다. 마지막 음절을 내리세요.',
+
     micDenied:'마이크 권한이 필요해요. 설정에서 허용해 주세요.',
     micNoSpeech:'소리가 들리지 않았어요. 다시 눌러서 읽어 주세요.',
     micNoMic:'마이크를 찾지 못했어요.',
@@ -148,6 +156,13 @@ var UI = {
     simIntermediate:'Intermediate',
     simBeginner:'Beginner',
 
+    intoRiseGood:'You lifted the ending — good.',
+    intoRiseFlat:'This is a question, but the ending stayed flat. Lift the last syllable.',
+    intoRiseFell:'This is a question, but you dropped the ending. Lift the last syllable.',
+    intoFallGood:'You let the ending fall — good.',
+    intoFallFlat:'The ending stayed flat. Let the last syllable fall.',
+    intoFallRose:'This is a statement, but you lifted the ending. Let the last syllable fall.',
+
     micDenied:'Microphone access is needed. Allow it in settings.',
     micNoSpeech:'Nothing was heard. Tap and read it aloud again.',
     micNoMic:'No microphone found.',
@@ -162,5 +177,19 @@ var UI = {
   }
 };
 
-/* toggle order. id has no UI column yet and falls back to en — see above. */
+/* The partial column the header promised. Indonesian has no UI chrome
+   yet, but the intonation feedback is the one thing a learner must read
+   in their own language to act on it, so those keys are filled and the
+   rest falls through to en. Adding more Indonesian is adding more keys
+   here — nothing else has to change. */
+UI.id = {
+  intoRiseGood:'Akhirnya Anda naikkan — bagus.',
+  intoRiseFlat:'Ini kalimat tanya, tetapi akhirnya datar. Naikkan suku kata terakhir.',
+  intoRiseFell:'Ini kalimat tanya, tetapi akhirnya Anda turunkan. Naikkan suku kata terakhir.',
+  intoFallGood:'Akhirnya Anda turunkan — bagus.',
+  intoFallFlat:'Akhirnya datar. Turunkan suku kata terakhir.',
+  intoFallRose:'Ini kalimat berita, tetapi akhirnya Anda naikkan. Turunkan suku kata terakhir.'
+};
+
+/* toggle order */
 var LANGS = ['en','id','ko'];

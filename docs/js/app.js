@@ -83,6 +83,8 @@ function paint(){
   });
   $('result').classList.remove('show');
   $('l1box').classList.remove('show');
+  $('intoNote').classList.remove('show');
+  lastRes = null;
   setHint('hintTap',false);
   $('audioNote').classList.remove('show');
 }
@@ -151,6 +153,7 @@ function run(){
 }
 
 function paintScore(res){
+  lastRes = res;
   var tiles=Array.prototype.slice.call(document.querySelectorAll('.tile:not(.punct):not(.space)'));
   tiles.forEach(function(el,i){
     var s=res.syllables[i];
@@ -168,11 +171,21 @@ function paintScore(res){
 
 /* everything about the result that has words in it, so a language switch
    can replay it without re-running the check */
-var lastTotal = 0;
+var lastTotal = 0, lastRes = null;
 function showResult(tt){
   lastTotal = tt;
   $('verdict').textContent = verdictFor(tt);
   $('note').innerHTML = tt>=NATURAL ? t('notePerfect') : S[idx].tip;
+
+  /* B-3: one line about what the ending actually did. Only when the
+     contour was measurable — no "not enough data" filler on screen. */
+  var box=$('intoNote');
+  if(lastRes && lastRes.feedback){
+    box.textContent = t(lastRes.feedback);
+    box.classList.add('show');
+    if(lastRes.intonation.ok) box.classList.remove('miss'); else box.classList.add('miss');
+  } else box.classList.remove('show');
+
   renderL1(tt);
 }
 
@@ -329,16 +342,49 @@ function devMicDone(cap){
     +(cap.trimmedMs/1000).toFixed(1)+'s) · peak '+cap.peak.toFixed(3)
     +' · wav '+Math.round(cap.wav.size/1024)+'KB';
 }
+/* B-4 dev half, and B-5: the blended number cannot show whether the F0
+   half works while the other half is Math.random(), so both are printed
+   with the raw evidence behind the intonation verdict. */
 function devMicResult(res, fromCache){
   if(!$('micOut')) return;
-  $('micOut').textContent += '\nengine ' + res.engine
-    + (res.measured ? '' : ' (측정 아님 — 자리표시자)')
-    + ' · total ' + res.total + (fromCache ? ' · 캐시 재사용' : '');
+  var i = res.intonation, L = [];
+  L.push('engine ' + res.engine + (fromCache ? ' · 캐시 재사용' : ''));
+  L.push('total ' + res.total + '  =  into ' + (i.score == null ? '—' : i.score)
+    + ' ×' + res.mix.intonation.toFixed(2)
+    + '  +  pron ' + res.pronunciation.score + ' ×' + res.mix.pronunciation.toFixed(2)
+    + '   (pron 자리표시자)');
+  if(i.ok === null){
+    L.push('F0 판정 불가 — ' + i.reason);
+  } else {
+    L.push('ΔF0 ' + (i.deltaSt>=0?'+':'') + i.deltaSt + 'st / ' + i.windowMs + 'ms'
+      + '  (' + (i.slopeSt>=0?'+':'') + i.slopeSt + ' st/s)  '
+      + i.startHz + '→' + i.endHz + 'Hz');
+    L.push('expect ' + i.expect + ' · got ' + i.got + ' · ' + (i.ok ? '맞음' : '틀림')
+      + '   [flat<' + i.thresholds.clearSt + 'st · full=' + i.thresholds.targetSt
+      + 'st · tail=' + i.thresholds.tailMs + 'ms]');
+    L.push('voiced ' + i.voiced + '/' + i.total + ' · tail ' + i.frames + 'f · Hz ' + i.hz.join(' '));
+  }
+  $('micOut').textContent += '\n' + L.join('\n');
 }
 function devMicOff(){
   if(!$('micDev')) return;
   $('micLevel').style.width='0%';
   $('micStat').textContent='—';
+}
+
+/* B-5: tap the readout to put the whole calibration trail on the
+   clipboard. Two people reading numbers off a phone screen and typing
+   them into a spreadsheet is how calibration sessions die. */
+if($('micDev')){
+  $('micDev').addEventListener('click', function(){
+    var n = Score.log().length;
+    if(!n){ $('micStat').textContent = '기록 없음'; return; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(Score.dump()).then(
+        function(){ $('micStat').textContent = '캘리브레이션 로그 ' + n + '건 복사됨'; },
+        function(){ $('micStat').textContent = '복사 실패 — 로그 ' + n + '건'; });
+    } else $('micStat').textContent = '클립보드 미지원 — 로그 ' + n + '건';
+  });
 }
 
 /* --- dev mode: hold the 말 seal for 3s to show/hide SIMULATE.
