@@ -10,7 +10,7 @@
   fetch('./version.json?t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { return r.json(); })
     .then(function (v) {
-      if (tag) tag.textContent = 'v' + v.build + ' · ' + v.date;
+      if (tag) tag.textContent = 'v' + v.build;
     })
     .catch(function () {
       if (tag) tag.textContent = 'v— offline';
