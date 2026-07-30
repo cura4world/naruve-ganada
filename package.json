@@ -7,5 +7,12 @@
     "bump": "node scripts/bump.mjs",
     "serve": "npx --yes serve docs -l 5173",
     "ship": "node scripts/bump.mjs && git add -A && git commit -m \"build\" && git push"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/core": "^8.4.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.2"
   }
 }
