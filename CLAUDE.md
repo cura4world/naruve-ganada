@@ -55,6 +55,46 @@ WebView 컨테이너 padding으로 넣고 인셋을 소비한다. 그 결과 APK
 position:fixed로 되돌리지 않는다. 고정하면 탭바 높이를 상수로 박아야 하고,
 그 상수가 safe-area와 어긋나는 순간 다시 겹친다.
 
+## 아이콘
+아이콘은 `npm run icons` 한 번으로 끝난다. capacitor-assets를 손으로 부르지 않는다.
+원본은 assets/GANADA고딕_icon.v5.png 하나(1024 정사각)이고 나머지는 전부 파생물이다.
+
+**assets/icon.png, icon-foreground.png, icon-background.png는 존재하면 안 된다.**
+스크립트가 발견하면 지운다. 이유가 각각 다르다.
+
+- icon-foreground.png / icon-background.png를 주면 capacitor-assets 3.0.5의
+  `generateAdaptiveIconForeground`가 템플릿을 `kind === 'icon'`으로 고른다.
+  그건 레거시 템플릿(36~192)이라 어댑티브 레이어가 192px로 나온다. 도구 버그다.
+  "adaptive 레이어가 192px로 깨진다"의 진짜 원인이며, 덮어쓰기 문제가 아니다.
+- icon.png는 logo 폴백으로 읽혀서(project.js loadLogoInputAsset) 진짜 logo.png를 이긴다.
+
+그래서 쓰는 파일은 이것뿐이다.
+- assets/logo.png       패딩된 포그라운드. logo 경로가 432px 어댑티브 템플릿을 쓴다
+- assets/icon-only.png  레거시 정사각 아이콘 (ic_launcher, ic_launcher_round)
+- assets/splash.png / splash-dark.png
+
+처리 순서가 logo → icon → splash라서, logo가 부수적으로 만든 레거시 아이콘과
+스플래시는 뒤따르는 icon-only.png와 splash.png가 덮어쓴다. 의도된 동작이다.
+
+**안전 영역 이중 인셋 주의.** 생성된 ic_launcher.xml이 두 레이어를
+`inset="16.7%"`로 감싼다. 즉 레이어 이미지는 108dp 중 중앙 72dp에 그려진다.
+그 인셋이 곧 안전영역 패딩이므로, 이미지 기준 목표는 66/72 = 91.7%다.
+66/108 = 61.1%로 잡으면 인셋이 두 번 걸려 마크가 42dp로 작아진다.
+XML이 inset="0%"로 바뀌면 icon-layers.mjs의 SAFE를 66/108로 바꾼다.
+
+배경색은 원본 모서리에서 뽑아 `--iconBackgroundColor`로 넘긴다. 하드코딩하지 않는다.
+현재 값은 #C0392F이고 네 모서리가 일치하는지도 스크립트가 확인한다.
+
+올바른 결과: 레이어 81/108/162/216/324/432, 레거시 36/48/72/96/144/192.
+`npm run icons:verify`가 크기, 배경색 일치, 레이어가 실제로 logo.png에서 왔는지를
+검사하고 하나라도 어긋나면 non-zero로 끝난다.
+
+assets/icon-round.png와 play-store-512.png는 capacitor-assets가 읽지 않는 파일명이다
+(인식 목록: logo, logo-dark, icon-only, icon-foreground, icon-background, splash, splash-dark).
+스토어 등록용으로만 쓴다.
+
+아이콘을 바꾸면 APK를 다시 빌드해야 폰에 반영된다. `npm run apk`.
+
 ## 배포 경로
 이 저장소는 GitHub Pages로 배포된다. 소스는 main 브랜치의 /docs 폴더다.
 따라서 main에 들어간 docs/ 내용이 곧 폰에서 보이는 화면이다. 빌드 단계가 따로 없다.
@@ -120,7 +160,9 @@ docs/js/boot.js에는 번호가 없다. boot.js는 version.json을 fetch해서 �
 - docs/css/app.css     색·글꼴·여백. safe-area는 :root와 .phone에만 있다
 - docs/sw.js           캐시 전략 (건드릴 일 거의 없음. BUILD 줄은 bump.mjs가 고친다)
 - docs/version.json    빌드번호·날짜 (bump.mjs가 고친다. 손으로 고치지 않는다)
-- scripts/bump.mjs     빌드번호 올리는 스크립트
+- scripts/bump.mjs        빌드번호 올리는 스크립트
+- scripts/icon-layers.mjs 원본 1장에서 아이콘 전체를 다시 만든다
+- scripts/icon-verify.mjs 생성 결과 검사 (크기·배경색·아트 출처)
 - .github/workflows/auto-merge.yml  PR 자동 병합
 - android/app/src/main/java/app/naruve/ganada/MainActivity.java  시스템 바 인셋 처리
 
@@ -141,13 +183,6 @@ K-드라마·K-팝의 가사, 특정 작품의 긴 대사, 작품명·아티스�
 capacitor.config.json의 server 블록을 제거한다.
 원격 URL만 띄우는 앱은 플레이 심사에서 반려될 수 있다.
 제거 후에는 docs/ 내용이 APK에 번들되며, 웹 수정 시 APK 재빌드가 필요하다.
-
-## 아이콘 재생성 시 함정
-capacitor-assets generate를 그냥 실행하면 adaptive 레이어가 192px로 깨진다.
-icon 단계가 adaptive-icon 단계의 432px 출력을 같은 파일명에 덮어쓴다.
-재생성할 때는 assets/icon-foreground.png와 assets/icon-background.png를
-임시로 다른 이름으로 옮긴 뒤 실행해야 한다.
-올바른 결과: 레이어 108/162/216/324/432, 레거시 48/72/96/144/192.
 
 ## 현재 상태
 문장 50개 (Standard 15 / Everyday 15 / Drama 12 / Sounds 8)
