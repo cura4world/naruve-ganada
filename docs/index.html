@@ -79,12 +79,15 @@
     <div class="hint" id="hint">Tap and read it aloud</div>
   </div>
 
+  <!-- buildtag rides along in the sim row: normal flow, so it can never
+       collide with the tab bar and needs no safe-area maths of its own -->
   <div class="sim">
     <span class="sim-label">Simulate</span>
     <button class="sim-btn on" data-lv="native">Native</button>
     <button class="sim-btn" data-lv="advanced">Advanced</button>
     <button class="sim-btn" data-lv="intermediate">Intermediate</button>
     <button class="sim-btn" data-lv="beginner">Beginner</button>
+    <span class="buildtag" id="buildTag">v—</span>
   </div>
 
   <nav class="tabs">
@@ -104,8 +107,6 @@
   </section>
 
 </div>
-
-<div class="buildtag" id="buildTag">v—</div>
 
 <script src="./js/data.js"></script>
 <script src="./js/phonemes.js"></script>

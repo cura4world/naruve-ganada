@@ -8,8 +8,42 @@
 - 경로는 반드시 상대경로(./)로 쓴다. 나중에 도메인 루트로 옮길 때 깨진다.
 - main에 직접 푸시하지 않는다. 작업이 끝나면 항상 브랜치를 만들고 PR을 연다.
 - docs/ 안 파일을 고쳤으면 커밋 전에 반드시 빌드번호를 올린다. 아래 "빌드번호" 항목 참조.
+- 레이아웃을 고칠 때, 기존 safe-area 관련 코드를 제거하거나 옮기기 전에
+  반드시 `git log -S`로 그 코드가 왜 생겼는지 먼저 확인한다. 아래 "레이아웃과 safe-area" 참조.
 - 파일 수정은 부분 패치가 아니라 해당 파일 전체를 다시 써서 교체한다.
 - 근거 없는 수치를 쓰지 않는다. 추정이면 추정이라고 밝힌다.
+
+## 레이아웃과 safe-area
+`env(safe-area-inset-*)`는 app.css 안에서 **:root의 두 줄에만** 존재한다.
+
+```
+--safe-top: env(safe-area-inset-top, 0px);
+--safe-bottom: env(safe-area-inset-bottom, 0px);
+```
+
+실제 여백은 레이아웃 최상위인 `.phone`의 padding 한 곳에서만 준다.
+개별 컴포넌트(.topbar, .tabs, .buildtag)에 env()를 다시 넣지 않는다.
+흩어놓으면 한쪽을 고칠 때 다른 쪽이 조용히 풀린다. 실제로 두 번 그랬다.
+
+예외는 `.update-bar` 하나다. position:fixed라서 .phone의 padding 밖으로 나가므로
+자기 오프셋에 `var(--safe-bottom)`를 더한다. env()를 직접 부르지는 않는다.
+
+세로 구조는 이렇게 고정한다. 바꾸기 전에 이유를 확인한다.
+- `.phone`은 `height:100dvh` (min-height 아님) — 열의 높이를 묶어둔다.
+- `.stage`만 스크롤한다 (`flex:1; min-height:0; overflow-y:auto`).
+  `min-height:0`이 없으면 overflow가 걸리지 않고 열이 늘어난다.
+- `.record-zone` `.sim` `.tabs`는 `flex:none` — 눌리지 않는다.
+- min-height를 쓰거나 .stage의 스크롤을 빼면, 문장이 길 때 탭바가
+  화면 아래로 밀려나가 시스템 내비게이션 바에 겹친다.
+
+빌드번호 표시(.buildtag)는 .sim 행 안의 일반 흐름에 있다.
+position:fixed로 되돌리지 않는다. 고정하면 탭바 높이를 상수로 박아야 하고,
+그 상수가 safe-area와 어긋나는 순간 다시 겹친다.
+
+Android APK는 targetSdk 36이라 edge-to-edge가 강제된다. WebView는
+`env(safe-area-inset-*)`에 디스플레이 컷아웃만 넘겨주고 시스템 바는 넘겨주지 않는다.
+그래서 상단(펀치홀)은 CSS로 잡히지만 하단 내비게이션 바는 CSS로 잡히지 않는다.
+하단 겹침이 APK에서만 보인다면 원인은 CSS가 아니라 안드로이드 쪽이다.
 
 ## 배포 경로
 이 저장소는 GitHub Pages로 배포된다. 소스는 main 브랜치의 /docs 폴더다.
@@ -49,8 +83,8 @@ npm run bump      # = node scripts/bump.mjs
 ```
 
 이 스크립트가 바꾸는 파일 두 개:
-- docs/version.json  {"build":"0.1.2","date":"..."} — patch 자리 +1, 날짜 갱신
-- docs/sw.js         const BUILD = '0.1.2'  — 같은 값으로 치환, 캐시 이름이 바뀜
+- docs/version.json  {"build":"0.1.5","date":"..."} — patch 자리 +1, 날짜 갱신
+- docs/sw.js         const BUILD = '0.1.5'  — 같은 값으로 치환, 캐시 이름이 바뀜
 
 docs/js/boot.js에는 번호가 없다. boot.js는 version.json을 fetch해서 화면에 표시만 한다.
 따라서 빌드번호를 올리려고 boot.js를 여는 것은 잘못이다.
@@ -69,7 +103,7 @@ docs/js/boot.js에는 번호가 없다. boot.js는 version.json을 fetch해서 �
 - docs/js/phonemes.js  모국어 설명 표 (음소 기준, 언어 추가는 열 하나 추가)
 - docs/js/app.js       화면 제어·채점
 - docs/js/boot.js      서비스워커 등록, 빌드 번호 표시
-- docs/css/app.css     색·글꼴·여백
+- docs/css/app.css     색·글꼴·여백. safe-area는 :root와 .phone에만 있다
 - docs/sw.js           캐시 전략 (건드릴 일 거의 없음. BUILD 줄은 bump.mjs가 고친다)
 - docs/version.json    빌드번호·날짜 (bump.mjs가 고친다. 손으로 고치지 않는다)
 - scripts/bump.mjs     빌드번호 올리는 스크립트
