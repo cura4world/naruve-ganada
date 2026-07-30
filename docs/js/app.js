@@ -4,11 +4,16 @@
 var DEV_UNLOCK = true;
 var DEV_HOLD_MS = 3000;
 
+/* Sounds is meant to be assigned by the diagnostic, not browsed — that is
+   why data.js marks it browse:false. There is no diagnostic yet, so it is
+   shown during development. Flip to false the day the diagnostic lands. */
+var SHOW_SOUNDS_IN_BROWSE = true;
+
 var LEVELS={native:{ok:[95,99],weak:[88,95]},advanced:{ok:[88,97],weak:[74,84]},
   intermediate:{ok:[78,92],weak:[58,70]},beginner:{ok:[62,80],weak:[40,55]}};
 
 var $=function(id){return document.getElementById(id);};
-var level='native', idx=0, credits=27, busy=false, koVoice=null, browseCol='everyday', L1='en';
+var level='native', idx=0, credits=27, busy=false, browseCol='everyday', L1='en';
 function rand(r){return r[0]+Math.floor(Math.random()*(r[1]-r[0]+1));}
 
 /* --- strings. t() falls back to en, so a language may fill in the table
@@ -27,14 +32,6 @@ function setHint(k,live){
   hintKey=k; $('hint').textContent=t(k);
   if(live) $('hint').classList.add('live'); else $('hint').classList.remove('live');
 }
-
-function pickVoice(){
-  if(!window.speechSynthesis) return;
-  var vs=speechSynthesis.getVoices()||[];
-  for(var i=0;i<vs.length;i++){var lg=(vs[i].lang||'').toLowerCase().replace('_','-');
-    if(lg.indexOf('ko')===0){koVoice=vs[i];return;}}
-}
-if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;setTimeout(pickVoice,600);}
 
 function toneSvg(t_){
   if(t_==='question') return '<svg width="26" height="14" viewBox="0 0 26 14"><path d="M2 11 H14 C19 11 20 9 23.5 3" fill="none" stroke="#C0392F" stroke-width="2.1" stroke-linecap="round"/><path d="M20.5 3 H23.8 V6.3" fill="none" stroke="#C0392F" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -119,7 +116,7 @@ function verdictFor(tt){
 
 function run(){
   if(busy) return; busy=true;
-  if(window.speechSynthesis) speechSynthesis.cancel();
+  Example.stop();
   $('result').classList.remove('show'); resetTiles();
   $('rec').classList.add('rec'); setHint('hintListening',true);
   setTimeout(function(){
@@ -153,27 +150,24 @@ function showResult(tt){
   renderL1(tt);
 }
 
+/* The button only drives its own state. Which source actually makes the
+   sound — recorded file, native TTS, Web Speech — is audio.js's problem. */
 $('listen').addEventListener('click',function(){
-  var b=$('listen'),lab=$('listenLabel'),note=$('audioNote');
+  var b=$('listen'), lab=$('listenLabel'), note=$('audioNote');
   note.classList.remove('show');
-  if(!window.speechSynthesis||typeof SpeechSynthesisUtterance==='undefined'){
-    note.textContent=t('audioBlocked');note.classList.add('show');return;}
-  speechSynthesis.cancel(); pickVoice();
-  var s=S[idx], u=new SpeechSynthesisUtterance(s.k);
-  u.lang='ko-KR'; u.rate=0.82; u.volume=1;
-  u.pitch = s.t==='question'?1.25:(s.t==='exclam'?1.15:0.95);
-  if(koVoice) u.voice=koVoice;
-  var started=false;
-  b.classList.add('playing'); lab.textContent=t('listenPlaying');
-  function done(){b.classList.remove('playing');lab.textContent=t('listen');}
-  u.onstart=function(){started=true;}; u.onend=done;
-  u.onerror=function(){done();note.textContent=t('audioFailed');note.classList.add('show');};
-  speechSynthesis.speak(u);
-  setTimeout(function(){if(!started){done();
-    var vs=(speechSynthesis.getVoices()||[]).length;
-    note.textContent= vs===0 ? t('audioNoVoices') : t('audioSilent');
-    note.classList.add('show');}},1200);
-  setTimeout(function(){if(b.classList.contains('playing')) done();},8000);
+  if(b.classList.contains('playing')){ Example.stop(); }
+  function done(){ b.classList.remove('playing'); lab.textContent=t('listen'); }
+  Example.play(S[idx], {
+    onstart:function(){ b.classList.add('playing'); lab.textContent=t('listenPlaying'); },
+    onend:done,
+    onerror:function(kind){
+      done();
+      note.textContent = kind==='inapp' ? t('audioInApp')
+                       : kind==='unsupported' ? t('audioUnavailable')
+                       : t('audioFailed');
+      note.classList.add('show');
+    }
+  });
 });
 
 $('pairLink').addEventListener('click',function(){
@@ -225,12 +219,14 @@ $('l1Btn').addEventListener('click',function(){
   applyLang();
 });
 
+function browsable(c){ return c.browse || (c.id==='sounds' && SHOW_SOUNDS_IN_BROWSE); }
 function renderCols(){
   var h='';
   COLLECTIONS.forEach(function(c){
-    if(!c.browse) return;
+    if(!browsable(c)) return;
     var have=S.filter(function(x){return x.c===c.id;}).length;
-    h+='<button class="b-col'+(c.id===browseCol?' on':'')+'" data-col="'+c.id+'">'+colName(c.id)+'<span class="n">'+have+'/'+c.target+'</span></button>';
+    h+='<button class="b-col'+(c.id===browseCol?' on':'')+'" data-col="'+c.id+'">'
+      +'<span>'+colName(c.id)+'</span><span class="n">'+have+'/'+c.target+'</span></button>';
   });
   $('bCols').innerHTML=h;
   Array.prototype.slice.call(document.querySelectorAll('.b-col')).forEach(function(b){
@@ -247,7 +243,8 @@ function renderList(){
     var tg='<span'+(o.x.t==='question'?' class="q"':'')+'>'+toneWord(o.x.t)+'</span>'
       +'<span>'+form+'</span>'
       +'<span>'+t('lvPrefix')+o.x.lv+'</span>';
-    h+='<button class="b-item" data-i="'+o.i+'"><div class="k">'+o.x.k+'</div><div class="r">'+o.x.r+'</div><div class="t">'+tg+'</div></button>';
+    h+='<button class="b-item" data-i="'+o.i+'"><div class="k">'+o.x.k+'</div><div class="r">'+o.x.r+'</div>'
+      +'<div class="g">'+o.x.g+'</div><div class="t">'+tg+'</div></button>';
   });
   if(!items.length) h='<div class="b-set">'+t('emptyList')+'</div>';
   $('bList').innerHTML=h;

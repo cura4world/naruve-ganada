@@ -74,10 +74,11 @@ var UI = {
     simIntermediate:'중급',
     simBeginner:'초급',
 
-    audioBlocked:'이 화면에서는 소리가 막혀 있어요. Chrome에서 열어 주세요.',
-    audioFailed:'재생에 실패했어요. Chrome에서 열고 미디어 음량을 확인해 주세요.',
-    audioNoVoices:'이 화면에 음성이 없어요. Chrome에서 열어 주세요.',
-    audioSilent:'음성은 있는데 재생되지 않았어요. 미디어 음량을 확인하거나 Chrome에서 열어 주세요.',
+    /* "크롬에서 열어라"는 인앱 브라우저에서만 옳다. 설치된 앱 안에서는
+       열 크롬이 없다. audio.js가 상황을 가려 셋 중 하나만 보낸다. */
+    audioInApp:'인앱 브라우저에서는 소리가 막혀요. 브라우저로 열어 주세요.',
+    audioUnavailable:'이 기기에서는 예시 음성을 재생할 수 없어요.',
+    audioFailed:'재생에 실패했어요. 미디어 음량을 확인해 주세요.',
 
     shareAlert:'결과 카드 → 사진에 저장 / 인스타그램 공유\n\n(프로토타입 자리표시자 — 공유 이미지가 여기서 만들어집니다.)'
   },
@@ -141,10 +142,9 @@ var UI = {
     simIntermediate:'Intermediate',
     simBeginner:'Beginner',
 
-    audioBlocked:'This viewer blocks audio. Open the file in Chrome instead.',
-    audioFailed:'Speech failed here. Open in Chrome, and check media volume.',
-    audioNoVoices:'No speech voices in this viewer. Open the file in Chrome.',
-    audioSilent:'Voice found but nothing played. Check media volume, or open in Chrome.',
+    audioInApp:'In-app browsers block audio. Open this in your browser.',
+    audioUnavailable:'Example audio is not available on this device.',
+    audioFailed:'Playback failed. Check your media volume.',
 
     shareAlert:'Result card → saved to photos / shared to Instagram.\n\n(Prototype placeholder — the shareable image gets built here.)'
   }

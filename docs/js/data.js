@@ -140,7 +140,7 @@ var S = [
  tn:'Fall on 다.',w:['갑','습'],tip:'<span class="syl">갑</span> and <span class="syl">습</span> both stop. Hold the air in.'},
 {c:'sounds',s:'Linking',t:'statement',f:'haeyo',lv:2,k:'한국어를 배워요.',r:'hangugeoreul baewoyo',g:'Drills linking across syllables.',
  tn:'Level, small fall.',w:['국','워'],tip:'<span class="syl">국</span>+어 becomes 구거. Never stop between them.'},
-{c:'sounds',s:'ㄴ becomes ㄹ',t:'statement',f:'haeyo',lv:3,k:'신라면 먹을래요?',r:'sillamyeon meogeullaeyo?',g:'Drills ㄴ+ㄹ turning into ㄹㄹ.',
+{c:'sounds',s:'ㄴ becomes ㄹ',t:'question',f:'haeyo',lv:3,k:'신라면 먹을래요?',r:'sillamyeon meogeullaeyo?',g:'Drills ㄴ+ㄹ turning into ㄹㄹ.',
  tn:'Lift 요.',w:['신','래'],tip:'신라 is said 실라. The ㄴ turns into ㄹ.'},
 {c:'sounds',s:'Aspirated',t:'statement',f:'haeyo',lv:1,k:'코피가 나요.',r:'kopiga nayo',g:'Drills ㅋ and ㅍ.',
  tn:'Level.',w:['코','피'],tip:'Both need a real puff of air. Hold a hand to your mouth and feel it.'},

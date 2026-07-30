@@ -2,18 +2,28 @@
    Strategy:
      · HTML + version.json  → network first  (so a push shows up immediately)
      · css / js / icons     → stale-while-revalidate
+     · audio/               → cache first, in a cache that outlives builds
      · fonts (cross-origin) → cache first
    skipWaiting + clients.claim means a new build takes over on the next launch,
    without the user having to close every tab.                                  */
 
-const BUILD = '0.1.6';           // replaced by scripts/bump.mjs on every push
+const BUILD = '0.1.7';           // replaced by scripts/bump.mjs on every push
 const CACHE = 'naruve-' + BUILD;
+
+/* Example audio is expensive on mobile data — Indonesia is the first market —
+   and a recording never changes without its filename changing, because the
+   name is a hash of the sentence. So it lives in its own cache that the
+   activate handler does NOT sweep: a build bump must not make the phone
+   re-download every clip it already has. */
+const AUDIO_CACHE = 'naruve-audio-v1';
+const KEEP = [CACHE, AUDIO_CACHE];
 
 const PRECACHE = [
   './',
   './index.html',
   './css/app.css',
   './js/ui.js',
+  './js/audio.js',
   './js/data.js',
   './js/phonemes.js',
   './js/app.js',
@@ -39,7 +49,7 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(
-        keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
+        keys.filter((k) => !KEEP.includes(k)).map((k) => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
@@ -59,6 +69,20 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
+
+  // Example audio — cache first, keep forever. Matches wherever AUDIO.base
+  // points, so this keeps working after the move to external storage.
+  if (/\/audio\/.+\.(mp3|m4a|ogg|wav)$/i.test(url.pathname)) {
+    e.respondWith(
+      caches.open(AUDIO_CACHE).then((c) =>
+        c.match(req).then((hit) => hit || fetch(req).then((res) => {
+          if (res.ok) c.put(req, res.clone());
+          return res;
+        }))
+      )
+    );
+    return;
+  }
 
   // Google Fonts — cache first, they never change
   if (url.hostname.endsWith('gstatic.com') || url.hostname.endsWith('googleapis.com')) {
