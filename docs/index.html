@@ -15,18 +15,22 @@
 <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
+<!-- text that never changes at runtime carries data-i18n; applyLang() in
+     app.js fills it from ui.js. Anything set from JS uses t() directly. -->
 <div class="phone">
 
   <header class="topbar">
-    <div class="brand"><div class="seal-mark">말</div><span>Pronunciation</span></div>
-    <div class="credits"><b id="credits">27</b> checks left</div>
+    <div class="brand"><div class="seal-mark">말</div><span data-i18n="brand">Pronunciation</span></div>
+    <!-- no space here on purpose: the gap belongs to the string, because
+         Korean writes 27회 with none and English writes 27 checks with one -->
+    <div class="credits"><b id="credits">27</b><span data-i18n="checksLeft"> checks left</span></div>
   </header>
 
   <div class="strip">
     <div class="where"><b id="curCol">Drama</b><span class="dot"></span><span class="set" id="curSet">Reactions</span></div>
     <div style="display:flex;gap:7px;flex:none">
       <button class="browse-btn" id="l1Btn">EN</button>
-      <button class="browse-btn" id="openBrowse">Browse</button>
+      <button class="browse-btn" id="openBrowse" data-i18n="browse">Browse</button>
     </div>
   </div>
 
@@ -53,7 +57,7 @@
       <div class="score-row">
         <div class="score-num" id="scoreNum">0</div>
         <div class="score-meta">
-          <div class="score-label">Your score</div>
+          <div class="score-label" data-i18n="scoreLabel">Your score</div>
           <div class="score-verdict" id="verdict">—</div>
         </div>
       </div>
@@ -63,14 +67,14 @@
         <div id="l1Body"></div>
       </div>
       <div class="actions">
-        <button class="btn" id="share">Share card</button>
-        <button class="btn primary" id="next">Next sentence</button>
+        <button class="btn" id="share" data-i18n="shareBtn">Share card</button>
+        <button class="btn primary" id="next" data-i18n="nextBtn">Next sentence</button>
       </div>
     </section>
   </main>
 
   <div class="record-zone">
-    <button class="seal-btn" id="rec" aria-label="Record your voice">
+    <button class="seal-btn" id="rec" data-i18n-aria="recordAria" aria-label="Record your voice">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
         <rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 10.8a6.5 6.5 0 0 0 13 0"/>
         <line x1="12" y1="17.3" x2="12" y2="21"/><line x1="8.6" y1="21" x2="15.4" y2="21"/>
@@ -79,27 +83,27 @@
     <div class="hint" id="hint">Tap and read it aloud</div>
   </div>
 
-  <!-- buildtag rides along in the sim row: normal flow, so it can never
-       collide with the tab bar and needs no safe-area maths of its own -->
+  <!-- the row stays even when SIMULATE is hidden: buildtag lives here and it
+       is how a deploy gets confirmed on the phone. See DEV_UNLOCK in app.js -->
   <div class="sim">
-    <span class="sim-label">Simulate</span>
-    <button class="sim-btn on" data-lv="native">Native</button>
-    <button class="sim-btn" data-lv="advanced">Advanced</button>
-    <button class="sim-btn" data-lv="intermediate">Intermediate</button>
-    <button class="sim-btn" data-lv="beginner">Beginner</button>
+    <span class="sim-label" data-i18n="simLabel">Simulate</span>
+    <button class="sim-btn on" data-lv="native" data-i18n="simNative">Native</button>
+    <button class="sim-btn" data-lv="advanced" data-i18n="simAdvanced">Advanced</button>
+    <button class="sim-btn" data-lv="intermediate" data-i18n="simIntermediate">Intermediate</button>
+    <button class="sim-btn" data-lv="beginner" data-i18n="simBeginner">Beginner</button>
     <span class="buildtag" id="buildTag">v—</span>
   </div>
 
   <nav class="tabs">
-    <button class="tab" aria-selected="true"><span class="ico">말</span>Practice</button>
-    <button class="tab" aria-selected="false"><span class="ico">높</span>Honorifics</button>
-    <button class="tab" aria-selected="false"><span class="ico">나</span>You</button>
+    <button class="tab" aria-selected="true"><span class="ico">말</span><span data-i18n="tabPractice">Practice</span></button>
+    <button class="tab" aria-selected="false"><span class="ico">높</span><span data-i18n="tabHonorifics">Honorifics</span></button>
+    <button class="tab" aria-selected="false"><span class="ico">나</span><span data-i18n="tabYou">You</span></button>
   </nav>
 
   <section class="browse" id="browse" aria-hidden="true">
     <div class="b-head">
-      <div class="b-title">Browse</div>
-      <button class="b-close" id="closeBrowse" aria-label="Close">×</button>
+      <div class="b-title" data-i18n="browseTitle">Browse</div>
+      <button class="b-close" id="closeBrowse" data-i18n-aria="close" aria-label="Close">×</button>
     </div>
     <div class="b-cols" id="bCols"></div>
     <div class="b-blurb" id="bBlurb"></div>
@@ -108,6 +112,7 @@
 
 </div>
 
+<script src="./js/ui.js"></script>
 <script src="./js/data.js"></script>
 <script src="./js/phonemes.js"></script>
 <script src="./js/app.js"></script>
