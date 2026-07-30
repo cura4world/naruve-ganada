@@ -6,7 +6,7 @@
    skipWaiting + clients.claim means a new build takes over on the next launch,
    without the user having to close every tab.                                  */
 
-const BUILD = '0.1.2';           // replaced by scripts/bump.mjs on every push
+const BUILD = '0.1.3';           // replaced by scripts/bump.mjs on every push
 const CACHE = 'naruve-' + BUILD;
 
 const PRECACHE = [
@@ -25,7 +25,11 @@ const PRECACHE = [
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE)
-      .then((c) => c.addAll(PRECACHE))
+      // cache: 'reload' goes past the browser's own HTTP cache.
+      // Without it a worker installing while the previous max-age is still
+      // alive fills the brand-new cache with the previous build's files —
+      // the build number on screen changes but the layout does not.
+      .then((c) => c.addAll(PRECACHE.map((u) => new Request(u, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -83,10 +87,12 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // everything else — serve cache, refresh in the background
+  // everything else — serve cache, refresh in the background.
+  // The background refresh skips the HTTP cache too, for the same reason
+  // as the precache above.
   e.respondWith(
     caches.match(req).then((hit) => {
-      const net = fetch(req).then((res) => {
+      const net = fetch(new Request(req.url, { cache: 'reload' })).then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy));
         return res;
