@@ -87,7 +87,6 @@ function paint(){
   $('audioNote').classList.remove('show');
 }
 
-function scoreFor(ch){var L=LEVELS[level];return S[idx].w.indexOf(ch)>=0?rand(L.weak):rand(L.ok);}
 function inkTile(el,sc){
   var a=0.10+(sc/100)*0.86;
   el.style.backgroundColor='rgba(17,26,34,'+a.toFixed(3)+')';
@@ -114,30 +113,57 @@ function verdictFor(tt){
   return t('verdict0');
 }
 
+/* Tap starts a real take; tap again ends it early. The take also ends
+   itself on silence or at the 10s ceiling — see mic.js. */
 function run(){
+  if(Mic.isLive()){ Mic.stop(); return; }
   if(busy) return; busy=true;
   Example.stop();
   $('result').classList.remove('show'); resetTiles();
-  $('rec').classList.add('rec'); setHint('hintListening',true);
+  $('audioNote').classList.remove('show');
+
+  Mic.record({
+    onstart:function(){
+      $('rec').classList.add('rec'); setHint('hintListening',true); devMicOpen();
+    },
+    onlevel:devMicLevel,
+    ondone:function(cap){
+      $('rec').classList.remove('rec'); setHint('hintScoring',false); devMicDone(cap);
+      Score.evaluate(S[idx], cap, function(res, fromCache){
+        devMicResult(res, fromCache);
+        paintScore(res);
+        /* a repeat of the very same audio must not be billed twice */
+        if(!fromCache){ credits=Math.max(0,credits-1); $('credits').textContent=credits; }
+      });
+    },
+    onerror:function(kind){
+      $('rec').classList.remove('rec'); devMicOff();
+      var note=$('audioNote');
+      note.textContent = kind==='denied' ? t('micDenied')
+                       : kind==='nospeech' ? t('micNoSpeech')
+                       : kind==='nomic' ? t('micNoMic')
+                       : kind==='unsupported' ? t('micUnsupported')
+                       : t('micFailed');
+      note.classList.add('show');
+      setHint('hintTap',false); busy=false;
+    }
+  });
+}
+
+function paintScore(res){
+  var tiles=Array.prototype.slice.call(document.querySelectorAll('.tile:not(.punct):not(.space)'));
+  tiles.forEach(function(el,i){
+    var s=res.syllables[i];
+    if(s) setTimeout(function(){ inkTile(el, s.score); }, i*80);
+  });
+  var tt=res.total;
   setTimeout(function(){
-    $('rec').classList.remove('rec'); setHint('hintScoring',false);
-    setTimeout(function(){
-      var tiles=Array.prototype.slice.call(document.querySelectorAll('.tile:not(.punct):not(.space)'));
-      var sc=[];
-      tiles.forEach(function(el,i){var v=scoreFor(el.getAttribute('data-ch'));sc.push(v);
-        setTimeout(function(){inkTile(el,v);},i*80);});
-      var sum=0; for(var k=0;k<sc.length;k++) sum+=sc[k];
-      var tt=Math.round(sum/sc.length);
-      setTimeout(function(){
-        $('result').classList.add('show');
-        var n=0;(function step(){n+=Math.max(1,Math.ceil((tt-n)/6));if(n>=tt)n=tt;
-          $('scoreNum').textContent=n; if(n<tt) requestAnimationFrame(step);})();
-        showResult(tt);
-        credits=Math.max(0,credits-1); $('credits').textContent=credits;
-        setHint('hintAgain',false); busy=false;
-      }, tiles.length*80+200);
-    },500);
-  },2100);
+    $('result').classList.add('show');
+    var n=0;(function step(){n+=Math.max(1,Math.ceil((tt-n)/6));if(n>=tt)n=tt;
+      $('scoreNum').textContent=n; if(n<tt) requestAnimationFrame(step);})();
+    showResult(tt);
+    setHint('hintAgain',false); busy=false;
+  }, tiles.length*80+200);
 }
 
 /* everything about the result that has words in it, so a language switch
@@ -276,6 +302,44 @@ $('next').addEventListener('click',function(){
   var p=pool.indexOf(idx); idx=pool[(p+1)%pool.length]; paint();
 });
 $('share').addEventListener('click',function(){ alert(t('shareAlert')); });
+
+/* --- A-4: proof that the microphone is actually receiving sound.
+   The panel is hidden by CSS unless body.dev, so these can run always. --- */
+function devMicOpen(){
+  if(!$('micDev')) return;
+  $('micLevel').style.width='0%';
+  $('micStat').textContent='0.0s · rms 0.000';
+  $('micOut').textContent='';
+}
+function devMicLevel(rms, ms){
+  if(!$('micDev')) return;
+  var pct=Math.min(100, Math.round(rms/0.25*100));
+  var bar=$('micLevel');
+  bar.style.width=pct+'%';
+  bar.style.background = rms>=MIC.onsetRms ? 'var(--seal)' : 'var(--rule)';
+  $('micStat').textContent=(ms/1000).toFixed(1)+'s · rms '+rms.toFixed(3)
+    + (rms>=MIC.onsetRms ? ' · 소리 감지' : '');
+}
+function devMicDone(cap){
+  if(!$('micDev')) return;
+  $('micLevel').style.width='0%';
+  $('micStat').textContent='held '+(cap.ms/1000).toFixed(1)+'s · audio '
+    +(cap.rawMs/1000).toFixed(1)+'s · speech '+(cap.speechMs/1000).toFixed(1)+'s';
+  $('micOut').textContent='kept '+(cap.keptMs/1000).toFixed(1)+'s (−'
+    +(cap.trimmedMs/1000).toFixed(1)+'s) · peak '+cap.peak.toFixed(3)
+    +' · wav '+Math.round(cap.wav.size/1024)+'KB';
+}
+function devMicResult(res, fromCache){
+  if(!$('micOut')) return;
+  $('micOut').textContent += '\nengine ' + res.engine
+    + (res.measured ? '' : ' (측정 아님 — 자리표시자)')
+    + ' · total ' + res.total + (fromCache ? ' · 캐시 재사용' : '');
+}
+function devMicOff(){
+  if(!$('micDev')) return;
+  $('micLevel').style.width='0%';
+  $('micStat').textContent='—';
+}
 
 /* --- dev mode: hold the 말 seal for 3s to show/hide SIMULATE.
    Deliberately not persisted — a reload always comes back clean, so a
