@@ -14,7 +14,9 @@
 - 근거 없는 수치를 쓰지 않는다. 추정이면 추정이라고 밝힌다.
 
 ## 레이아웃과 safe-area
-`env(safe-area-inset-*)`는 app.css 안에서 **:root의 두 줄에만** 존재한다.
+여백을 주는 곳은 웹과 네이티브에 하나씩, 총 두 군데뿐이다.
+
+**웹 (docs/css/app.css)** — `env(safe-area-inset-*)`는 `:root`의 두 줄에만 존재한다.
 
 ```
 --safe-top: env(safe-area-inset-top, 0px);
@@ -28,6 +30,19 @@
 예외는 `.update-bar` 하나다. position:fixed라서 .phone의 padding 밖으로 나가므로
 자기 오프셋에 `var(--safe-bottom)`를 더한다. env()를 직접 부르지는 않는다.
 
+**네이티브 (android/.../MainActivity.java)** — APK는 targetSdk 36이라
+edge-to-edge가 강제된다. WebView는 `env(safe-area-inset-*)`에 디스플레이 컷아웃만
+넘겨주고 시스템 바는 넘겨주지 않는다. 그래서 상단(펀치홀)은 CSS로 잡히지만
+하단 내비게이션 바는 CSS로 절대 잡히지 않는다. 탭 글자가 내비게이션 바에 겹친
+원인이 이것이었고, CSS를 아무리 고쳐도 APK에서는 해결되지 않는다.
+
+MainActivity의 `setOnApplyWindowInsetsListener`가 systemBars + displayCutout을
+WebView 컨테이너 padding으로 넣고 인셋을 소비한다. 그 결과 APK에서는
+--safe-top/--safe-bottom이 0으로 떨어지는데, 이미 네이티브에서 밀어놨으므로 맞다.
+브라우저와 PWA에서는 이 파일이 관여하지 않고 CSS 경로만 동작한다.
+
+이 리스너를 지우면 하단 겹침이 그대로 돌아온다. 지우기 전에 git log를 본다.
+
 세로 구조는 이렇게 고정한다. 바꾸기 전에 이유를 확인한다.
 - `.phone`은 `height:100dvh` (min-height 아님) — 열의 높이를 묶어둔다.
 - `.stage`만 스크롤한다 (`flex:1; min-height:0; overflow-y:auto`).
@@ -40,15 +55,14 @@
 position:fixed로 되돌리지 않는다. 고정하면 탭바 높이를 상수로 박아야 하고,
 그 상수가 safe-area와 어긋나는 순간 다시 겹친다.
 
-Android APK는 targetSdk 36이라 edge-to-edge가 강제된다. WebView는
-`env(safe-area-inset-*)`에 디스플레이 컷아웃만 넘겨주고 시스템 바는 넘겨주지 않는다.
-그래서 상단(펀치홀)은 CSS로 잡히지만 하단 내비게이션 바는 CSS로 잡히지 않는다.
-하단 겹침이 APK에서만 보인다면 원인은 CSS가 아니라 안드로이드 쪽이다.
-
 ## 배포 경로
 이 저장소는 GitHub Pages로 배포된다. 소스는 main 브랜치의 /docs 폴더다.
 따라서 main에 들어간 docs/ 내용이 곧 폰에서 보이는 화면이다. 빌드 단계가 따로 없다.
 docs/ 밖의 파일(scripts/, android/, .github/ 등)은 배포물에 포함되지 않는다.
+
+android/ 를 고친 경우는 Pages 배포로 반영되지 않는다. `npm run apk`로 APK를
+다시 만들어 폰에 설치해야 한다. 지금 capacitor.config.json에 server 블록이 있어
+APK는 원격 URL을 띄우는 껍데기다. 즉 웹 수정은 즉시, 네이티브 수정은 재설치.
 
 ## 브랜치와 PR
 main에 직접 푸시하지 않는다. 작업은 항상 브랜치에서 하고 끝나면 PR을 연다.
@@ -108,6 +122,7 @@ docs/js/boot.js에는 번호가 없다. boot.js는 version.json을 fetch해서 �
 - docs/version.json    빌드번호·날짜 (bump.mjs가 고친다. 손으로 고치지 않는다)
 - scripts/bump.mjs     빌드번호 올리는 스크립트
 - .github/workflows/auto-merge.yml  PR 자동 병합
+- android/app/src/main/java/app/naruve/ganada/MainActivity.java  시스템 바 인셋 처리
 
 ## 설계 원칙
 - 학습앱이 아니라 점수앱. 첫 화면이 곧 기능이다. 로그인·온보딩·레벨테스트를 앞에 두지 않는다.
