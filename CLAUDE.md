@@ -1,5 +1,10 @@
 # Naruve 발음앱 — Claude Code 작업 지침
 
+모든 작업 전에 DECISIONS.md를 읽을 것.
+여기 기록된 결정과 어긋나는 제안은 하지 않는다.
+새 결정이 생기면 수정안을 제시하고 승인을 받는다.
+DECISIONS.md는 사용자 승인 없이 수정하지 않는다.
+
 ## 프로젝트
 한국어 학습자용 발음·억양 점수 앱. PWA로 만들고 나중에 Capacitor로 Android 앱화.
 회사: Naruve Studio / 도메인: naruve.app (아직 미연결, 지금은 GitHub Pages 임시 주소)
@@ -232,6 +237,7 @@ app.js는 버튼 상태만 관리하고 무엇이 소리를 내는지는 모른�
 
 ## 보류 항목
 지금 구현하지 않는다. 착수할 때 이 목록에서 지운다.
+DECISIONS.md 13절의 착수 금지 목록이 이 목록보다 우선한다.
 
 - **발음 측정 엔진** — 통합 점수의 70%가 아직 난수다. 나머지 보류 항목
   대부분이 이것 뒤에 줄 서 있다(비율 재검토·레벨 배지·임계값 확정).
@@ -321,9 +327,10 @@ docs/js/boot.js에는 번호가 없다. boot.js는 version.json을 fetch해서 �
 4. 푸시하고 PR을 연다
 
 예외: docs/ 밖만 고친 경우(scripts/, android/, .github/, capacitor.config.json, README,
-이 CLAUDE.md 등)는 올리지 않는다. 폰에 배포되는 내용이 아니라 캐시와 무관하다.
+이 CLAUDE.md, DECISIONS.md 등)는 올리지 않는다. 폰에 배포되는 내용이 아니라 캐시와 무관하다.
 
 ## 파일 담당
+- DECISIONS.md        결정 기록. 단일 출처. 승인 없이 고치지 않는다
 - docs/index.html      화면 뼈대. 문구는 data-i18n으로만 넣는다
 - docs/js/ui.js        UI 문구 표 (한국어가 마스터본, 언어 추가는 열 하나 추가)
 - docs/js/audio.js     예시 음성 재생 (파일 → 네이티브 TTS → Web Speech 순)
