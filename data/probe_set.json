@@ -1,0 +1,92 @@
+{
+  "_source": "DECISIONS.md 8.5절 표를 그대로 옮긴 것. 임의로 문장을 추가하지 않는다.",
+  "_rules": [
+    "오류 항목의 ref_text는 정답 표기다. tts_text만 비튼다.",
+    "한 문장에 두 오류를 넣지 않는다. 어느 쪽이 감점됐는지 분리되지 않는다.",
+    "핵심 지표는 절대 점수가 아니라 정상-오류 gap이다.",
+    "감점이 target_word에 떨어졌는지까지 확인한다. 엉뚱한 어절이 깎이면 실패다."
+  ],
+  "_fields": {
+    "id": "샘플 식별자. 접두사(s1/s2/s3/s4)가 같은 것끼리 한 쌍이다.",
+    "ref_text": "발음평가에 넘길 참조 텍스트. 오류 항목도 정답 표기를 쓴다.",
+    "tts_text": "TTS에 그대로 넣을 입력. 오류는 여기서만 만든다. null이면 오디오를 새로 만들지 않는다.",
+    "error_type": "none이면 정상 샘플.",
+    "note": "이 샘플이 무엇을 재는지.",
+    "target_word": "감점이 떨어져야 하는 어절. error_type이 none이면 null. (C) 표의 O/X 판정에 쓴다.",
+    "audio_from": "다른 항목의 오디오를 재사용할 때 그 id. ref_text만 바꿔 재호출하는 경우에 쓴다."
+  },
+  "items": [
+    {
+      "id": "s1_ok",
+      "ref_text": "만나서 반갑습니다",
+      "tts_text": "만나서 반갑습니다",
+      "error_type": "none",
+      "note": "s1 쌍의 정상 기준선",
+      "target_word": null,
+      "audio_from": null
+    },
+    {
+      "id": "s1_batchim",
+      "ref_text": "만나서 반갑습니다",
+      "tts_text": "만나서 반가씀니다",
+      "error_type": "batchim_drop",
+      "note": "받침 ㅂ 탈락. 감점이 반갑습니다에 떨어져야 한다",
+      "target_word": "반갑습니다",
+      "audio_from": null
+    },
+    {
+      "id": "s2_ok",
+      "ref_text": "많이 드세요",
+      "tts_text": "많이 드세요",
+      "error_type": "none",
+      "note": "음소 개수 판별용. s2_alt_ref와 같은 오디오를 공유한다",
+      "target_word": null,
+      "audio_from": null
+    },
+    {
+      "id": "s2_alt_ref",
+      "ref_text": "마니 드세요",
+      "tts_text": null,
+      "error_type": "none",
+      "note": "s2_ok와 같은 오디오에 참조 텍스트만 바꿔 재호출. 많이 어절의 Phonemes 길이를 비교해 표기형/표준발음형을 판별한다",
+      "target_word": null,
+      "audio_from": "s2_ok"
+    },
+    {
+      "id": "s3_ok",
+      "ref_text": "이거 얼마예요?",
+      "tts_text": "이거 얼마예요?",
+      "error_type": "none",
+      "note": "s3 쌍의 정상 기준선",
+      "target_word": null,
+      "audio_from": null
+    },
+    {
+      "id": "s3_vowel",
+      "ref_text": "이거 얼마예요?",
+      "tts_text": "이거 올마예요?",
+      "error_type": "vowel_eo_to_o",
+      "note": "ㅓ→ㅗ 대치. 감점이 얼마예요?에 떨어져야 한다",
+      "target_word": "얼마예요?",
+      "audio_from": null
+    },
+    {
+      "id": "s4_ok",
+      "ref_text": "값이 싸요",
+      "tts_text": "값이 싸요",
+      "error_type": "none",
+      "note": "s4 쌍의 정상 기준선",
+      "target_word": null,
+      "audio_from": null
+    },
+    {
+      "id": "s4_tense",
+      "ref_text": "값이 싸요",
+      "tts_text": "값이 사요",
+      "error_type": "tense_loss",
+      "note": "된소리→예사소리. ref_text는 지시문의 값이 사요가 아니라 정답 표기 값이 싸요다 — DECISIONS.md 8.5 표와 오류 항목 규칙에 맞춘 것. 감점이 싸요에 떨어져야 한다",
+      "target_word": "싸요",
+      "audio_from": null
+    }
+  ]
+}
