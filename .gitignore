@@ -2,3 +2,13 @@ node_modules/
 .DS_Store
 *.log
 .vscode/
+
+# 프로브 하네스
+# .env에는 Azure/ElevenLabs 키가 들어간다. 커밋되면 그 즉시 폐기해야 한다.
+.env
+.env.local
+# 생성물 — TTS mp3, 변환된 wav, 엔진 원본 응답. 전부 재생성 가능하다.
+out/
+# 파이썬 부산물
+__pycache__/
+*.pyc
