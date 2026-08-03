@@ -12,6 +12,9 @@ DECISIONS.md는 사용자 승인 없이 수정하지 않는다.
 ## 절대 규칙
 - 경로는 반드시 상대경로(./)로 쓴다. 나중에 도메인 루트로 옮길 때 깨진다.
 - main에 직접 푸시하지 않는다. 작업이 끝나면 항상 브랜치를 만들고 PR을 연다.
+- **docs/에는 앱에 실릴 것만 둔다. 개발 문서는 저장소 루트에 둔다.**
+  docs/가 GitHub Pages 배포 루트라 그 안의 파일은 전부 공개 접근된다.
+  PROBE.md를 docs/에 뒀다가 루트로 옮긴 이유가 이것이다.
 - docs/ 안 파일을 고쳤으면 커밋 전에 반드시 빌드번호를 올린다. 아래 "빌드번호" 항목 참조.
 - 레이아웃을 고칠 때, 기존 safe-area 관련 코드를 제거하거나 옮기기 전에
   반드시 `git log -S`로 그 코드가 왜 생겼는지 먼저 확인한다. 아래 "레이아웃과 safe-area" 참조.
@@ -204,6 +207,26 @@ Math.random을 돌린다. `pronunciation.measured:false`이고 개발 모드에
 엔진 도착 순서: placeholder → intonation(완료) → recognition(네이티브)
 → cloud(유료 정밀 모드). 교체는 score.js 안에서만 일어난다.
 
+## 발음 엔진 프로브
+2층 발음 엔진을 고르기 전에 후보들을 같은 자로 재는 하네스가 저장소에 있다.
+실행 순서는 **PROBE.md**(루트)에, 무엇을 왜 재는지는 DECISIONS.md 8.5절에 있다.
+
+- `data/probe_set.json`  DECISIONS.md 8.5 표 그대로. 임의로 문장을 더하지 않는다
+- `scripts/tts_gen.py`   프로브용 오류 샘플 생성 (표기를 비틀어 TTS에 넣는다)
+- `scripts/prep_audio.sh` mp3 → 16kHz/16bit/mono wav
+- `scripts/pa_probe.py`  어댑터를 통해 엔진 호출. 원본 응답을 out/raw/에 그대로 저장
+- `scripts/pa_report.py` 표 다섯 개 (A 표기형판별 / B 스키마 / C 판별력 / D 벤더편향 / E 눈금)
+- `scripts/adapters/`    엔진별 구현. azure만 구현됐고 etri·ondevice는 골격
+
+엔진을 하나 더 붙이는 비용이 파일 하나여야 DECISIONS.md 8.4의 "세 개를 같은
+자로 재고 나서 고른다"가 실제로 지켜진다. 그래서 처음부터 어댑터 구조다.
+
+**out/ 는 .gitignore에 있다.** 생성물(mp3·wav·응답 JSON)은 커밋하지 않는다.
+`.env`도 마찬가지다 — 키가 들어간다.
+
+`scripts/adapters/azure.py`의 REST 규격은 아직 실호출로 검증되지 않았다.
+400이 오면 코드보다 Speech Studio를 먼저 본다. PROBE.md 1-b 참조.
+
 ## 예시 음성
 재생 요청은 docs/js/audio.js의 `Example.play()` 하나로만 들어간다.
 app.js는 버튼 상태만 관리하고 무엇이 소리를 내는지는 모른다. 순서는 이렇다.
@@ -269,7 +292,11 @@ DECISIONS.md 13절의 착수 금지 목록이 이 목록보다 우선한다.
 ## 배포 경로
 이 저장소는 GitHub Pages로 배포된다. 소스는 main 브랜치의 /docs 폴더다.
 따라서 main에 들어간 docs/ 내용이 곧 폰에서 보이는 화면이다. 빌드 단계가 따로 없다.
-docs/ 밖의 파일(scripts/, android/, .github/ 등)은 배포물에 포함되지 않는다.
+docs/ 밖의 파일(scripts/, android/, data/, .github/, 루트의 .md들)은
+배포물에 포함되지 않는다.
+
+**뒤집어 말하면 docs/ 안의 파일은 전부 공개된다.** 개발 문서를 docs/에 두면
+Pages 주소로 그대로 읽힌다. 그래서 PROBE.md는 루트에 있다.
 
 android/ 를 고친 경우는 Pages 배포로 반영되지 않는다. `npm run apk`로 APK를
 다시 만들어 폰에 설치해야 한다. 지금 capacitor.config.json에 server 블록이 있어
@@ -297,7 +324,19 @@ gh pr create --fill
 `npm run ship`은 현재 브랜치를 그대로 푸시하는 스크립트다. main에서 실행하면
 main 직접 푸시가 되므로 쓰지 않는다. bump는 `npm run bump`로 따로 돌린다.
 
-## 빌드번호 (캐시 무효화)
+## 두 개의 버전 번호 — 섞지 않는다
+성격이 완전히 다른 숫자가 둘 있고, 서로 다른 스크립트가 관리한다.
+한 스크립트로 합치지 않는다. 문서 한 줄 고치고 앱 버전이 오르면 안 된다.
+
+| 숫자 | 어디 | 언제 오르나 | 올리는 것 |
+|---|---|---|---|
+| 빌드번호 0.1.x | docs/version.json + docs/sw.js | docs/를 고칠 때마다 | `npm run bump` |
+| versionCode | android/app/build.gradle | APK를 만들 때마다 | `npm run bump:apk` |
+
+versionName("1.0")은 사용자에게 보이는 제품 버전이라 자동으로 올리지 않는다.
+필요하면 `node scripts/bump-apk.mjs --name 1.1`처럼 명시한다.
+
+### 빌드번호 (캐시 무효화)
 docs/ 안의 파일을 하나라도 수정했으면, 그 변경을 커밋할 때 빌드번호를 같이 올린다.
 빼먹으면 서비스워커 캐시 이름이 그대로라 폰에서 변경이 보이지 않는다.
 
@@ -326,11 +365,29 @@ docs/js/boot.js에는 번호가 없다. boot.js는 version.json을 fetch해서 �
 3. `git add -A` — 수정한 파일 + docs/version.json + docs/sw.js를 한 커밋에 함께 넣는다
 4. 푸시하고 PR을 연다
 
-예외: docs/ 밖만 고친 경우(scripts/, android/, .github/, capacitor.config.json, README,
-이 CLAUDE.md, DECISIONS.md 등)는 올리지 않는다. 폰에 배포되는 내용이 아니라 캐시와 무관하다.
+예외: docs/ 밖만 고친 경우(scripts/, android/, data/, .github/, capacitor.config.json,
+README, 루트의 CLAUDE.md·DECISIONS.md·PROBE.md 등)는 올리지 않는다.
+폰에 배포되는 내용이 아니라 캐시와 무관하다.
+
+### versionCode (Play 업로드)
+`npm run apk`가 빌드 **앞에서** `scripts/bump-apk.mjs`를 돌린다. 손으로 올릴 일이 없다.
+비공개 테스트에서 수정본을 여러 번 올릴 때 한 번이라도 잊으면 Play가 업로드를
+거부하는데, 그 실수를 아예 못 하게 만드는 것이 목적이다.
+
+```
+npm run apk          # versionCode +1 → cap sync → assembleDebug
+npm run bump:apk     # 번호만 올린다
+npm run apk:nobump   # 번호를 안 올리고 빌드한다 (로컬 실험용)
+node scripts/bump-apk.mjs --dry-run   # 무엇이 바뀔지만 본다
+```
+
+Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 실패해서 번호가
+하나 건너뛰어도 문제가 없다. 그래서 빌드 앞에 두는 것이 안전하다.
+바뀐 build.gradle은 커밋에 같이 넣는다.
 
 ## 파일 담당
 - DECISIONS.md        결정 기록. 단일 출처. 승인 없이 고치지 않는다
+- PROBE.md            발음평가 프로브 실행 순서 (루트다. docs/에 두지 않는다)
 - docs/index.html      화면 뼈대. 문구는 data-i18n으로만 넣는다
 - docs/js/ui.js        UI 문구 표 (한국어가 마스터본, 언어 추가는 열 하나 추가)
 - docs/js/audio.js     예시 음성 재생 (파일 → 네이티브 TTS → Web Speech 순)
@@ -344,11 +401,20 @@ docs/js/boot.js에는 번호가 없다. boot.js는 version.json을 fetch해서 �
 - docs/css/app.css     색·글꼴·여백. safe-area는 :root와 .phone에만 있다
 - docs/sw.js           캐시 전략 (PRECACHE 배열만 손댄다. BUILD 줄은 bump.mjs가 고친다)
 - docs/version.json    빌드번호·날짜 (bump.mjs가 고친다. 손으로 고치지 않는다)
-- scripts/bump.mjs        빌드번호 올리는 스크립트
+- data/probe_set.json     프로브 문장 (DECISIONS.md 8.5 표. 임의로 더하지 않는다)
+- scripts/bump.mjs        빌드번호(서비스워커 캐시) 올리는 스크립트
+- scripts/bump-apk.mjs    versionCode 올리는 스크립트. bump.mjs와 섞지 않는다
 - scripts/icon-layers.mjs 원본 1장에서 아이콘 전체를 다시 만든다
 - scripts/icon-verify.mjs 생성 결과 검사 (크기·배경색·아트 출처)
+- scripts/tts_gen.py      프로브 오류 샘플 생성
+- scripts/prep_audio.sh   mp3 → 16kHz/16bit/mono wav
+- scripts/pa_probe.py     엔진 호출. 원본 응답을 out/raw/에 그대로 저장
+- scripts/pa_report.py    표 다섯 개 생성
+- scripts/adapters/       엔진 어댑터 (azure 구현 / etri·ondevice 골격)
+- .env.example            프로브 키 서식. 실제 .env는 커밋되지 않는다
 - .github/workflows/auto-merge.yml  PR 자동 병합
 - android/app/src/main/java/app/naruve/ganada/MainActivity.java  시스템 바 인셋 처리
+- android/app/build.gradle  versionCode·versionName (bump-apk.mjs가 고친다)
 
 ## 설계 원칙
 - 학습앱이 아니라 점수앱. 첫 화면이 곧 기능이다. 로그인·온보딩·레벨테스트를 앞에 두지 않는다.
@@ -374,9 +440,10 @@ K-드라마·K-팝의 가사, 특정 작품의 긴 대사, 작품명·아티스�
   진단이 없는데 숨기면 Sounds 8개에 아예 도달할 수 없다.
 
 바꾼 뒤 `npm run apk`로 다시 빌드해야 폰에 반영된다.
+versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로 정한다.
 
 ## 현재 상태
-빌드 0.1.9 기준.
+빌드 0.1.10 기준.
 
 **문장** 50개 (Standard 15 / Everyday 15 / Drama 12 / Sounds 8).
 50개 전부 `t:` 억양 태그와 `w:` 약점 음절이 채워져 있어 채점 경로에 구멍은 없다.
@@ -390,6 +457,9 @@ K-드라마·K-팝의 가사, 특정 작품의 긴 대사, 작품명·아티스�
 **채점 2층(발음)** 자리표시자다. Math.random. 통합 점수의 70%가 여기서 온다.
 이걸 실제 엔진으로 바꾸는 것이 다음 큰 작업이다.
 
+**엔진 프로브** 하네스는 준비됐고 아직 한 번도 돌지 않았다. 키와 egress가
+없어서다. Azure 어댑터의 REST 규격은 미검증. PROBE.md 참조.
+
 **예시 음성** docs/audio/ 폴더가 없어 항상 폰 내장 TTS(APK는 네이티브 플러그인,
 브라우저는 Web Speech)로 재생된다. 유료 TTS 파일을 넣으면 코드 수정 없이
 그 문장만 파일 재생으로 바뀐다.
@@ -397,3 +467,5 @@ K-드라마·K-팝의 가사, 특정 작품의 긴 대사, 작품명·아티스�
 **언어** en·ko 완전, id는 억양 피드백 6키만.
 
 **결과 공유** `alert()` 자리표시자.
+
+**versionCode** 1. 첫 `npm run apk`에서 2가 된다.
