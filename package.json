@@ -1,13 +1,15 @@
 {
   "name": "naruve-ganada",
-  "version": "0.1.0",
   "private": true,
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "bump": "node scripts/bump.mjs",
+    "bump:apk": "node scripts/bump-apk.mjs",
     "serve": "npx --yes serve docs -l 5173",
     "ship": "node scripts/bump.mjs && git add -A && git commit -m \"build\" && git push",
-    "apk": "npx cap sync android && cd android && .\\gradlew.bat assembleDebug",
+    "apk": "node scripts/bump-apk.mjs && npx cap sync android && cd android && .\\gradlew.bat assembleDebug",
+    "apk:nobump": "npx cap sync android && cd android && .\\gradlew.bat assembleDebug",
     "icons": "node scripts/icon-layers.mjs && node scripts/icon-verify.mjs",
     "icons:verify": "node scripts/icon-verify.mjs"
   },
