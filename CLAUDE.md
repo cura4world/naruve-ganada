@@ -300,6 +300,12 @@ docs/ 밖의 파일(scripts/, android/, data/, .github/, 루트의 .md들)은
 뒤집어 말하면 docs/ 안의 파일은 전부 공개 URL로 접근된다.
 무엇을 docs/에 두고 무엇을 루트에 두는지는 DECISIONS.md 12절 참조.
 
+도메인은 naruve.app이고 docs/CNAME이 지정한다. **Settings > Pages의 custom
+domain 칸은 쓰지 않는다** — 거기에 입력하면 GitHub이 docs/CNAME을 main에 직접
+커밋해 브랜치와 PR을 건너뛴다. 도메인을 바꿀 때는 docs/CNAME을 PR로 고친다.
+그 칸 말고 나머지 Pages 설정(Enforce HTTPS 등)은 파일을 건드리지 않으므로
+`gh api`로 켜고 꺼도 된다.
+
 android/ 를 고친 경우는 Pages 배포로 반영되지 않는다. `npm run apk`로 APK를
 다시 만들어 폰에 설치해야 한다. 지금 capacitor.config.json에 server 블록이 있어
 APK는 원격 URL을 띄우는 껍데기다. 즉 웹 수정은 즉시, 네이티브 수정은 재설치.
