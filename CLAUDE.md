@@ -7,7 +7,7 @@ DECISIONS.md는 사용자 승인 없이 수정하지 않는다.
 
 ## 프로젝트
 한국어 학습자용 발음·억양 점수 앱. PWA로 만들고 나중에 Capacitor로 Android 앱화.
-회사: Naruve Studio / 도메인: naruve.app (아직 미연결, 지금은 GitHub Pages 임시 주소)
+회사: Naruve Studio / 도메인: naruve.app (GitHub Pages에 연결. docs/CNAME이 지정한다)
 
 ## 절대 규칙
 - 로컬 작업 시작 전 항상 `git fetch` 후 origin/main과의 차이를 확인한다.
