@@ -70,10 +70,12 @@ epretx.etri.re.kr
 
 ### 도구
 
-`python3` (3.8+), `ffmpeg`. **파이썬 패키지는 설치할 것이 없다** — 표준 라이브러리만 쓴다.
+`python` (3.8+), `ffmpeg`. **파이썬 패키지는 설치할 것이 없다** — 표준 라이브러리만 쓴다.
+
+> 이 PC에서는 `python3`가 아니라 `python`이다. `python3`는 Windows Store 별칭 스텁이라 아무것도 실행하지 않고 exit 49로 끝난다.
 
 ```
-python3 --version
+python --version
 ffmpeg -version
 ```
 
@@ -148,23 +150,26 @@ ko-KR 동작 탓인지 바로 갈린다.** 그 구분이 안 되면 몇 시간�
 ## 2. 음성 만들기 — 예상 15분
 
 ```
-python3 scripts/tts_gen.py --list
+python scripts/tts_gen.py --list
 ```
 
 무엇을 만들지 먼저 본다. 7개가 나와야 한다 (`s2_alt_ref`는 오디오를
 새로 만들지 않으므로 건너뛴다고 표시된다).
 
+`--list`도 벤더를 알아야 목록을 찍는다. 1-a에서 `.env`의 `TTS_VENDOR`를
+채웠으면 그대로 나오고, 아직이면 `--vendor azure`를 같이 준다.
+
 ### Azure만 있을 때
 
 ```
-python3 scripts/tts_gen.py --vendor azure
+python scripts/tts_gen.py --vendor azure
 ```
 
 ### ElevenLabs 키도 있을 때 — 둘 다 돌린다
 
 ```
-python3 scripts/tts_gen.py --vendor elevenlabs
-python3 scripts/tts_gen.py --vendor azure
+python scripts/tts_gen.py --vendor elevenlabs
+python scripts/tts_gen.py --vendor azure
 ```
 
 → `out/tts/<id>__<vendor>.mp3`
@@ -201,15 +206,17 @@ bash scripts/prep_audio.sh
 먼저 계획만 본다. 호출은 나가지 않는다.
 
 ```
-python3 scripts/pa_probe.py --engine azure --vendor azure --dry-run
+python scripts/pa_probe.py --engine azure --vendor azure --dry-run
 ```
 
 8개 항목이 나와야 한다. `s2_alt_ref`에 `(오디오 재사용: s2_ok)`가 붙는다.
+3단계를 건너뛰었으면 8개가 전부 "음성이 없어 건너뛸 항목"으로 나온다 —
+그건 오류가 아니라 wav가 아직 없다는 뜻이다.
 
 ### 첫 호출에서 규격부터 확인한다
 
 ```
-python3 scripts/pa_probe.py --engine azure --vendor azure
+python scripts/pa_probe.py --engine azure --vendor azure
 ```
 
 첫 줄에서 400이 뜨면 **여기서 멈추고 1-b로 돌아간다.** 나머지를 계속
@@ -218,7 +225,7 @@ python3 scripts/pa_probe.py --engine azure --vendor azure
 ### 통과하면 ElevenLabs 음성도
 
 ```
-python3 scripts/pa_probe.py --engine azure --vendor elevenlabs
+python scripts/pa_probe.py --engine azure --vendor elevenlabs
 ```
 
 ### 음소 알파벳 두 번 돌리기
@@ -229,7 +236,7 @@ python3 scripts/pa_probe.py --engine azure --vendor elevenlabs
 
 ```
 # .env 에서 AZURE_PHONEME_ALPHABET=IPA 주석을 푼 뒤
-python3 scripts/pa_probe.py --engine azure --vendor azure --force
+python scripts/pa_probe.py --engine azure --vendor azure --force
 ```
 
 → `out/raw/<engine>__<id>__<vendor>.json` — **가공 없는 원본**
@@ -239,8 +246,8 @@ python3 scripts/pa_probe.py --engine azure --vendor azure --force
 ## 5. 표 보기 — 예상 30분
 
 ```
-python3 scripts/pa_report.py
-python3 scripts/pa_report.py -o out/report.md
+python scripts/pa_report.py
+python scripts/pa_report.py -o out/report.md
 ```
 
 | 표 | 무엇을 답하나 |
