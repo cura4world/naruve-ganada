@@ -367,18 +367,37 @@ def _table_b_syllables(recs, out):
     out.append("한 칸만 밀려도 엉뚱한 음절에 잉크가 차고, 사용자는 그것이 틀렸다는")
     out.append("것을 알 수 없다 (DECISIONS.md 8.6).")
     out.append("")
-    out.append("| id | 벤더 | 어절 | Syllables | 표기 음절 수 | 판정 |")
-    out.append("|---|---|---|---|---|---|")
+    out.append("**정상 샘플과 오류 샘플을 갈라서 읽는다.** 오류 샘플의 표적 어절은")
+    out.append("일부러 다른 소리를 넣은 것이라 음절 구성이 달라지는 게 정상일 수 있다")
+    out.append("(s1_batchim의 `반가씀니다`는 받침 ㅂ이 빠졌다). 그걸 엔진 결함으로")
+    out.append("세면 오탐이다. 그래서 표적 어절의 불일치는 **보류**로 따로 모은다.")
+    out.append("표적이 아닌 어절은 오류 샘플에서도 정상 발음이므로 그대로 신호로 센다.")
+    out.append("")
+    out.append("| id | 샘플 | 벤더 | 어절 | Syllables | 표기 음절 수 | 판정 |")
+    out.append("|---|---|---|---|---|---|---|")
 
-    missing_arr, mismatch = [], []
+    missing_arr, mismatch, held = [], [], []
     for r in sorted(recs, key=lambda x: (x["id"], x.get("tts_vendor") or "")):
         v = r.get("tts_vendor") or MISSING
+        is_err = (r.get("error_type") or "none") != "none"
+        target = r.get("target_word")
         for w in words(r["response"]):
             text = word_text(w)
             want = written_syllables(text)
+            # 이 어절이 일부러 비틀린 자리인가. 오류 샘플이라도 표적이
+            # 아닌 어절은 정상 발음이라 판정을 무르게 할 이유가 없다.
+            is_target = bool(is_err and target and norm(text) == norm(target))
+            kind = ("**오류·표적**" if is_target else "오류") if is_err else "정상"
+            where = "%s / %s / %s" % (v, r["id"], text)
+
             if not has_syllables(w):
-                got, verdict = MISSING, "**배열 없음**"
-                missing_arr.append("%s / %s / %s" % (v, r["id"], text))
+                got = MISSING
+                if is_target:
+                    verdict = "배열 없음 (보류)"
+                    held.append(where + " — 배열 없음")
+                else:
+                    verdict = "**배열 없음**"
+                    missing_arr.append(where)
             else:
                 n = len(syllables(w))
                 got = str(n)
@@ -386,28 +405,39 @@ def _table_b_syllables(recs, out):
                     verdict = MISSING
                 elif n == want:
                     verdict = "일치"
+                elif is_target:
+                    verdict = "불일치 (보류)"
+                    held.append(where + " — Syllables %d, 표기 %d" % (n, want))
                 else:
                     verdict = "**불일치**"
-                    mismatch.append("%s / %s / %s — Syllables %d, 표기 %d"
-                                    % (v, r["id"], text, n, want))
-            out.append("| %s | %s | %s | %s | %d | %s |"
-                       % (r["id"], v, text or MISSING, got, want, verdict))
+                    mismatch.append(where + " — Syllables %d, 표기 %d" % (n, want))
+            out.append("| %s | %s | %s | %s | %s | %d | %s |"
+                       % (r["id"], kind, v, text or MISSING, got, want, verdict))
     out.append("")
 
     if missing_arr:
-        out.append("> **Syllables 배열이 없는 어절 %d건.**" % len(missing_arr))
+        out.append("> **Syllables 배열이 없는 어절 %d건** (정상 발음인 어절만)." % len(missing_arr))
         for m in missing_arr:
             out.append("> - " + m)
         out.append("> 이 어절만 어절 단위 타일로 떨어뜨린다.")
         out.append("")
     if mismatch:
-        out.append("> **개수가 표기 음절 수와 어긋난 어절 %d건.**" % len(mismatch))
+        out.append("> **개수가 표기 음절 수와 어긋난 어절 %d건** (정상 발음인 어절만)." % len(mismatch))
         for m in mismatch:
             out.append("> - " + m)
         out.append("> 정렬을 신뢰할 수 없다. 이 어절도 어절 단위로 내린다.")
         out.append("")
+    if held:
+        out.append("> **보류 %d건 — 오류 샘플의 표적 어절이다.** 일부러 비튼 자리라" % len(held))
+        out.append("> 음절 구성이 달라진 것인지 엔진이 못 쪼갠 것인지 이 표로는 갈리지 않는다.")
+        for h in held:
+            out.append("> - " + h)
+        out.append("> 엔진 결함으로 세지 않는다. 가르려면 같은 어절의 정상 샘플(%s)과"
+                   % "*_ok")
+        out.append("> 나란히 놓고 본다 — 정상 쪽에서도 어긋나면 그때는 엔진 쪽이다.")
+        out.append("")
     if not missing_arr and not mismatch:
-        out.append("> 전 어절에서 배열이 있고 개수도 맞다. 그래도 표본이 이만큼일 뿐이다.")
+        out.append("> 정상 발음인 어절에서는 배열이 다 있고 개수도 맞다. 그래도 표본이 이만큼일 뿐이다.")
         out.append("")
     return out
 
