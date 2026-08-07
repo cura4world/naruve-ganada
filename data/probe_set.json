@@ -4,7 +4,8 @@
     "오류 항목의 ref_text는 정답 표기다. tts_text만 비튼다.",
     "한 문장에 두 오류를 넣지 않는다. 어느 쪽이 감점됐는지 분리되지 않는다.",
     "핵심 지표는 절대 점수가 아니라 정상-오류 gap이다.",
-    "감점이 target_word에 떨어졌는지까지 확인한다. 엉뚱한 어절이 깎이면 실패다."
+    "감점이 target_word에 떨어졌는지까지 확인한다. 엉뚱한 어절이 깎이면 실패다.",
+    "표기형/표준발음형 판별용이던 s2_alt_ref는 제거됐다. 2026-08-07 Speech Studio 실측에서 표준발음형으로 확정됐다 — 많이의 Phonemes가 4개(표기형이면 5개)로 왔다. 같은 오디오를 참조 텍스트만 바꿔 두 번 부르는 절차가 필요 없어졌다."
   ],
   "_fields": {
     "id": "샘플 식별자. 접두사(s1/s2/s3/s4)가 같은 것끼리 한 쌍이다.",
@@ -13,7 +14,7 @@
     "error_type": "none이면 정상 샘플.",
     "note": "이 샘플이 무엇을 재는지.",
     "target_word": "감점이 떨어져야 하는 어절. error_type이 none이면 null. (C) 표의 O/X 판정에 쓴다.",
-    "audio_from": "다른 항목의 오디오를 재사용할 때 그 id. ref_text만 바꿔 재호출하는 경우에 쓴다."
+    "audio_from": "다른 항목의 오디오를 재사용할 때 그 id. 지금 쓰는 항목은 없다. 오류 가설 재채점(DECISIONS.md 4.1)을 프로브로 재볼 때 같은 방식으로 다시 쓴다. 하네스(tts_gen·pa_probe)는 계속 지원한다."
   },
   "items": [
     {
@@ -21,7 +22,7 @@
       "ref_text": "만나서 반갑습니다",
       "tts_text": "만나서 반갑습니다",
       "error_type": "none",
-      "note": "s1 쌍의 정상 기준선",
+      "note": "s1 쌍의 정상 기준선. 만나서는 Syllables 배열이 없었던 어절이라 재현되는지도 같이 본다",
       "target_word": null,
       "audio_from": null
     },
@@ -39,18 +40,9 @@
       "ref_text": "많이 드세요",
       "tts_text": "많이 드세요",
       "error_type": "none",
-      "note": "음소 개수 판별용. s2_alt_ref와 같은 오디오를 공유한다",
+      "note": "표준발음형 확정의 근거가 된 문장. 많이의 Phonemes가 4개로 오는지, Syllables가 [마][니] 2개로 오는지를 (B)에서 다시 확인한다",
       "target_word": null,
       "audio_from": null
-    },
-    {
-      "id": "s2_alt_ref",
-      "ref_text": "마니 드세요",
-      "tts_text": null,
-      "error_type": "none",
-      "note": "s2_ok와 같은 오디오에 참조 텍스트만 바꿔 재호출. 많이 어절의 Phonemes 길이를 비교해 표기형/표준발음형을 판별한다",
-      "target_word": null,
-      "audio_from": "s2_ok"
     },
     {
       "id": "s3_ok",

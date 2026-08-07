@@ -14,9 +14,11 @@
 점수 차를 봐야 그 크기를 안다. 그래서 한 벤더가 다른 벤더를
 덮어쓰면 안 된다.
 
-audio_from이 있는 항목(s2_alt_ref)은 건너뛴다. 그건 오디오를 새로
-만드는 항목이 아니라 같은 오디오에 참조 텍스트만 바꿔 재호출하는
-항목이다.
+audio_from이 있는 항목은 건너뛴다. 그건 오디오를 새로 만드는 항목이
+아니라 같은 오디오에 참조 텍스트만 바꿔 재호출하는 항목이다.
+지금은 그런 항목이 없다 — 표기형/표준발음형 판별용이던 s2_alt_ref는
+2026-08-07 실측으로 답이 나와 제거됐다. 오류 가설 재채점을 프로브로
+재볼 때 같은 방식으로 다시 쓴다.
 
 DECISIONS.md 9절 5번: 표기를 비튼 입력을 교정하지 않고 쓰인 대로
 읽는 벤더여야 한다. 반가씀니다를 반갑습니다로 되돌려 읽어버리면
@@ -182,7 +184,7 @@ def main():
             continue
         except urllib.error.URLError as e:
             print("  실패 %s: %s" % (it["id"], e.reason))
-            print("  egress 정책에 막힌 것일 수 있다. docs/PROBE.md의 도메인 목록을 확인한다.")
+            print("  egress 정책에 막힌 것일 수 있다. PROBE.md의 도메인 목록을 확인한다.")
             return 0
         made += 1
         print("  생성 %s  (%d bytes)" % (os.path.basename(out_path), os.path.getsize(out_path)))
