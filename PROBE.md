@@ -6,9 +6,9 @@ PC 앞에서 위에서 아래로 그대로 따라가는 문서다.
 **전제** — Azure 키는 발급받았다. ETRI 키는 없어도 된다.
 **ETRI 없이 Azure만으로 끝까지 간다.** 아래 어느 단계도 ETRI를 기다리지 않는다.
 
-**1-b는 끝났다** (2026-08-07). Speech Studio 실측으로 ko-KR 응답 스키마가
-확정됐고, 그 결과가 `scripts/adapters/azure.py`의 docstring에 정답지로
-적혀 있다. 남은 미확인은 **요청 규격**뿐이다.
+**1-b는 끝났다.** 응답 스키마는 2026-08-07 Speech Studio 실측으로, **요청 규격은
+2026-08-10 첫 실호출(HTTP 200)로** 확정됐다. 응답 정답지는
+`scripts/adapters/azure.py`의 docstring에 있다.
 
 ---
 
@@ -138,14 +138,24 @@ Prosody assessment 체크)에 폰 녹음 4문장을 넣어 확인했다. 우리 
 | `ProsodyScore` | **없다.** Prosody를 켜고 불러도 ko-KR 응답에는 오지 않는다 |
 | 표기형이냐 표준발음형이냐 | **표준발음형.** `많이`의 Phonemes가 4개(표기형이면 5개). G2P 불필요 |
 
-**요청 규격은 아직 미검증이다.** Studio는 우리 요청을 거치지 않으므로
-이 부분에 대해서는 아무것도 증명하지 못한다. 첫 실호출에서 확인한다.
+**요청 규격도 확정됐다 (2026-08-10).** 첫 실호출이 HTTP 200이었다.
+아래 넷이 전부 그대로 통과했다.
 
 - 엔드포인트 경로와 쿼리 (`language=ko-KR`, `format=detailed`)
 - `Pronunciation-Assessment` 헤더 이름과 base64 인코딩
 - PA 설정 JSON 키 (`ReferenceText` / `GradingSystem` / `Granularity` /
   `Dimension` / `EnableMiscue` / **`NBestPhonemeCount`**)
 - `Content-Type`의 codec·samplerate 표기
+
+**응답 스키마는 REST와 Studio가 다르다 (2026-08-10).** Studio는 점수를
+`PronunciationAssessment` 아래에 중첩해 주고 **REST는 평평하게 준다.**
+최상위도 Studio는 리스트, REST는 dict다. `pa_report.py`와
+`pa_report_adhoc.py`는 두 형태를 다 받는다. `DECISIONS.md` 3.2 참조.
+
+같은 오디오·같은 참조 텍스트인데 점수도 조금 다르다(`17 싸요` Studio 89.8 /
+REST 88.0). **기준은 REST다.** 앱이 받는 것이 그쪽이다.
+
+아래 400 대응 절차는 다른 엔진·다른 설정에서 다시 필요할 수 있어 남겨둔다.
 
 **401이 아니라 400이 오면 규격 문제다.** 401은 키 문제다.
 400이면 `NBestPhonemeCount`가 첫 번째 용의자다 — `.env`에
@@ -372,7 +382,7 @@ Azure TTS만 썼다면 편향까지 얹혀 있다. 진짜 눈금은 원어민 �
 |---|---|---|
 | 0 준비 확인 | 5분 | 5분 |
 | 1-a `.env` | 5분 | 5분 |
-| 1-b 규격 확인 | **완료.** 400이 나면 10~20분 | 같음 |
+| 1-b 규격 확인 | **완료** (응답 08-07 / 요청 08-10) | 같음 |
 | 2 TTS 생성 | 3분 | 5분 |
 | 2 귀로 확인 | 10분 | 15분 |
 | 3 변환 | 1분 | 1분 |
