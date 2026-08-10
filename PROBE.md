@@ -83,6 +83,18 @@ python --version
 ffmpeg -version
 ```
 
+### 실행할 때 앞에 붙이는 것 — `PYTHONIOENCODING=utf-8`
+
+**Windows에서는 이걸 빼면 한글 출력이 전부 깨진다.** 콘솔이 cp949고
+스크립트 출력은 utf-8이라 `������`로 나온다. 아래 모든 명령에 붙인다.
+
+```
+PYTHONIOENCODING=utf-8 python scripts/pa_probe.py ...
+```
+
+PowerShell에서는 `$env:PYTHONIOENCODING="utf-8"`을 먼저 한 번 실행한다.
+파일로 저장하는 경로(`-o`)는 항상 utf-8이라 이 문제가 없다.
+
 ffmpeg이 없으면:
 
 ```
@@ -208,10 +220,52 @@ bash scripts/prep_audio.sh
 
 ## 4. 프로브 실행 — 예상 10분
 
+### `--enable-miscue`는 필수다 (2026-08-10)
+
+기본값이 없다. 안 주면 에러로 끝난다.
+
+`false`는 **강제 정렬(forced alignment)** 모드다 — Microsoft Learn FAQ:
+"단일 샷 모드에서 EnableMiscue가 false로 설정되면 시스템은 인식된 텍스트가
+참조 텍스트와 강제적으로 맞추게 합니다." 참조 텍스트가 바뀌면 정렬 목표가
+바뀌므로 같은 오디오라도 점수가 달라진다.
+
+`DECISIONS.md` 8.8·8.9 D군은 전부 Speech Studio 기본값(false)에서 나온 값이고,
+이 하네스는 반대로 `true`가 박혀 있었다(2026-08-10에 고쳤다). 무엇으로 쟀는지
+모르는 결과가 쌓이지 않도록 매번 명시한다. 보낸 값은 결과 JSON의
+`enable_miscue`·`engine_config`와 리포트 머리에 함께 남는다.
+
+Speech Studio UI에는 이 설정이 없다. 고급 옵션은 Prosody 하나뿐이다.
+
+30초를 넘는 오디오는 연속 모드가 되어 이 설정이 적용되지 않는다.
+스크립트가 ffprobe로 길이를 미리 재고, 넘으면 그 항목을 부르지 않는다.
+
+### 단발 모드 — 오디오 하나로 규격만 확인할 때
+
+세트 전체를 돌리기 전에 요청 규격을 한 번의 호출로 확인할 수 있다.
+TTS 생성(2단계)과 변환(3단계)을 건너뛴다. m4a를 그대로 주면 스크립트가
+**저장소 밖 임시 폴더**에서 16kHz/mono wav로 바꿔 보내고 끝나면 지운다.
+
+```
+PYTHONIOENCODING=utf-8 python scripts/pa_probe.py --engine azure \
+    --audio "C:/어딘가/17 싸요.m4a" --ref "싸요" --enable-miscue false
+```
+
+→ `out/adhoc/<engine>__<id>__miscue-<값>.json`
+
+`out/raw/`에 섞지 않는다. `pa_report.py`의 (C)(D)(E) 표는 probe_set의 쌍
+구조와 TTS 벤더를 전제로 짜여 있어서, 사람 녹음이 같은 폴더에 들어가면
+쌍이 아닌 것을 쌍으로 묶는다.
+
+**음성 파일은 저장소로 복사하지 않는다.** 공개 저장소이고 음성 데이터다.
+경로는 하드코딩하지 말고 인자로 준다.
+
+### 세트 모드
+
 먼저 계획만 본다. 호출은 나가지 않는다.
 
 ```
-python scripts/pa_probe.py --engine azure --vendor azure --dry-run
+PYTHONIOENCODING=utf-8 python scripts/pa_probe.py \
+    --engine azure --vendor azure --enable-miscue false --dry-run
 ```
 
 **7개** 항목이 나와야 한다. 3단계를 건너뛰었으면 7개가 전부 "음성이 없어
@@ -220,7 +274,8 @@ python scripts/pa_probe.py --engine azure --vendor azure --dry-run
 ### 첫 호출에서 규격부터 확인한다
 
 ```
-python scripts/pa_probe.py --engine azure --vendor azure
+PYTHONIOENCODING=utf-8 python scripts/pa_probe.py \
+    --engine azure --vendor azure --enable-miscue false
 ```
 
 첫 줄에서 400이 뜨면 **여기서 멈추고 1-b로 돌아간다.** 나머지를 계속
@@ -230,7 +285,8 @@ python scripts/pa_probe.py --engine azure --vendor azure
 ### 통과하면 ElevenLabs 음성도
 
 ```
-python scripts/pa_probe.py --engine azure --vendor elevenlabs
+PYTHONIOENCODING=utf-8 python scripts/pa_probe.py \
+    --engine azure --vendor elevenlabs --enable-miscue false
 ```
 
 ### 음소 알파벳 두 번 돌리기
@@ -242,7 +298,8 @@ Studio 조건에서다. 알파벳을 지정하면 이름이 채워지는지는 �
 
 ```
 # .env 에서 AZURE_PHONEME_ALPHABET=IPA 주석을 푼 뒤
-python scripts/pa_probe.py --engine azure --vendor azure --force
+PYTHONIOENCODING=utf-8 python scripts/pa_probe.py \
+    --engine azure --vendor azure --enable-miscue false --force
 ```
 
 → `out/raw/<engine>__<id>__<vendor>.json` — **가공 없는 원본**

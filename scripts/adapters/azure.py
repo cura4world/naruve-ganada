@@ -1,11 +1,32 @@
 """Azure 발음평가 어댑터.
 
-ko-KR / scripted / granularity=Phoneme / EnableMiscue=true
+ko-KR / scripted / granularity=Phoneme / **EnableMiscue는 호출자가 지정한다**
 
 스크립트형(scripted) 평가다. DECISIONS.md 8.1 — 참조 오디오는 채점에
 쓰이지 않는다. 참조 **텍스트**만 넘어가고 채점은 "사용자 음성 vs 텍스트
 유도 음향모델" 비교다. 그래서 오류 가설 재채점(4.1)이 성립한다.
 같은 오디오에 참조 텍스트만 바꿔 다시 부를 수 있다.
+
+
+## EnableMiscue — 기본값을 두지 않는 이유 (2026-08-10)
+
+Microsoft Learn FAQ: **"단일 샷 모드에서 EnableMiscue가 false로 설정되면
+시스템은 인식된 텍스트가 참조 텍스트와 강제적으로 맞추게 합니다."**
+
+즉 false는 강제 정렬(forced alignment) 모드다. 인식 결과를 참조 텍스트에
+끼워 맞춘 뒤 채점한다. 참조 텍스트가 바뀌면 정렬 목표 자체가 바뀌므로
+같은 오디오라도 점수가 달라진다.
+
+DECISIONS.md 8.8(띄어쓰기 민감성)과 8.9 D군(오류 가설 재채점 무력화)은
+**둘 다 Speech Studio 기본값, 즉 false에서 측정된 값이다.** 그 조건이
+두 현상을 동시에 설명할 수 있는지가 지금 검증 대상이다. Speech Studio
+UI에는 이 설정이 없다(고급 옵션은 Prosody 하나뿐). SDK/REST로만 된다.
+
+이 어댑터는 예전에 `EnableMiscue: True`를 코드에 박아두고 있었다.
+Studio 측정은 전부 false였으므로, 그대로 돌렸다면 두 값이 다른 것을
+모른 채 비교했을 것이다. 그래서 기본값을 없애고 필수 인자로 올렸다.
+30초를 넘는 오디오는 연속 모드가 되어 이 설정을 쓸 수 없다 — 길이
+확인은 호출부(pa_probe.py)가 한다.
 
 
 ## 응답 스키마 — 2026-08-07 실측으로 확정
@@ -38,6 +59,8 @@ Speech Studio 발음평가 도구(ko-KR, Prosody assessment 체크)에 폰 녹�
    맡는다 — DECISIONS.md 10절.
 2. **Phoneme·Syllable 이름은 항상 빈 문자열이다.** NBestPhonemes의
    Phoneme도 마찬가지다. 정렬은 이름이 아니라 순서와 Offset으로만 된다.
+   ko-KR은 음소 이름을 원천 미지원이다(en-US·zh-CN만). 빈 문자열은
+   버그가 아니다.
 3. 다만 **NBestPhonemes의 Score에는 값이 있다.** 이름이 없어도 2순위
    점수가 높으면(50~80) 그 자리에서 소리가 흔들렸다는 신호로 읽을 수
    있다. 오류 가설 재채점의 보조 신호다.
@@ -58,6 +81,8 @@ Speech Studio 발음평가 도구(ko-KR, Prosody assessment 체크)에 폰 녹�
   되면서 AccuracyScore 59 / ErrorType Mispronunciation, 문장
   CompletenessScore가 50으로 떨어졌다. 타일은 참조 텍스트가 아니라
   **응답의 Words**로 그려야 한다.
+  (DECISIONS.md 8.6-3 정정 — Azure가 제멋대로 나눈 것이 아니라 그때
+  참조 텍스트가 붙여쓰기였다. 결론은 같고 이유만 다르다.)
 
 **요청 규격은 아직 미검증이다.** 위 실측은 Speech Studio가 만든
 요청에 대한 것이라 우리 요청에 대해서는 아무것도 증명하지 못한다.
@@ -94,13 +119,17 @@ class AzureAdapter(Adapter):
             "?language=ko-KR&format=detailed" % region
         )
 
-    def _pa_header(self, ref_text):
+    def pa_config(self, ref_text, enable_miscue):
+        """이번 호출에 보낼 PA 설정. 헤더로 만들기 전의 원형."""
+        if enable_miscue is None:
+            raise ValueError("enable_miscue는 True/False로 명시해야 한다")
+
         cfg = {
             "ReferenceText": ref_text,
             "GradingSystem": "HundredMark",
             "Granularity": "Phoneme",
             "Dimension": "Comprehensive",
-            "EnableMiscue": True,
+            "EnableMiscue": bool(enable_miscue),
         }
         # ProsodyScore는 켜지 않는다. Studio에서 켜고 부른 ko-KR 응답에도
         # 오지 않았다(위 실측 1번). 켜봐야 요청 규격만 하나 더 늘어난다.
@@ -125,12 +154,18 @@ class AzureAdapter(Adapter):
         if nbest > 0:
             cfg["NBestPhonemeCount"] = nbest
 
+        return cfg
+
+    def _pa_header(self, cfg):
         raw = json.dumps(cfg, ensure_ascii=False).encode("utf-8")
         return base64.b64encode(raw).decode("ascii")
 
-    def assess(self, audio_path, ref_text):
+    def assess(self, audio_path, ref_text, enable_miscue):
         if not self.available():
             raise NotConfigured("SPEECH_KEY / SPEECH_REGION")
+
+        cfg = self.pa_config(ref_text, enable_miscue)
+        self.last_config = cfg
 
         with open(audio_path, "rb") as fh:
             audio = fh.read()
@@ -142,7 +177,7 @@ class AzureAdapter(Adapter):
             headers={
                 "Ocp-Apim-Subscription-Key": os.environ["SPEECH_KEY"],
                 "Content-Type": "audio/wav; codecs=audio/pcm; samplerate=16000",
-                "Pronunciation-Assessment": self._pa_header(ref_text),
+                "Pronunciation-Assessment": self._pa_header(cfg),
                 "Accept": "application/json",
                 "User-Agent": "naruve-probe",
             },

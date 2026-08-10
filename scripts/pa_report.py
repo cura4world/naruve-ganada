@@ -627,6 +627,14 @@ def main():
     out.append("- 엔진: %s" % ", ".join(engines))
     out.append("- TTS 벤더: %s" % (", ".join(vendors) or MISSING))
     out.append("- 응답 %d건" % len(recs))
+    # EnableMiscue는 채점 방식 자체를 바꾼다(adapters/azure.py). 어느 값으로
+    # 잰 표인지 모르면 숫자를 비교할 수 없으므로 표 머리에 박아둔다.
+    # 값이 섞여 있으면 그대로 여러 개를 찍는다 — 하나로 뭉뚱그리지 않는다.
+    miscue = sorted({str(r.get("enable_miscue")).lower() for r in recs})
+    miscue = [m if m != "none" else "%s(기록 없음)" % MISSING for m in miscue]
+    out.append("- EnableMiscue: %s" % ", ".join(miscue))
+    if len(miscue) > 1:
+        out.append("  **값이 섞여 있다. 아래 표의 점수를 서로 비교하지 않는다.**")
     out.append("")
     out.append("값이 %s 인 칸은 응답에서 그 필드를 찾지 못한 것이다. 추정치를 넣지 않았다." % MISSING)
     out.append("")
