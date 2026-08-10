@@ -43,7 +43,7 @@ class EtriAdapter(Adapter):
     # 규격이 확정되면 False로 바꾼다.
     is_stub = True
 
-    def assess(self, audio_path, ref_text):
+    def assess(self, audio_path, ref_text, enable_miscue):
         if not self.available():
             raise NotConfigured("ETRI_API_KEY")
         raise NotImplementedError(

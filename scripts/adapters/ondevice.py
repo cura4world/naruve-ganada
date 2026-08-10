@@ -34,7 +34,7 @@ class OnDeviceAdapter(Adapter):
     def available(self):
         return False
 
-    def assess(self, audio_path, ref_text):
+    def assess(self, audio_path, ref_text, enable_miscue):
         raise NotImplementedError(
             "온디바이스 어댑터는 자리만 있다. DECISIONS.md 8.2 / 10절 참조."
         )
