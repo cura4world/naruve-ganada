@@ -12,3 +12,7 @@ out/
 # 파이썬 부산물
 __pycache__/
 *.pyc
+
+# Workers 로컬 상태 — wrangler가 만드는 miniflare 캐시·시뮬레이터 DB.
+# 재생성되고 기계마다 다르다. 커밋하지 않는다.
+worker/.wrangler/
