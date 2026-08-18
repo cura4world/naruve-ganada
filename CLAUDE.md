@@ -63,13 +63,24 @@ WebView 컨테이너 padding으로 넣고 인셋을 소비한다. 그 결과 APK
 - `.phone`은 `height:100dvh` (min-height 아님) — 열의 높이를 묶어둔다.
 - `.stage`만 스크롤한다 (`flex:1; min-height:0; overflow-y:auto`).
   `min-height:0`이 없으면 overflow가 걸리지 않고 열이 늘어난다.
-- `.record-zone` `.sim` `.tabs`는 `flex:none` — 눌리지 않는다.
+- `.sim` `.tabs`는 `flex:none` — 눌리지 않는다.
 - min-height를 쓰거나 .stage의 스크롤을 빼면, 문장이 길 때 탭바가
   화면 아래로 밀려나가 시스템 내비게이션 바에 겹친다.
 
 빌드번호 표시(.buildtag)는 .sim 행 안의 일반 흐름에 있다.
 position:fixed로 되돌리지 않는다. 고정하면 탭바 높이를 상수로 박아야 하고,
 그 상수가 safe-area와 어긋나는 순간 다시 겹친다.
+
+**녹음 버튼은 탭바 가운데에 얹혀 있다 (2026-08-18).** `.record-zone`은 없앴다 —
+그 행이 화면 아래 1/3을 먹어 결과가 한 화면에 안 들어왔다.
+
+- `.tabs`는 5칸이고 가운데 `.tab-gap`은 빈 칸이다. 그 자리에 `.mic-dock`이 얹힌다
+- `.mic-dock`은 `position:absolute`이고 기준은 `.tabs`다(`.tabs`가 `position:relative`).
+  오프셋을 `bottom:calc(100% - var(--mic-sink))`로 쓰므로 **탭바 높이나 safe-area를
+  상수로 박지 않는다.** `position:fixed`로 바꾸면 buildtag 주의사항과 같은 함정에 빠진다
+- 치수는 `:root`의 `--mic-size` `--mic-sink` `--mic-rise` `--hint-h` 넷뿐이다.
+  `.stage`의 padding-bottom이 그 값들로 계산되므로, 버튼 크기를 바꾸면
+  결과가 가려지는 일 없이 여백이 따라 움직인다. 숫자를 두 곳에 적지 않는다
 
 ## 아이콘
 아이콘은 `npm run icons` 한 번으로 끝난다. capacitor-assets를 손으로 부르지 않는다.
@@ -464,13 +475,15 @@ K-드라마·K-팝의 가사, 특정 작품의 긴 대사, 작품명·아티스�
 versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로 정한다.
 
 ## 현재 상태
-빌드 0.1.15 기준.
+빌드 0.1.16 기준.
 
 **문장** 50개 (Standard 15 / Everyday 15 / Drama 12 / Sounds 8).
 50개 전부 `t:` 억양 태그와 `w:` 약점 음절이 채워져 있어 채점 경로에 구멍은 없다.
 
-**마이크** 실제로 켜진다. getUserMedia로 녹음하고, 무음 절단·10초 상한·
-무음 take 무과금이 모두 동작한다.
+**마이크** 실제로 켜진다. 무음 절단·10초 상한·무음 take 무과금이 모두 동작한다.
+**스트림은 녹음 사이에 유지된다** — getUserMedia를 take마다 부르면 인앱 브라우저가
+문장을 바꿀 때마다 권한 다이얼로그를 띄운다(카카오톡 Android에서 실측).
+트랙을 놓는 곳은 `release()` 하나뿐이고, 백그라운드 전환과 5분 미사용에서만 부른다.
 
 **채점 1층(억양)** 실측이다. pitch.js가 F0를 뽑고 문말 기울기를 문장의
 `t:` 태그와 대조한다. 임계값 `INTO`는 아직 실측 전 잠정값이다.
@@ -489,6 +502,10 @@ Worker의 CORS 허용 origin이 `https://naruve.app` 하나뿐이라
 
 **언어** en·ko 완전, id는 억양 피드백 6키만.
 
-**결과 공유** `alert()` 자리표시자.
+**결과 공유** `alert()` 자리표시자. 설정 탭도 같은 자리표시자다.
+
+**오류 설명** 15.10의 세 겹뿐이다 — 총점 판정(85/70) · 낮은 단어(60 미만) · 억양 방향.
+`renderL1`은 정의만 남고 호출되지 않는다. s.w에 박힌 확정 설명이라
+정밀도 65%를 넘긴 L1부터 켠다.
 
 **versionCode** 1. 첫 `npm run apk`에서 2가 된다.

@@ -19,6 +19,19 @@
 
    What comes back is what a scorer needs: pcm for pitch and timing work
    on-device, wav for anything that later goes over the network.
+
+   ## The stream is kept between takes (2026-08-18)
+
+   getUserMedia used to be called once per take and every track was
+   stopped when the take ended. In-app browsers (KakaoTalk on Android)
+   treat each new getUserMedia as a fresh request and pop the permission
+   dialog **every time the sentence changes**. Unusable.
+
+   So the MediaStream now lives at module scope and is reused. A take
+   stops the recorder, not the microphone. The track is released only
+   when the app goes to the background or after IDLE_RELEASE_MS of not
+   recording — leaving the OS mic indicator lit forever is not acceptable
+   either. If the track has since died, the next take asks again.
    ===================================================================== */
 
 var MIC = {
@@ -31,9 +44,44 @@ var MIC = {
   outRate: 16000       /* what speech engines want */
 };
 
+/* how long an unused microphone may stay open before we let it go */
+var MIC_IDLE_RELEASE_MS = 5 * 60 * 1000;
+
 var Mic = (function(){
   var stream=null, rec=null, ctx=null, analyser=null, ticker=null;
   var chunks=[], levels=[], t0=0, live=false;
+  var idleTimer=null;
+
+  function streamAlive(){
+    if(!stream) return false;
+    var tracks = stream.getAudioTracks();
+    if(!tracks.length) return false;
+    for(var i=0;i<tracks.length;i++) if(tracks[i].readyState !== 'live') return false;
+    return true;
+  }
+
+  /* The only place tracks are stopped. Not called when a take ends. */
+  function release(){
+    if(idleTimer){ clearTimeout(idleTimer); idleTimer=null; }
+    if(stream){
+      stream.getTracks().forEach(function(t){ try{t.stop();}catch(e){} });
+      stream=null;
+    }
+  }
+
+  function armIdleRelease(){
+    if(idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(function(){ idleTimer=null; if(!live) release(); },
+                           MIC_IDLE_RELEASE_MS);
+  }
+
+  /* Going to the background must not leave the indicator on. */
+  if(typeof document !== 'undefined'){
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState === 'hidden' && !live) release();
+    });
+    window.addEventListener('pagehide', function(){ if(!live) release(); });
+  }
 
   function supported(){
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
@@ -48,12 +96,14 @@ var Mic = (function(){
     return '';
   }
 
+  /* Ends a take. **Does not touch the tracks** — that is release()'s job
+     and doing it here is what caused the repeated permission dialog. */
   function teardown(){
     if(ticker){ clearInterval(ticker); ticker=null; }
     if(rec && rec.state!=='inactive'){ try{ rec.stop(); }catch(e){} }
-    if(stream){ stream.getTracks().forEach(function(t){ try{t.stop();}catch(e){} }); stream=null; }
     if(ctx){ try{ ctx.close(); }catch(e){} ctx=null; }
     rec=null; analyser=null; live=false;
+    armIdleRelease();
   }
 
   /* ---- PCM helpers: decode, find the speech, cut, resample, wrap ---- */
@@ -142,9 +192,16 @@ var Mic = (function(){
     if(!supported()){ h.onerror('unsupported'); return; }
     chunks=[]; levels=[]; live=true;
 
-    navigator.mediaDevices.getUserMedia({
-      audio:{ channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true }
-    }).then(function(st){
+    /* Reuse the open microphone. getUserMedia is called from here and
+       nowhere else, and only when there is nothing live to reuse. */
+    if(idleTimer){ clearTimeout(idleTimer); idleTimer=null; }
+    var got = streamAlive()
+      ? Promise.resolve(stream)
+      : navigator.mediaDevices.getUserMedia({
+          audio:{ channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+        });
+
+    got.then(function(st){
       stream=st;
       var mime=pickMime();
       try { rec = mime ? new MediaRecorder(st,{mimeType:mime}) : new MediaRecorder(st); }
@@ -193,6 +250,9 @@ var Mic = (function(){
       }, 50);
     }).catch(function(err){
       teardown();
+      /* a refusal or a dead device means the handle is worthless — drop it
+         so the next take asks again instead of reusing a corpse */
+      release();
       var n = err && err.name;
       h.onerror(n==='NotAllowedError'||n==='SecurityError' ? 'denied'
               : n==='NotFoundError' ? 'nomic' : 'failed');
@@ -206,5 +266,7 @@ var Mic = (function(){
   }
 
   return { supported:supported, record:record, stop:stop,
+           release:release,
+           held:function(){ return streamAlive(); },
            isLive:function(){ return live; } };
 })();

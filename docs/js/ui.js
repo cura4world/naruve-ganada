@@ -75,6 +75,8 @@ var UI = {
     tabPractice:'연습',
     tabHonorifics:'높임말',
     tabYou:'나',
+    tabSettings:'설정',
+    settingsSoon:'설정 화면은 준비 중입니다.',
 
     simLabel:'시뮬레이션',
     simNative:'원어민',
@@ -164,6 +166,8 @@ var UI = {
     tabPractice:'Practice',
     tabHonorifics:'Honorifics',
     tabYou:'You',
+    tabSettings:'Settings',
+    settingsSoon:'Settings are on the way.',
 
     simLabel:'Simulate',
     simNative:'Native',
