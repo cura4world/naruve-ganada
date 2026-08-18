@@ -3,7 +3,7 @@
   "appName": "Ganada",
   "webDir": "docs",
   "server": {
-    "url": "https://cura4world.github.io/naruve-ganada/",
+    "url": "https://naruve.app/",
     "androidScheme": "https",
     "cleartext": false
   }
