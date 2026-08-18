@@ -1,0 +1,27 @@
+# Naruve 가나다 채점 프록시 (DECISIONS.md 17.1 — 서버 프록시)
+#
+# 여기에 키를 적지 않는다. Azure 구독키는 Secret으로만 들어가고
+# 코드에서는 env.AZURE_SPEECH_KEY로 읽는다. 등록은 사람이 한다 — README 참조.
+
+name = "naruve-ganada-score"
+main = "src/index.js"
+compatibility_date = "2026-08-18"
+account_id = "c3eda5f2dd5cadf18407852bbe3ac29e"
+
+# 첫 버전은 *.workers.dev 주소를 쓴다. 커스텀 도메인은 나중에.
+workers_dev = true
+
+[vars]
+# 키가 아니라 리전 이름이다. 리전은 공개돼도 무해하고, 키는 리전 종속이라
+# 엔드포인트와 리소스 리전이 반드시 일치해야 한다 (17.4).
+AZURE_REGION = "koreacentral"
+
+# 사용자 음성. 키 구조는 {UUID}/{날짜}/{세션}/{녹음}.wav — 16.6 "UUID가 앞".
+[[r2_buckets]]
+binding = "AUDIO"
+bucket_name = "naruve-ganada-audio"
+
+# 익명 UUID별 크레딧 카운터 (17.3 · 18절 무료 30회 총량).
+[[kv_namespaces]]
+binding = "KV"
+id = "7bba6faac92e4a2c9f40e82ddeee025a"
