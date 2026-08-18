@@ -93,6 +93,9 @@ function azureRequest(env, ref, body) {
     Dimension: "Comprehensive",
     // 8.10 — 삽입·누락 감지. 참조와 어절이 일대일이면 false와 표면 점수가 같다.
     EnableMiscue: true,
+    // 8.7 — 이름은 빈 문자열로 오지만 Score에는 값이 있다. 요청해야 온다.
+    // 지금 클라이언트 응답에는 싣지 않고 .azure.json에만 남는다.
+    NBestPhonemeCount: 5,
   };
   // ko-KR에는 ProsodyScore가 오지 않는다(8절 실측). 켜지 않는다.
 
@@ -231,6 +234,15 @@ async function handleScore(request, env) {
       { reason: "azure_failed", status: parsed.RecognitionStatus || "no_status" },
       502
     );
+  }
+
+  // 무음·잡음도 RecognitionStatus는 Success로 온다(2026-08-18 실측: 무음 WAV와
+  // 무작위 바이트 둘 다 200 / 점수 0 / ErrorType Omission). 상태 코드로는 갈리지
+  // 않으므로 Words를 직접 본다. 하나도 못 알아들은 시도에 크레딧을 깎지 않는다.
+  const words = ((parsed.NBest || [])[0] || {}).Words || [];
+  const heard = words.filter((w) => field(w, "ErrorType") !== "Omission");
+  if (heard.length === 0) {
+    return json({ reason: "nothing_recognized" }, 422);
   }
 
   // --- 성공했을 때만 저장하고 깎는다. ---
