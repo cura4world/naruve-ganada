@@ -106,16 +106,25 @@ function inkTile(el,sc){
   el.style.backgroundColor='rgba(17,26,34,'+a.toFixed(3)+')';
   el.style.borderColor='rgba(17,26,34,'+Math.min(a+0.14,1).toFixed(3)+')';
   el.style.color=sc>=52?'var(--paper)':'var(--ink)';
-  if(sc<80){el.classList.add('flag');var n=el.querySelector('.num');n.textContent=sc;
-    n.style.color=sc>=52?'var(--paper)':'var(--ink-faint)';}
+  if(sc<80){
+    el.classList.add('flag');
+    var n=el.querySelector('.num');
+    n.textContent=sc;
+    /* the number rides on the tile's own fill, so it flips at the same
+       threshold the glyph does. ink-faint disappeared into a pale tile. */
+    n.style.color=sc>=52?'var(--paper)':'var(--ink-soft)';
+  }
 }
 /* miscue로 빠진 단어. 회색 빈 타일로 두고 숫자를 넣지 않는다 —
    "못 들었다"와 "0점"은 다른 말이다. */
 function omitTile(el){
   el.classList.add('omit');
+  el.classList.add('flag');
   el.style.backgroundColor='transparent';
   el.style.borderColor='var(--rule)';
   el.style.color='var(--ink-faint)';
+  var n=el.querySelector('.num');
+  if(n){ n.textContent='—'; n.style.color='var(--ink-faint)'; }
 }
 function resetTiles(){
   var all=document.querySelectorAll('.tile');
@@ -190,10 +199,19 @@ function paintNoScore(res){
 
   $('result').classList.add('noscore');
   $('result').classList.add('show');
+  revealResult();
   showIntoNote();
   $('note').textContent='';
   $('l1box').classList.remove('show');
   setHint('hintAgain',false); busy=false;
+}
+
+/* .stage가 유일한 스크롤러다. 결과가 마이크·탭바 뒤로 들어가지 않게 올려준다. */
+function revealResult(){
+  var el=$('result');
+  if(!el || !el.scrollIntoView) return;
+  try { el.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+  catch(e){ el.scrollIntoView(false); }
 }
 
 function paintScore(res){
@@ -222,6 +240,7 @@ function paintScore(res){
     var n=0;(function step(){n+=Math.max(1,Math.ceil((tt-n)/6));if(n>=tt)n=tt;
       $('scoreNum').textContent=n; if(n<tt) requestAnimationFrame(step);})();
     showResult(tt);
+    revealResult();
     setHint('hintAgain',false); busy=false;
   }, tiles.length*80+200);
 }
@@ -275,7 +294,9 @@ function showResult(tt){
   /* (3) 억양 */
   showIntoNote();
 
-  renderL1(low);
+  /* 15.10 — 첫 버전 오류 설명은 위 세 겹뿐이다. renderL1은 s.w에 박힌
+     확정 설명이라 조건부로도 켜지 않는다. 65% 문턱을 넘은 L1부터 켠다. */
+  $('l1box').classList.remove('show');
 }
 
 /* The button only drives its own state. Which source actually makes the
@@ -407,6 +428,11 @@ $('next').addEventListener('click',function(){
   var p=pool.indexOf(idx); idx=pool[(p+1)%pool.length]; paint();
 });
 $('share').addEventListener('click',function(){ alert(t('shareAlert')); });
+
+/* 설정 화면은 아직 없다. 16.6의 "내 식별자 보기·삭제 요청"이 여기 들어간다. */
+if($('tabSettings')){
+  $('tabSettings').addEventListener('click',function(){ alert(t('settingsSoon')); });
+}
 
 /* --- A-4: proof that the microphone is actually receiving sound.
    The panel is hidden by CSS unless body.dev, so these can run always. --- */

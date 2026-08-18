@@ -75,20 +75,12 @@
     </section>
   </main>
 
-  <div class="record-zone">
-    <button class="seal-btn" id="rec" data-i18n-aria="recordAria" aria-label="Record your voice">
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 10.8a6.5 6.5 0 0 0 13 0"/>
-        <line x1="12" y1="17.3" x2="12" y2="21"/><line x1="8.6" y1="21" x2="15.4" y2="21"/>
-      </svg>
-    </button>
-    <div class="hint" id="hint">Tap and read it aloud</div>
-    <!-- A-4: live proof the mic is receiving sound. CSS hides it unless body.dev -->
-    <div class="micdev" id="micDev" aria-hidden="true">
-      <div class="micdev-bar"><i id="micLevel"></i></div>
-      <div class="micdev-txt" id="micStat">—</div>
-      <div class="micdev-txt" id="micOut"></div>
-    </div>
+  <!-- A-4: live proof the mic is receiving sound. Hidden unless body.dev,
+       so it can never affect the shipped layout. -->
+  <div class="micdev" id="micDev" aria-hidden="true">
+    <div class="micdev-bar"><i id="micLevel"></i></div>
+    <div class="micdev-txt" id="micStat">—</div>
+    <div class="micdev-txt" id="micOut"></div>
   </div>
 
   <!-- the row stays even when SIMULATE is hidden: buildtag lives here and it
@@ -102,10 +94,25 @@
     <span class="buildtag" id="buildTag">v—</span>
   </div>
 
+  <!-- Five cells with the middle one empty: the record button sits in that
+       gap, half over the bar. It is positioned against .tabs itself, not
+       against a hardcoded bar height, so safe-area changes cannot break it. -->
   <nav class="tabs">
     <button class="tab" aria-selected="true"><span class="ico">말</span><span data-i18n="tabPractice">Practice</span></button>
     <button class="tab" aria-selected="false"><span class="ico">높</span><span data-i18n="tabHonorifics">Honorifics</span></button>
+    <div class="tab-gap" aria-hidden="true"></div>
     <button class="tab" aria-selected="false"><span class="ico">나</span><span data-i18n="tabYou">You</span></button>
+    <button class="tab" id="tabSettings" aria-selected="false"><span class="ico">⚙</span><span data-i18n="tabSettings">Settings</span></button>
+
+    <div class="mic-dock">
+      <div class="hint" id="hint">Tap and read it aloud</div>
+      <button class="seal-btn" id="rec" data-i18n-aria="recordAria" aria-label="Record your voice">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 10.8a6.5 6.5 0 0 0 13 0"/>
+          <line x1="12" y1="17.3" x2="12" y2="21"/><line x1="8.6" y1="21" x2="15.4" y2="21"/>
+        </svg>
+      </button>
+    </div>
   </nav>
 
   <section class="browse" id="browse" aria-hidden="true">
