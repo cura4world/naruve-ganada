@@ -101,12 +101,21 @@ Ocp-Apim-Subscription-Key: <Secret>
 Content-Type: audio/wav; codecs=audio/pcm; samplerate=16000
 Pronunciation-Assessment: base64({ ReferenceText, GradingSystem:"HundredMark",
                                    Granularity:"Phoneme", Dimension:"Comprehensive",
-                                   EnableMiscue:true })
+                                   EnableMiscue:true, NBestPhonemeCount:5 })
 본문: 클라이언트가 보낸 WAV 바이트 그대로 (17.2 — 디코딩·변환 없음)
 ```
 
-`EnableMiscue`는 **true**다. 삽입·누락을 잡는 설정이고, 참조와 어절이 일대일로 맞으면
-false와 표면 점수가 같다(8.10, 32건 실측). 타임아웃 8초.
+PA 설정 다섯 줄의 뜻:
+
+| 키 | 값 | 왜 |
+|---|---|---|
+| `GradingSystem` | `HundredMark` | 100점 만점 |
+| `Granularity` | `Phoneme` | 음절·음소까지 받는다. 화면은 단어만 쓰지만 원본은 남긴다 |
+| `Dimension` | `Comprehensive` | Accuracy·Fluency·Completeness·Pron 전부 |
+| `EnableMiscue` | `true` | 삽입·누락 감지. 참조와 어절이 일대일이면 false와 표면 점수가 같다(8.10, 32건 실측) |
+| `NBestPhonemeCount` | `5` | 8.7의 2순위 음소 점수. **요청해야 온다.** 이름은 빈 문자열이지만 Score에는 값이 있다 |
+
+`ProsodyScore`는 켜지 않는다 — ko-KR 응답에 오지 않는다(8절 실측). 타임아웃 8초.
 
 **저장물** (16.6 — UUID가 앞)
 
@@ -125,6 +134,7 @@ false와 표면 점수가 같다(8.10, 32건 실측). 타임아웃 8초.
 | 200 | `{ credits, r2Key, azure: { pronScore, accuracyScore, fluencyScore, completenessScore, words: [{ word, accuracyScore, errorType, offset, duration }] } }` |
 | 400 | `{ error: "bad_uuid" \| "bad_session" \| "bad_recording" \| "bad_ref" \| "ref_too_long" \| "empty_body" }` |
 | 402 | `{ reason: "credits_exhausted", credits: 0 }` — 무료 30회 소진 (18절) |
+| 422 | `{ reason: "nothing_recognized" }` — 한 단어도 못 알아들음. **저장·차감 없음** |
 | 413 | `{ error: "too_large", max, got }` |
 | 415 | `{ error: "bad_content_type", got }` |
 | 405 | `{ error: "method_not_allowed" }` — 경로는 맞고 메서드가 다름 |
@@ -152,13 +162,11 @@ Capacitor 앱의 origin(`capacitor://localhost`, `http://localhost`)은 **APK로
 
 ## 5. 알고 있는 한계
 
-- **무음·잡음도 Success로 온다.** 무음 WAV와 무작위 바이트를 넣어 봤더니 둘 다
-  HTTP 200 / `RecognitionStatus: Success`로 오고 점수만 0, `ErrorType: Omission`이었다.
-  **즉 502 경로로 걸러지지 않고 크레딧이 깎인다.** 무음 take를 거르는 것은
-  `mic.js`의 몫이다(이미 그렇게 되어 있다)
-- **`NBestPhonemes`를 요청하지 않는다.** `azure.py`는 `NBestPhonemeCount: 5`를 보내는데
-  이 Worker는 보내지 않아 `.azure.json`에 2순위 음소 점수가 없다(8.7의 보조 신호).
-  필요해지면 PA 설정에 한 줄 추가한다
+- **무음·잡음도 Azure는 Success로 준다.** 무음 WAV와 무작위 바이트 둘 다 HTTP 200 /
+  `RecognitionStatus: Success` / 점수 0 / `ErrorType: Omission`으로 왔다.
+  **상태 코드로는 갈리지 않으므로 `Words`를 직접 본다** — Omission이 아닌 단어가
+  하나도 없으면 422다(2026-08-18 추가). 크레딧은 그대로다.
+  무음 take를 애초에 안 보내는 것은 여전히 `mic.js`의 몫이다
 - **KV는 트랜잭션이 아니다.** 같은 UUID가 동시에 여러 번 부르면 차감이 하나로 합쳐질 수
   있다. 첫 버전은 감수한다 — 16.3이 "첫 버전은 KV로 시작해도 됨"이다.
   문제가 되면 Durable Object로 옮긴다
