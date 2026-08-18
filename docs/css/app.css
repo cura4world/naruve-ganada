@@ -64,11 +64,20 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
   font-family:var(--kr);font-weight:500;font-size:clamp(24px,6.9vw,29px);line-height:1;color:var(--ink);
   transition:background-color 620ms ease,color 620ms ease,border-color 620ms ease}
 .tile.space{width:8px;border-color:transparent}
+/* 15.9 — 첫 버전 타일은 어절이다. 한 음절 폭에 맞춰 둔 고정 width를 풀고
+   글자 수만큼 늘어나게 한다. 높이와 리듬은 그대로 둔다. */
+.tile.word{width:auto;min-width:clamp(44px,12.6vw,54px);padding:0 10px;
+  font-size:clamp(19px,5.4vw,24px)}
+.tile.omit{border-style:dashed}
 .tile.punct{width:20px;border-color:transparent;color:var(--ink-faint);font-weight:700}
 .tile .num{position:absolute;bottom:4px;left:0;right:0;font-family:var(--ui);font-size:9px;font-weight:700;
   letter-spacing:.05em;opacity:0;transition:opacity 460ms ease;font-variant-numeric:tabular-nums}
 .tile.flag{padding-bottom:6px}
 .tile.flag .num{opacity:.85}
+
+/* 점수를 못 낸 회차(소진·미인식·서버 오류)에는 숫자 자리를 통째로 감춘다.
+   0점과 "이번엔 점수가 없다"는 다른 말이다. */
+.result.noscore .score-row{display:none}
 
 .meta-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
 .chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--rule);border-radius:100px;

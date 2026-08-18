@@ -51,6 +51,14 @@ var UI = {
     verdict75:'알아듣는 데 무리 없음',
     verdict60:'두세 곳만 고치면 됩니다',
     verdict0:'받침과 끝음절부터',
+    /* 15.10 첫 버전 세 단계 — 85 / 70 / 그 아래 */
+    verdictHigh:'또렷하고 자연스러워요',
+    verdictMid:'잘 들려요 — 낮은 단어를 다시 들어보세요',
+    verdictLow:'조금 더 — 아래 단어들에 집중해 보세요',
+    lowWord:'{w}이(가) 낮아요. 예시를 다시 들어보세요.',
+    creditsGone:'정밀 채점 30회를 모두 사용하셨어요. 듣기·따라 말하기·억양 확인은 계속 할 수 있어요.',
+    scoreNothing:'소리가 잘 안 들렸어요. 조용한 곳에서 다시 해보세요.',
+    scoreServer:'채점 서버가 잠시 응답하지 않아요. 잠시 후 다시 해보세요.',
 
     col:{
       standard:{ n:'표준', b:'교과서와 TOPIK에 나오는 한국어. 생략 없는 완전한 문장.' },
@@ -133,6 +141,13 @@ var UI = {
     verdict75:'Understood without effort',
     verdict60:'Two or three spots to fix',
     verdict0:'Start with final consonants and syllable endings',
+    verdictHigh:'Clear and natural',
+    verdictMid:'Easy to follow — listen to the low words again',
+    verdictLow:'Nearly there — focus on the words below',
+    lowWord:'{w} came out low. Listen to the example again.',
+    creditsGone:'You have used all 30 detailed checks. Listening, speaking and the intonation check still work.',
+    scoreNothing:'That did not come through clearly. Try again somewhere quieter.',
+    scoreServer:'The scoring server is not answering right now. Please try again in a moment.',
 
     col:{
       standard:{ n:'Standard', b:'The Korean in your textbook and on TOPIK. Complete sentences, nothing dropped.' },

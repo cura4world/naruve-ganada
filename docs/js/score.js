@@ -5,30 +5,26 @@
    Score.evaluate(sentence, capture, cb). app.js does not know which
    engine answered, so swapping an engine is a change in this file only.
 
-   Layer 1 — intonation — is REAL. F0 is measured on-device (pitch.js)
-   and the sentence-final contour is compared with the sentence's own
-   t: 'question' / 'statement' tag. That tag already drives the "Rising —
-   Lift it" instruction on screen; this is what makes the instruction and
-   the result agree.
+   Layer 1 — intonation — is REAL and free. F0 is measured on-device
+   (pitch.js) and the sentence-final contour is compared with the
+   sentence's own t: 'question' / 'statement' tag. That tag already drives
+   the "Rising — Lift it" instruction on screen; this is what makes the
+   instruction and the result agree. Costs nothing, so it runs even when
+   the paid layer cannot (DECISIONS.md 18 — the exhausted state still
+   shows intonation).
 
-   Layer 2 — pronunciation — is still the placeholder. Random inside the
-   SIMULATE bands. It is labelled as such everywhere it surfaces.
+   Layer 2 — pronunciation — is now REAL. Azure via our own Worker
+   (DECISIONS.md 17.1). Math.random is gone.
 
-   The user sees one number. Dev mode sees both, because a single blended
-   number cannot tell you whether the F0 half is working when the other
-   half is Math.random().
+   The headline number is Azure's PronScore. DECISIONS.md 15.10 puts
+   intonation on its own line instead of inside the headline, so the two
+   layers are no longer blended. SCORE_MIX below is kept for the record
+   and is NOT applied — revisiting the blend is a DECISIONS.md item.
    ===================================================================== */
 
-/* Blend, revisited when the real pronunciation engine lands — see the
-   pending list in CLAUDE.md.
-
-   30/70 because: intonation here is a single feature on the final
-   syllable, while pronunciation covers every syllable in the sentence,
-   so segmental accuracy carries more information about whether a Korean
-   listener understands. But a question read with a falling tail is
-   genuinely misheard, so the feature has to cost real points — at 30%
-   a fully wrong contour takes about 15 points off the headline, which
-   is visible without being catastrophic. */
+/* Kept, not applied. It was the 30/70 split from the days when layer 2
+   was Math.random(). The headline is now PronScore alone (15.10). Do not
+   re-wire this without changing DECISIONS.md — the two move together. */
 var SCORE_MIX = { intonation: 0.30, pronunciation: 0.70 };
 
 /* Provisional. Nobody has measured a real speaker against these yet —
@@ -44,10 +40,6 @@ var Score = (function(){
   var cache = {};
   var log = [];
 
-  function syllables(k){
-    return k.split('').filter(function(ch){ return ch!==' ' && !/[,.?!？]/.test(ch); });
-  }
-
   function fingerprint(sentence, cap){
     var h = 0x811c9dc5;
     function mix(n){ h ^= n|0; h = (h + ((h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24))) >>> 0; }
@@ -58,7 +50,7 @@ var Score = (function(){
     return h.toString(16);
   }
 
-  /* ---- layer 1: measured ---- */
+  /* ---- layer 1: measured, on-device, free ---- */
   function intonation(sentence, cap){
     var trk = Pitch.track(cap.pcm, cap.sampleRate);
     var c = Pitch.finalContour(trk, INTO.tailMs, INTO.minFrames);
@@ -87,8 +79,8 @@ var Score = (function(){
     };
   }
 
-  /* the phrase to put under the score — the point of B-3 is that it says
-     what went wrong, not that something did */
+  /* the phrase to put under the score — it says what went wrong, not
+     that something did */
   function feedbackKey(into){
     if(!into || into.ok === null) return null;
     if(into.expect === 'rise')
@@ -98,70 +90,95 @@ var Score = (function(){
          : into.got === 'flat' ? 'intoFallFlat' : 'intoFallRose';
   }
 
-  /* ---- layer 2: NOT a measurement ---- */
-  function pronunciation(sentence){
-    var L = LEVELS[level], out = [];
-    syllables(sentence.k).forEach(function(ch){
-      var band = sentence.w.indexOf(ch) >= 0 ? L.weak : L.ok;
-      out.push({ ch:ch, score: band[0] + Math.floor(Math.random()*(band[1]-band[0]+1)) });
+  function record(sentence, r, cap){
+    log.push({
+      k: sentence.k, t: sentence.t,
+      total: r.total,
+      pron: r.azure ? r.azure.pronScore : null,
+      acc: r.azure ? r.azure.accuracyScore : null,
+      words: r.azure ? r.azure.words.map(function(w){
+        return { w: w.word, a: w.accuracyScore, e: w.errorType };
+      }) : null,
+      err: r.error || null,
+      into: r.intonation.score == null ? null : r.intonation.score,
+      expect: r.intonation.expect || null, got: r.intonation.got || null,
+      deltaSt: r.intonation.deltaSt == null ? null : r.intonation.deltaSt,
+      slopeSt: r.intonation.slopeSt == null ? null : r.intonation.slopeSt,
+      startHz: r.intonation.startHz || null, endHz: r.intonation.endHz || null,
+      frames: r.intonation.frames || 0, voiced: r.intonation.voiced || 0,
+      windowMs: r.intonation.windowMs || 0,
+      reason: r.intonation.reason || null,
+      hz: r.intonation.hz || [],
+      thresholds: r.intonation.thresholds || null,
+      speechMs: cap.speechMs, keptMs: cap.keptMs, peak: +cap.peak.toFixed(4)
     });
-    var sum = 0;
-    out.forEach(function(o){ sum += o.score; });
-    return { measured:false, score: Math.round(sum/Math.max(1,out.length)), syllables: out };
+    if (log.length > 60) log.shift();
   }
 
-  function run(sentence, cap){
-    var into = intonation(sentence, cap);
-    var pron = pronunciation(sentence);
-    var usable = into.ok !== null;
-    var total = usable
-      ? Math.round(SCORE_MIX.intonation*into.score + SCORE_MIX.pronunciation*pron.score)
-      : pron.score;
-
+  function base(sentence, cap, into){
     return {
-      engine: usable ? 'intonation+placeholder' : 'placeholder',
-      measured: usable,           /* at least one layer came from the audio */
-      total: total,
+      engine: 'azure+intonation',
+      total: null,          /* headline. null means "no number this time" */
+      azure: null,
       intonation: into,
-      pronunciation: pron,
       feedback: feedbackKey(into),
-      mix: SCORE_MIX,
-      syllables: pron.syllables
+      error: null,          /* 'exhausted' | 'nothing' | 'server' | 'network' */
+      credits: Identity.credits(),
+      capture: { ms:cap.ms, rawMs:cap.rawMs, speechMs:cap.speechMs,
+                 keptMs:cap.keptMs, trimmedMs:cap.trimmedMs,
+                 peak:+cap.peak.toFixed(4), bytes:cap.wav.size }
     };
   }
 
   return {
     evaluate: function(sentence, cap, cb){
       var key = fingerprint(sentence, cap);
+      /* the very same audio must not be billed twice — 10절 재시도 캐시.
+         Azure ko-KR is deterministic (8.8 확정 1), so a cached answer is
+         the same answer, not a stale one. */
       if (cache[key]){ cb(cache[key], true); return; }
-      var r = run(sentence, cap);
-      r.capture = { ms:cap.ms, rawMs:cap.rawMs, speechMs:cap.speechMs,
-                    keptMs:cap.keptMs, trimmedMs:cap.trimmedMs,
-                    peak:+cap.peak.toFixed(4), bytes:cap.wav.size };
-      cache[key] = r;
-      /* B-5: enough to re-derive the verdict later and move the
-         thresholds without recording everyone again */
-      log.push({
-        k: sentence.k, t: sentence.t,
-        total: r.total, into: r.intonation.score == null ? null : r.intonation.score,
-        pron: r.pronunciation.score, mix: SCORE_MIX.intonation,
-        expect: r.intonation.expect || null, got: r.intonation.got || null,
-        deltaSt: r.intonation.deltaSt == null ? null : r.intonation.deltaSt,
-        slopeSt: r.intonation.slopeSt == null ? null : r.intonation.slopeSt,
-        startHz: r.intonation.startHz || null, endHz: r.intonation.endHz || null,
-        frames: r.intonation.frames || 0, voiced: r.intonation.voiced || 0,
-        windowMs: r.intonation.windowMs || 0,
-        reason: r.intonation.reason || null,
-        hz: r.intonation.hz || [],
-        thresholds: r.intonation.thresholds || null,
-        speechMs: cap.speechMs, keptMs: cap.keptMs, peak: +cap.peak.toFixed(4)
+
+      var into = intonation(sentence, cap);
+      var res = base(sentence, cap, into);
+
+      /* 18절 — 소진 상태에서는 서버를 부르지 않는다. 억양만 보여준다. */
+      if (Identity.credits() <= 0){
+        res.error = 'exhausted';
+        res.credits = 0;
+        record(sentence, res, cap);
+        cb(res, false);
+        return;
+      }
+
+      Api.score(sentence.k, cap.wav, {
+        uuid: Identity.uuid(),
+        session: Identity.session(),
+        recording: Identity.newRecordingId()
+      }, function(err, data){
+        if (err){
+          res.error = err.kind;
+          if (err.kind === 'exhausted'){ Identity.setCredits(0); res.credits = 0; }
+          record(sentence, res, cap);
+          cb(res, false);
+          return;
+        }
+
+        res.azure = data.azure;
+        res.total = data.azure ? data.azure.pronScore : null;
+        res.r2Key = data.r2Key;
+        if (typeof data.credits === 'number'){
+          Identity.setCredits(data.credits);
+          res.credits = data.credits;
+        }
+        /* only a real, billed answer is worth caching */
+        cache[key] = res;
+        record(sentence, res, cap);
+        cb(res, false);
       });
-      if (log.length > 60) log.shift();
-      cb(r, false);
     },
     cached: function(){ return Object.keys(cache).length; },
     log: function(){ return log.slice(); },
-    dump: function(){ return JSON.stringify({ mix:SCORE_MIX, into:INTO, takes:log }, null, 1); },
+    dump: function(){ return JSON.stringify({ into:INTO, takes:log }, null, 1); },
     reset: function(){ cache = {}; log = []; }
   };
 })();

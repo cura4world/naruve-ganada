@@ -9,12 +9,15 @@ var DEV_HOLD_MS = 3000;
    shown during development. Flip to false the day the diagnostic lands. */
 var SHOW_SOUNDS_IN_BROWSE = true;
 
-var LEVELS={native:{ok:[95,99],weak:[88,95]},advanced:{ok:[88,97],weak:[74,84]},
-  intermediate:{ok:[78,92],weak:[58,70]},beginner:{ok:[62,80],weak:[40,55]}};
-
 var $=function(id){return document.getElementById(id);};
-var level='native', idx=0, credits=27, busy=false, browseCol='everyday', L1='en';
-function rand(r){return r[0]+Math.floor(Math.random()*(r[1]-r[0]+1));}
+
+/* SIMULATE 버튼은 더 이상 채점에 관여하지 않는다. 점수가 Azure 실측이 된
+   순간부터 레벨을 골라 난수 대역을 바꾸는 일이 없어졌다. 버튼과 .sim 행은
+   그대로 둔다 — 빌드번호가 그 안에 있고 잠금 제스처가 걸려 있다. */
+var level='native', idx=0, busy=false, browseCol='everyday', L1='en';
+
+/* 잔여 횟수의 권위는 서버다(18절). 화면에는 마지막으로 받은 값을 그린다. */
+function paintCredits(){ $('credits').textContent = Identity.credits(); }
 
 /* --- strings. t() falls back to en, so a language may fill in the table
    a little at a time without leaving blanks on screen. --- */
@@ -67,21 +70,30 @@ function paintCard(){
   } else $('pairLink').classList.remove('show');
 }
 
+/* 참조 텍스트를 그대로 공백으로만 나눈다. 서버도 이 글자 그대로 Azure에
+   보내므로(8.8 — 띄어쓰기가 채점 파라미터다) 여기서 손대면 화면과 채점이
+   다른 것을 가리키게 된다. */
+function wordsOf(k){
+  return k.split(/\s+/).filter(function(w){ return w.length; });
+}
+
 function paint(){
   var s=S[idx];
   paintCard();
 
+  /* 15.9 — 첫 버전 타일은 단어(어절) 단위다. 16.2대로 타일 하나가 곧
+     "구간"이고, 음절 표시가 열리는 날 이 배열만 음절로 바뀐다.
+     문장부호는 어절에 붙은 채로 둔다 — Azure Words도 그렇게 온다. */
   var wrap=$('tiles'); wrap.innerHTML='';
-  s.k.split('').forEach(function(ch){
+  wordsOf(s.k).forEach(function(w){
     var el=document.createElement('div');
-    if(ch===' ') el.className='tile space';
-    else if(/[,.?!]/.test(ch)) el.className='tile punct';
-    else el.className='tile';
-    el.setAttribute('data-ch',ch);
-    if(ch!==' ') el.innerHTML=ch+(/[,.?!]/.test(ch)?'':'<span class="num"></span>');
+    el.className='tile word';
+    el.setAttribute('data-w',w);
+    el.innerHTML=w+'<span class="num"></span>';
     wrap.appendChild(el);
   });
   $('result').classList.remove('show');
+  $('result').classList.remove('noscore');
   $('l1box').classList.remove('show');
   $('intoNote').classList.remove('show');
   lastRes = null;
@@ -97,22 +109,32 @@ function inkTile(el,sc){
   if(sc<80){el.classList.add('flag');var n=el.querySelector('.num');n.textContent=sc;
     n.style.color=sc>=52?'var(--paper)':'var(--ink-faint)';}
 }
+/* miscue로 빠진 단어. 회색 빈 타일로 두고 숫자를 넣지 않는다 —
+   "못 들었다"와 "0점"은 다른 말이다. */
+function omitTile(el){
+  el.classList.add('omit');
+  el.style.backgroundColor='transparent';
+  el.style.borderColor='var(--rule)';
+  el.style.color='var(--ink-faint)';
+}
 function resetTiles(){
   var all=document.querySelectorAll('.tile');
   for(var i=0;i<all.length;i++){var el=all[i];
     el.style.backgroundColor='transparent';
     el.style.borderColor=(el.classList.contains('punct')||el.classList.contains('space'))?'transparent':'var(--rule)';
     el.style.color=el.classList.contains('punct')?'var(--ink-faint)':'var(--ink)';
-    el.classList.remove('flag');}
+    el.classList.remove('flag');
+    el.classList.remove('omit');
+    var n=el.querySelector('.num'); if(n) n.textContent='';}
 }
 
-/* Judges the attempt, not the person. Bands are 90 / 75 / 60. */
-var NATURAL=90;
+/* Judges the attempt, not the person. 15.10 — 첫 버전 문구는 세 단계다.
+   LOW_WORD 아래로 떨어진 단어만 (2)번 줄에 이름이 오른다. */
+var VERDICT_HIGH=85, VERDICT_MID=70, LOW_WORD=60;
 function verdictFor(tt){
-  if(tt>=NATURAL) return t('verdict90');
-  if(tt>=75) return t('verdict75');
-  if(tt>=60) return t('verdict60');
-  return t('verdict0');
+  if(tt>=VERDICT_HIGH) return t('verdictHigh');
+  if(tt>=VERDICT_MID) return t('verdictMid');
+  return t('verdictLow');
 }
 
 /* Tap starts a real take; tap again ends it early. The take also ends
@@ -130,16 +152,21 @@ function run(){
     },
     onlevel:devMicLevel,
     ondone:function(cap){
-      $('rec').classList.remove('rec'); setHint('hintScoring',false); devMicDone(cap);
+      /* B-7: 서버를 기다리는 동안 버튼을 잠근다. 두 번 눌러 두 번 과금되는
+         일이 없어야 한다. busy 플래그만으로는 화면에 표시가 안 난다. */
+      $('rec').classList.remove('rec'); $('rec').classList.add('waiting');
+      $('rec').disabled = true;
+      setHint('hintScoring',false); devMicDone(cap);
       Score.evaluate(S[idx], cap, function(res, fromCache){
+        $('rec').classList.remove('waiting'); $('rec').disabled = false;
         devMicResult(res, fromCache);
+        paintCredits();
         paintScore(res);
-        /* a repeat of the very same audio must not be billed twice */
-        if(!fromCache){ credits=Math.max(0,credits-1); $('credits').textContent=credits; }
       });
     },
     onerror:function(kind){
-      $('rec').classList.remove('rec'); devMicOff();
+      $('rec').classList.remove('rec'); $('rec').classList.remove('waiting');
+      $('rec').disabled = false; devMicOff();
       var note=$('audioNote');
       note.textContent = kind==='denied' ? t('micDenied')
                        : kind==='nospeech' ? t('micNoSpeech')
@@ -152,15 +179,45 @@ function run(){
   });
 }
 
+/* 채점이 못 끝난 경우들. 총점도 타일도 그리지 않고, 억양만 남긴다 —
+   억양은 단말에서 잰 것이라 서버와 무관하게 유효하다(18절 소진 상태 포함). */
+function paintNoScore(res){
+  var note=$('audioNote');
+  note.textContent = res.error==='exhausted' ? t('creditsGone')
+                   : res.error==='nothing'   ? t('scoreNothing')
+                   : t('scoreServer');
+  note.classList.add('show');
+
+  $('result').classList.add('noscore');
+  $('result').classList.add('show');
+  showIntoNote();
+  $('note').textContent='';
+  $('l1box').classList.remove('show');
+  setHint('hintAgain',false); busy=false;
+}
+
 function paintScore(res){
   lastRes = res;
-  var tiles=Array.prototype.slice.call(document.querySelectorAll('.tile:not(.punct):not(.space)'));
-  tiles.forEach(function(el,i){
-    var s=res.syllables[i];
-    if(s) setTimeout(function(){ inkTile(el, s.score); }, i*80);
+  if(res.error || !res.azure){ paintNoScore(res); return; }
+
+  /* 타일과 Azure Words를 순서대로 맞춘다. Insertion은 참조에 없는 단어라
+     타일을 소비하지 않고, Omission은 타일을 소비하되 회색으로 남는다. */
+  var tiles=Array.prototype.slice.call(document.querySelectorAll('.tile.word'));
+  var words=res.azure.words||[], ti=0, painted=0;
+  words.forEach(function(w){
+    if(w.errorType==='Insertion') return;
+    var el=tiles[ti++]; if(!el) return;
+    if(w.errorType==='Omission'){ setTimeout(function(){ omitTile(el); }, painted*80); }
+    else { (function(e,sc,d){ setTimeout(function(){ inkTile(e, sc); }, d*80); })(el, w.accuracyScore, painted); }
+    painted++;
   });
+  if(ti !== tiles.length){
+    console.warn('타일 '+tiles.length+'개 · Azure 구간 '+ti+'개 — 개수가 다르다', words);
+  }
+
   var tt=res.total;
   setTimeout(function(){
+    $('result').classList.remove('noscore');
     $('result').classList.add('show');
     var n=0;(function step(){n+=Math.max(1,Math.ceil((tt-n)/6));if(n>=tt)n=tt;
       $('scoreNum').textContent=n; if(n<tt) requestAnimationFrame(step);})();
@@ -172,21 +229,53 @@ function paintScore(res){
 /* everything about the result that has words in it, so a language switch
    can replay it without re-running the check */
 var lastTotal = 0, lastRes = null;
-function showResult(tt){
-  lastTotal = tt;
-  $('verdict').textContent = verdictFor(tt);
-  $('note').innerHTML = tt>=NATURAL ? t('notePerfect') : S[idx].tip;
 
-  /* B-3: one line about what the ending actually did. Only when the
-     contour was measurable — no "not enough data" filler on screen. */
+/* 15.10 (2) — 이름을 부를 수 있는 것은 측정된 단어 점수뿐이다.
+   60 미만이 하나도 없으면 이 줄은 아예 뜨지 않는다. */
+function lowWords(res){
+  if(!res || !res.azure) return [];
+  return (res.azure.words||[])
+    .filter(function(w){ return w.errorType!=='Insertion'
+      && typeof w.accuracyScore==='number' && w.accuracyScore < LOW_WORD; })
+    .sort(function(a,b){ return a.accuracyScore-b.accuracyScore; })
+    .slice(0,2);
+}
+
+/* 15.10 (3) — 억양 방향. 잴 수 없었으면 줄 자체를 넣지 않는다.
+   "데이터 부족" 같은 안내를 채워 넣지 않는다. */
+function showIntoNote(){
   var box=$('intoNote');
   if(lastRes && lastRes.feedback){
     box.textContent = t(lastRes.feedback);
     box.classList.add('show');
     if(lastRes.intonation.ok) box.classList.remove('miss'); else box.classList.add('miss');
   } else box.classList.remove('show');
+}
 
-  renderL1(tt);
+function showResult(tt){
+  lastTotal = tt;
+
+  /* 점수가 없던 회차를 언어 전환으로 다시 그릴 때, 옛 총점의 문구가
+     되살아나면 안 된다. 억양 줄만 다시 그린다. */
+  if(lastRes && lastRes.error){ showIntoNote(); $('note').textContent=''; return; }
+
+  /* (1) 총점과 한 줄 판정 */
+  $('verdict').textContent = verdictFor(tt);
+
+  /* (2) 낮은 단어. 하드코딩된 오류 설명(구 S[].tip)은 쓰지 않는다 —
+     15절이 확정 오류 설명을 첫 버전에서 뺐다. */
+  var low = lowWords(lastRes);
+  if(low.length){
+    var names = low.map(function(w){ return '‘'+w.word+'’'; }).join(', ');
+    $('note').textContent = t('lowWord').replace('{w}', names);
+  } else {
+    $('note').textContent = tt>=VERDICT_HIGH ? t('notePerfect') : '';
+  }
+
+  /* (3) 억양 */
+  showIntoNote();
+
+  renderL1(low);
 }
 
 /* The button only drives its own state. Which source actually makes the
@@ -214,11 +303,14 @@ $('pairLink').addEventListener('click',function(){
 });
 
 /* --- L1 explanation: pulled from the phoneme library, not written per sentence --- */
-function renderL1(total){
+function renderL1(low){
   var box=$('l1box');
-  if (total >= NATURAL){ box.classList.remove('show'); return; }
+  /* 측정으로 낮게 나온 단어가 있을 때만 연다. 예전에는 총점만 보고 늘 열렸고,
+     그러면 무엇이 틀렸는지 재지도 않은 채 원인을 단정하는 셈이 된다. */
+  if (!low || !low.length){ box.classList.remove('show'); return; }
+  var lowText = low.map(function(w){ return w.word; }).join('');
   var s=S[idx], txt=s.k, keys=[], seen={};
-  s.w.forEach(function(syl){
+  s.w.filter(function(syl){ return lowText.indexOf(syl) >= 0; }).forEach(function(syl){
     var pos=txt.indexOf(syl);
     var nxt = pos>=0 ? txt.charAt(pos+1) : '';
     phonemesFor(syl, nxt).forEach(function(p){
@@ -348,11 +440,18 @@ function devMicDone(cap){
 function devMicResult(res, fromCache){
   if(!$('micOut')) return;
   var i = res.intonation, L = [];
-  L.push('engine ' + res.engine + (fromCache ? ' · 캐시 재사용' : ''));
-  L.push('total ' + res.total + '  =  into ' + (i.score == null ? '—' : i.score)
-    + ' ×' + res.mix.intonation.toFixed(2)
-    + '  +  pron ' + res.pronunciation.score + ' ×' + res.mix.pronunciation.toFixed(2)
-    + '   (pron 자리표시자)');
+  L.push('engine ' + res.engine + (fromCache ? ' · 캐시 재사용' : '')
+    + ' · credits ' + res.credits);
+  if(res.error){
+    L.push('채점 실패 — ' + res.error);
+  } else if(res.azure){
+    L.push('total ' + res.total + ' (= Azure PronScore)  acc ' + res.azure.accuracyScore
+      + ' · flu ' + res.azure.fluencyScore + ' · comp ' + res.azure.completenessScore);
+    L.push('words ' + res.azure.words.map(function(w){
+      return w.word + ' ' + w.accuracyScore + (w.errorType!=='None' ? '/'+w.errorType : '');
+    }).join('  '));
+    L.push('r2 ' + (res.r2Key || '—'));
+  }
   if(i.ok === null){
     L.push('F0 판정 불가 — ' + i.reason);
   } else {
@@ -413,4 +512,5 @@ if($('micDev')){
 /* open on Drama — the hook */
 for(var i=0;i<S.length;i++){ if(S[i].c==='drama'){ idx=i; break; } }
 applyLang();
+paintCredits();
 paint();

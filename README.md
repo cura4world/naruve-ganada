@@ -91,12 +91,31 @@ docs/                     ← GitHub Pages가 서빙하는 폴더
   js/
     data.js               문장 라이브러리      ← 문장 추가는 여기만
     phonemes.js           모국어 설명 표       ← 설명 수정은 여기만
-    app.js                화면 제어·채점
+    identity.js           익명 UUID·세션·크레딧 캐시
+    api.js                채점 서버 호출 한 곳
+    mic.js                마이크 녹음·무음 절단
+    pitch.js              F0 추출 (억양)
+    score.js              채점 경계 (억양 + 서버)
+    app.js                화면 제어
     boot.js               서비스워커 등록, 빌드 표시
   icons/
   audio/                  원어민 녹음 (예정)
 scripts/bump.mjs          빌드 번호 올리기
+worker/                   Cloudflare Workers 채점 프록시 (배포물 아님)
 ```
+
+### 서버 의존성
+
+**정밀 채점은 우리 Worker를 거친다.** `docs/js/api.js`가
+`https://naruve-ganada-score.cura4world.workers.dev`로 WAV를 보내고,
+Worker가 Azure를 부른 뒤 단어 점수를 돌려준다. 자세한 규격은 `worker/README.md`.
+
+**Worker의 CORS 허용 origin은 `https://naruve.app` 하나뿐이다.**
+그래서 `npm run serve`(localhost)에서는 채점 호출이 CORS로 막힌다 —
+화면·녹음·억양(F0)까지는 로컬에서 확인되고 점수만 안 나온다. 의도된 상태이고
+로컬용 우회를 넣지 않는다. 실제 채점 확인은 배포된 https://naruve.app 에서 한다.
+
+억양(F0)은 단말에서 계산하므로 서버 없이도 동작한다.
 
 ### 파일별 담당
 
@@ -122,14 +141,17 @@ scripts/bump.mjs          빌드 번호 올리기
 ## 지금 상태
 
 - 문장 50개 (Standard 15 · Everyday 15 · Drama 12 · Sounds 8)
-- 채점은 아직 가짜 값. 마이크를 켜지 않는다
+- 마이크 녹음 동작. 무음 절단·10초 상한·무음 take 무과금
+- **채점 두 층 다 실측이다** — 억양은 단말 F0, 발음은 Worker를 거친 Azure
+- 타일은 어절 단위. 총점은 Azure PronScore
+- 무료 30회는 서버가 센다. 소진하면 듣기·녹음·억양만 남는다
 - 예시 음성은 폰 내장 TTS. 나중에 직접 녹음한 파일로 교체
 - 모국어 설명은 영어 · 인도네시아어
 
 ## 다음 할 일
 
-1. 온디바이스 음성인식 한국어 정확도 실측 (샘플 20개)
-2. F0 추출로 억양 채점 구현 (Web Audio API, 원가 0원)
-3. 실제 마이크 녹음 연결 (MediaRecorder)
+1. 설정 화면 — 내 식별자 보기·삭제 요청 (DECISIONS 16.6)
+2. 온보딩 — 모국어·학습 단계 자가 신고, 저장 동의 (16.4)
+3. 이벤트 로그 저장 (16.1)
 4. 원어민 음성 직접 녹음 → `docs/audio/`
 5. 결과 카드 이미지 생성
