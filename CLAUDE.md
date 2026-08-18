@@ -307,7 +307,7 @@ DECISIONS.md 13절의 착수 금지 목록이 이 목록보다 우선한다.
 ## 배포 경로
 이 저장소는 GitHub Pages로 배포된다. 소스는 main 브랜치의 /docs 폴더다.
 따라서 main에 들어간 docs/ 내용이 곧 폰에서 보이는 화면이다. 빌드 단계가 따로 없다.
-docs/ 밖의 파일(scripts/, android/, data/, .github/, 루트의 .md들)은
+docs/ 밖의 파일(worker/, scripts/, android/, data/, .github/, 루트의 .md들)은
 배포물에 포함되지 않는다.
 
 뒤집어 말하면 docs/ 안의 파일은 전부 공개 URL로 접근된다.
@@ -409,6 +409,8 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 ## 파일 담당
 - DECISIONS.md        결정 기록. 단일 출처. 승인 없이 고치지 않는다
 - PROBE.md            발음평가 프로브 실행 순서 (루트다. docs/에 두지 않는다)
+- worker/             Cloudflare Workers 코드. Secret(AZURE_SPEECH_KEY)은 코드·toml·커밋
+                      어디에도 넣지 않는다. 배포는 npx wrangler deploy
 - docs/index.html      화면 뼈대. 문구는 data-i18n으로만 넣는다
 - docs/js/ui.js        UI 문구 표 (한국어가 마스터본, 언어 추가는 열 하나 추가)
 - docs/js/audio.js     예시 음성 재생 (파일 → 네이티브 TTS → Web Speech 순)
