@@ -96,7 +96,11 @@ var Score = (function(){
       total: r.total,
       pron: r.azure ? r.azure.pronScore : null,
       acc: r.azure ? r.azure.accuracyScore : null,
-      words: r.azure ? r.azure.words.map(function(w){
+      /* words가 비어 올 일은 서버 규격상 없다(summarize가 항상 배열을 준다).
+         그래도 || [] 를 두는 이유는, 여기서 던지면 예외가 프라미스 안에서
+         삼켜져 콜백이 아예 오지 않고 — app.js가 콜백에서 녹음 버튼 잠금을
+         푸는 탓에 — 버튼이 영영 잠긴 채로 남기 때문이다. */
+      words: r.azure ? (r.azure.words || []).map(function(w){
         return { w: w.word, a: w.accuracyScore, e: w.errorType };
       }) : null,
       err: r.error || null,
@@ -141,16 +145,18 @@ var Score = (function(){
       var into = intonation(sentence, cap);
       var res = base(sentence, cap, into);
 
-      /* 18절 — 소진 상태에서는 서버를 부르지 않는다. 억양만 보여준다.
-         테스터 예외(-1)는 여기서 걸리지 않는다. */
-      if (!Identity.unlimited() && Identity.credits() <= 0){
-        res.error = 'exhausted';
-        res.credits = 0;
-        record(sentence, res, cap);
-        cb(res, false);
-        return;
-      }
+      /* 소진 판정의 권위는 서버다(18절). 캐시된 잔여는 화면에 그릴 숫자일 뿐이고
+         호출을 막지 않는다 — 막으면 서버가 무슨 말을 하든 들을 기회가 없다.
 
+         0.1.18에서 실제로 그렇게 막혔다. 테스터를 DEV_UUIDS에 올렸는데도 폰의
+         localStorage에 굳은 credits=0 때문에 /score를 한 번도 부르지 않았고,
+         그래서 credits:-1을 받을 길이 없었다. 새로고침해도 캐시라 그대로였다.
+         여기에 있던 사전 차단이 그 원인이었다.
+
+         소진일 때 이 호출이 비싸지도 않다 — worker는 KV만 읽고 Azure·R2보다
+         **앞에서** 402를 돌려준다(2026-08-19 실측 0.41초. Azure 경로는 1~3초).
+         값이 나가는 것은 WAV 업로드뿐이고, 그것도 정말 소진한 사람이 계속
+         녹음할 때만이다. 억양은 이 호출과 무관하게 이미 위에서 재어 두었다. */
       Api.score(sentence.k, cap.wav, {
         uuid: Identity.uuid(),
         session: Identity.session(),
