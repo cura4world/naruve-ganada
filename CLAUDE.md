@@ -371,9 +371,15 @@ domain 칸은 쓰지 않는다** — 거기에 입력하면 GitHub이 docs/CNAME
 그 칸 말고 나머지 Pages 설정(Enforce HTTPS 등)은 파일을 건드리지 않으므로
 `gh api`로 켜고 꺼도 된다.
 
-android/ 를 고친 경우는 Pages 배포로 반영되지 않는다. `npm run apk`로 APK를
-다시 만들어 폰에 설치해야 한다. 지금 capacitor.config.json에 server 블록이 있어
-APK는 원격 URL을 띄우는 껍데기다. 즉 웹 수정은 즉시, 네이티브 수정은 재설치.
+**android/ 빌드는 네이티브를 고쳤을 때만이다. 웹 수정은 Pages로 나간다.**
+capacitor.config.json에 server 블록이 있어 APK는 https://naruve.app/ 를 띄우는
+껍데기다. `docs/`를 고쳤으면 push → Pages 배포 → 앱에서 새로고침(설정 탭의
+임시 바에 버튼이 있다)이나 앱 재실행으로 끝난다. APK를 다시 만들어야 하는 것은
+android/·capacitor.config.json·플러그인을 건드렸을 때뿐이고, 그때 `npm run apk`다.
+
+개발용 APK 이름은 **Naruve 가나다 (dev)** 이고 debug 서명이다. appId는
+`app.naruve.ganada` 그대로 둔다 — 바꾸면 Play 계정과 어긋난다.
+출시본은 server 블록을 빼고 번들로 만든다(README "출시할 때").
 
 ## 브랜치와 PR
 main에 직접 푸시하지 않는다. 작업은 항상 브랜치에서 하고 끝나면 PR을 연다.
@@ -521,7 +527,7 @@ K-드라마·K-팝의 가사, 특정 작품의 긴 대사, 작품명·아티스�
 versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로 정한다.
 
 ## 현재 상태
-빌드 0.1.20 기준.
+빌드 0.1.21 기준.
 
 **문장** 50개 (Standard 15 / Everyday 15 / Drama 12 / Sounds 8).
 50개 전부 `t:` 억양 태그와 `w:` 약점 음절이 채워져 있어 채점 경로에 구멍은 없다.

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Ganada</string>
-    <string name="title_activity_main">Ganada</string>
+    <string name="app_name">Naruve 가나다 (dev)</string>
+    <string name="title_activity_main">Naruve 가나다 (dev)</string>
     <string name="package_name">app.naruve.ganada</string>
     <string name="custom_url_scheme">app.naruve.ganada</string>
 </resources>
