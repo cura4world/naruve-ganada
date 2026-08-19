@@ -104,12 +104,13 @@ APK는 **껍데기**다. 안에 웹이 들어 있지 않고 WebView가 `https://
 | `docs/` (웹) | push → Pages 배포 → **앱에서 새로고침하거나 앱을 껐다 켠다.** APK 재빌드 없음 |
 | `android/`, `capacitor.config.json`, 플러그인 | **APK를 다시 만들어 설치한다** |
 
-설정 탭(⚙)의 임시 바에 **새로고침** 버튼이 있다 — 네이티브에서만 보인다.
+설정 화면(⚙) 맨 아래 **개발용** 행에 **Reload**·**Log** 버튼이 있다.
+이 행은 네이티브에서만 보인다 — `Capacitor.isNativePlatform()`이 참일 때만 켠다.
+브라우저에는 이미 새로고침이 있고 콘솔도 열리므로 띄우지 않는다.
 
 ### 설치 (사람이 한다)
 
-1. `D:ihub_workpk
-aruve-ganada-dev-0.1.21.apk` 를 폰으로 옮긴다
+1. `D:\aihub_work\apk\naruve-ganada-dev-0.1.23.apk` 를 폰으로 옮긴다
    (USB, 카카오톡 나에게 보내기, 구글 드라이브 아무거나)
 2. 파일을 누르면 "출처를 알 수 없는 앱" 경고가 뜬다 →
    **설정 → 이 출처 허용** → 뒤로 → 다시 설치
@@ -219,7 +220,20 @@ docs/                     ← GitHub Pages가 서빙하는 폴더
     boot.js               서비스워커 등록, 빌드 표시
   icons/
   audio/{m,f}/            예시 음성 mp3 100개 (문장 50 × 목소리 2)
-scripts/bump.mjs          빌드 번호 올리기
+scripts/                  빌드·아이콘·프로브·회귀 검사
+  bump.mjs                빌드번호(서비스워커 캐시) 올리는 스크립트
+  bump-apk.mjs            versionCode 올리는 스크립트. bump.mjs와 섞지 않는다
+  icon-layers.mjs         원본 1장에서 아이콘 전체를 다시 만든다
+  icon-verify.mjs         생성 결과 검사 (크기·배경색·아트 출처)
+  test_*.js               회귀 검사 6개. docs/js를 node vm에 올려 브라우저 없이 돌린다
+  tts/                    예시 음성 생성·손질·배치 — scripts/tts/README.md
+  adapters/               엔진 어댑터 (azure 구현 / etri·ondevice 골격)
+  pa_probe.py             엔진 호출. 원본 응답을 out/raw/에 그대로 저장
+  pa_report.py            표 다섯 개 생성
+  pa_report_adhoc.py      단발 모드(out/adhoc) 결과 표. pa_report.py와 섞지 않는다
+  probe_common.py         프로브 세 스크립트가 함께 쓰는 .env 파서·경로 규칙
+  tts_gen.py              프로브 오류 샘플 생성
+  prep_audio.sh           mp3 → 16kHz/16bit/mono wav
 worker/                   Cloudflare Workers 채점 프록시 (배포물 아님)
 ```
 
@@ -269,7 +283,15 @@ Worker가 Azure를 부른 뒤 단어 점수를 돌려준다. 자세한 규격은
 - 무료 30회는 서버가 센다. 소진하면 듣기·녹음·억양만 남는다
 - **예시 음성은 파일이다** — 타입캐스트 API(라이트 플랜, `ssfm-v30`), 2026-08-19 생성,
   목소리 우성(남)·이현(여). 파일이 없거나 로드에 실패하면 폰 내장 TTS로 떨어진다
+- 예시 음성 음량을 정규화했다 — ffmpeg loudnorm 2-pass, 목표 −16 LUFS / TP −1.5 dBTP
+- **첫 실행에 온보딩 한 번** — 모국어·학습 단계(둘 다 건너뛸 수 있다)·따라 할 목소리
+- **동의는 두 층이다** — 필수(채점을 위한 음성 처리와 익명 로그)와
+  선택(모델 개선을 위한 보관). 선택에 동의하지 않은 녹음은 7일 뒤 저장소가 스스로 지운다
+- **설정 화면**(⚙) — 목소리 · 표시 언어 · 채점 개선 참여 · 내 기록 ·
+  내 식별자(복사와 삭제 요청 메일) · 방침 링크 · 버전
 - 모국어 설명은 영어 · 인도네시아어
+
+각 항목의 사정은 `CLAUDE.md`의 "현재 상태" 절에 있다.
 
 ## 다음 할 일
 
