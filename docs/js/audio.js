@@ -4,15 +4,20 @@
    One entry point — Example.play(sentence, handlers) — behind which the
    sound source can change without app.js knowing:
 
-     1. recorded file   AUDIO.base + <hash>.mp3   ← paid TTS, later
-     2. native TTS      Capacitor TextToSpeech    ← the APK, offline
-     3. Web Speech      SpeechSynthesis ko-KR     ← browser and PWA
+     1. recorded file   AUDIO.base + <voice>/<hash>.mp3   ← paid TTS
+     2. native TTS      Capacitor TextToSpeech            ← the APK, offline
+     3. Web Speech      SpeechSynthesis ko-KR             ← browser and PWA
      4. nothing playable → the caller shows a notice
 
-   Dropping the real files in later needs NO code change. Put the mp3s in
-   docs/audio/ with an index.json listing their filenames; step 1 then
-   wins for exactly the sentences that have a file and every other
-   sentence keeps falling through to TTS. The plugin stays installed.
+   Since 2026-08-19 step 1 covers every sentence in data.js: 50 sentences ×
+   two voices, generated with the Typecast API (ssfm-v30, Lite plan) and
+   shipped in docs/audio/. Steps 2 and 3 stay because a file can still fail
+   to load — a half-written cache entry, a sentence edited after the clip
+   was made — and because the fallback costs nothing to keep.
+
+   Which voice: localStorage 'naruve.voice', "m" or "f", default "f".
+   Onboarding (P6-B) will set it; until then the Settings tab has a
+   temporary switch.
 
    Android System WebView — which is what Capacitor runs — does not
    implement Web Speech synthesis. That is why step 2 exists at all, and
@@ -25,12 +30,17 @@
 var AUDIO = {
   base: './audio/',
   manifest: 'index.json',
-  ext: '.mp3'
+  ext: '.mp3',
+  voices: ['m', 'f'],
+  defVoice: 'f',
+  voiceKey: 'naruve.voice'
 };
 
 /* Filename is a hash of the Korean text, so it is stable across edits to
    anything else and it changes exactly when the sentence changes — which
-   is precisely when the recording is stale too. */
+   is precisely when the recording is stale too. scripts/tts/build_final.py
+   computes the same value; if the two ever disagree every clip goes silent
+   and falls back to TTS, so neither side may be "improved" alone. */
 function audioName(s){
   var h = 0x811c9dc5, str = s.k;
   for (var i=0;i<str.length;i++){
@@ -39,13 +49,23 @@ function audioName(s){
   }
   return ('0000000' + h.toString(16)).slice(-8) + AUDIO.ext;
 }
-function audioUrl(s){ return AUDIO.base + audioName(s); }
+function audioVoice(){
+  try {
+    var v = localStorage.getItem(AUDIO.voiceKey);
+    if (AUDIO.voices.indexOf(v) >= 0) return v;
+  } catch(e){}
+  return AUDIO.defVoice;
+}
+/* path inside docs/audio/ — this is also the key used in index.json */
+function audioRel(s, voice){ return (voice || audioVoice()) + '/' + audioName(s); }
+function audioUrl(s, voice){ return AUDIO.base + audioRel(s, voice); }
 
 var Example = (function(){
-  var have = null;      /* filename -> 1, once the manifest is known */
+  var have = null;      /* rel path -> 1, once the manifest is known */
   var cur = null;       /* the thing currently making noise */
 
-  /* Ask once. A missing manifest is the normal state today, not an error. */
+  /* Ask once. A missing manifest used to be the normal state; now it means
+     the clips did not ship, so say so rather than silently going quiet. */
   (function loadManifest(){
     if (typeof fetch !== 'function') { have = {}; return; }
     fetch(AUDIO.base + AUDIO.manifest, { cache:'no-store' })
@@ -53,8 +73,9 @@ var Example = (function(){
       .then(function(list){
         have = {};
         (Array.isArray(list) ? list : (list.files || [])).forEach(function(n){ have[n]=1; });
+        if (!Object.keys(have).length) console.warn('[audio] index.json is empty — every sentence will use device TTS');
       })
-      .catch(function(){ have = {}; });
+      .catch(function(){ have = {}; console.warn('[audio] index.json missing — every sentence will use device TTS'); });
   })();
 
   function isNative(){
@@ -112,12 +133,16 @@ var Example = (function(){
     a.addEventListener('ended', function(){ cur=null; h.onend(); });
     a.addEventListener('error', function(){
       cur = null;
-      /* listed in the manifest but unusable — fall through rather than
-         leaving the learner with nothing */
-      if (!started) speak(s, h); else h.onerror('failed');
+      /* the clip should exist — say which one did not, then fall through
+         rather than leaving the learner with nothing */
+      if (!started){ console.warn('[audio] clip failed, falling back to TTS:', url); speak(s, h); }
+      else h.onerror('failed');
     });
     cur = { stop: function(){ a.pause(); } };
-    a.play().catch(function(){ cur=null; if(!started) speak(s,h); });
+    a.play().catch(function(){
+      cur=null;
+      if(!started){ console.warn('[audio] play() rejected, falling back to TTS:', url); speak(s,h); }
+    });
   }
 
   function speak(s, h){
@@ -159,15 +184,29 @@ var Example = (function(){
   return {
     play: function(s, h){
       stop();
-      var name = audioName(s);
-      if (have && have[name]) playFile(AUDIO.base + name, s, h);
-      else speak(s, h);
+      var rel = audioRel(s);
+      /* have === null means the manifest has not landed yet. Try the file
+         anyway: this call is inside a user gesture and deferring it through
+         a promise can cost the gesture, which is what browsers check before
+         letting audio start. A wrong guess costs one failed request and
+         lands in the same fallback. */
+      if (have === null || have[rel]) { playFile(AUDIO.base + rel, s, h); return; }
+      console.warn('[audio] no clip listed for', rel, '— using device TTS');
+      speak(s, h);
     },
     stop: stop,
+    /* which recorded voice the clips come from — "m" or "f" */
+    voice: audioVoice,
+    setVoice: function(v){
+      if (AUDIO.voices.indexOf(v) < 0) return audioVoice();
+      try { localStorage.setItem(AUDIO.voiceKey, v); } catch(e){}
+      return v;
+    },
     /* for diagnostics and tests */
     _state: function(){
       return { native:isNative(), tts:!!nativeTTS(), web:webSpeech(),
-               inApp:inAppBrowser(), files: have ? Object.keys(have).length : null };
+               inApp:inAppBrowser(), voice:audioVoice(),
+               files: have ? Object.keys(have).length : null };
     }
   };
 })();

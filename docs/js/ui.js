@@ -77,6 +77,10 @@ var UI = {
     tabYou:'나',
     tabSettings:'설정',
     settingsSoon:'설정 화면은 준비 중입니다.',
+    /* 임시 예시 음성 토글. 온보딩(P6-B)이 생기면 이 세 키와 함께 사라진다. */
+    voicePick:'예시 음성',
+    voiceMale:'남자',
+    voiceFemale:'여자',
 
     simLabel:'시뮬레이션',
     simNative:'원어민',
@@ -168,6 +172,9 @@ var UI = {
     tabYou:'You',
     tabSettings:'Settings',
     settingsSoon:'Settings are on the way.',
+    voicePick:'Example voice',
+    voiceMale:'Male',
+    voiceFemale:'Female',
 
     simLabel:'Simulate',
     simNative:'Native',

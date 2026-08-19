@@ -34,7 +34,17 @@
     </div>
   </div>
 
-  <main class="stage">
+  <main class="stage" id="stage">
+    <!-- 임시. 설정 화면(16.6)과 온보딩(P6-B)이 생기면 지운다.
+         .stage 안이라 열 높이에 영향이 없다 — CLAUDE.md "레이아웃과 safe-area" 참조. -->
+    <div class="voicebar" id="voiceBar" hidden>
+      <span class="vb-note" data-i18n="settingsSoon">Settings are on the way.</span>
+      <span class="vb-lab" data-i18n="voicePick">Example voice</span>
+      <button class="vb" id="voiceM" data-i18n="voiceMale">Male</button>
+      <button class="vb" id="voiceF" data-i18n="voiceFemale">Female</button>
+      <button class="vb vb-x" id="voiceClose" data-i18n="close">Close</button>
+    </div>
+
     <div class="tiles" id="tiles"></div>
     <div class="meta-row" id="metaRow"></div>
     <div class="romanized" id="roman"></div>
