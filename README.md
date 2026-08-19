@@ -26,11 +26,16 @@ git push -u origin main
 - Branch: `main` / 폴더: **`/docs`**
 - Save
 
-1~2분 뒤 주소가 나온다:
+1~2분 뒤 주소가 나온다. `docs/CNAME`이 커스텀 도메인을 지정하고 있으므로
+실제 주소는 이것이다:
 
 ```
-https://<아이디>.github.io/naruve-ganada/
+https://naruve.app
 ```
+
+(`docs/CNAME`이 없으면 `https://<아이디>.github.io/naruve-ganada/`가 된다.
+도메인을 바꿀 때 Settings > Pages의 custom domain 칸을 쓰지 않는 이유는
+`CLAUDE.md` "배포 경로"에 있다.)
 
 ### 3. 폰에 설치
 
@@ -44,17 +49,27 @@ Android Chrome으로 위 주소를 열고 → 메뉴 ⋮ → **홈 화면에 추
 
 ```bash
 # 1. Claude Code로 파일 수정
-# 2. 배포
-npm run ship
+# 2. docs/ 를 고쳤으면 빌드 번호를 올린다
+npm run bump
+# 3. 브랜치에서 커밋하고 PR을 연다
+git checkout -b <작업이름>
+git add -A && git commit -m "..."
+git push -u origin <작업이름>
+gh pr create --fill
 ```
 
-`ship` 한 줄이 이렇게 동작한다:
+**캐시 이름을 바꾸는 것은 `bump`다.** `npm run bump`(= `node scripts/bump.mjs`)가
+`docs/version.json`의 패치 번호를 올리고 같은 번호를 `docs/sw.js`의 `BUILD`에 찍는다.
+그 값이 서비스워커 캐시 이름이라, 빼먹으면 폰이 옛 파일을 계속 붙들고 있는다.
+PWA에서 가장 흔한 사고다. **docs/ 밖만 고쳤으면 올리지 않는다.**
 
-1. 빌드 번호를 올린다 (`0.1.1` → `0.1.2`)
-2. 서비스워커의 캐시 이름을 바꾼다 ← **이게 핵심**
-3. 커밋하고 푸시한다
+PR을 열면 `.github/workflows/auto-merge.yml`이 즉시 squash 병합하고
+그대로 GitHub Pages 배포까지 이어진다. 30초~1분 뒤 폰에서 새 버전이 열린다.
 
-30초~1분 뒤 폰에서 앱을 열면 새 버전이 적용된다.
+`npm run ship`은 `bump` 뒤에 `git add -A`·커밋·`git push`를 붙여 둔 스크립트다.
+**현재 브랜치를 그대로 푸시하므로 main에서는 쓰지 않는다** — main 직접 푸시가 된다.
+
+절차의 정본은 `CLAUDE.md`다 — "브랜치와 PR", "두 개의 버전 번호" 절을 본다.
 
 ### 적용됐는지 확인하는 법
 
@@ -235,10 +250,13 @@ Worker가 Azure를 부른 뒤 단어 점수를 돌려준다. 자세한 규격은
 ## 규칙
 
 **경로는 반드시 상대경로(`./`)로 쓴다.**
-지금은 `github.io/naruve-ganada/` 하위에 있지만 나중에 `app.naruve.app` 루트로 옮긴다. 절대경로로 쓰면 그때 전부 깨진다.
+지금은 `https://naruve.app` 루트에 있어 하위 경로 문제는 없다(`docs/CNAME`).
+그래도 이 규칙이 필요한 이유는 출시 때다 — `capacitor.config.json`의 `server`
+블록을 빼고 `docs/`를 APK에 번들하면(CLAUDE.md "출시 전 반드시 할 일")
+페이지가 더 이상 https 오리진에서 열리지 않는다. 그때 절대경로는 전부 깨진다.
 
-**푸시 전에 항상 `npm run ship`을 쓴다.**
-그냥 `git push`만 하면 캐시 이름이 안 바뀌어서 폰이 옛 파일을 계속 붙들고 있는다. PWA에서 가장 흔한 사고다.
+**docs/ 를 고쳤으면 커밋 전에 `npm run bump`.**
+캐시 이름을 바꾸는 것이 이 스크립트다. 위 "매일 쓰는 흐름" 참조.
 
 ---
 
@@ -255,7 +273,6 @@ Worker가 Azure를 부른 뒤 단어 점수를 돌려준다. 자세한 규격은
 
 ## 다음 할 일
 
-1. 설정 화면 — 내 식별자 보기·삭제 요청 (DECISIONS 16.6)
-2. 온보딩 — 모국어·학습 단계 자가 신고, 저장 동의 (16.4)
-3. 이벤트 로그 저장 (16.1)
-4. 결과 카드 이미지 생성
+1. 이벤트 로그 저장 (16.1) — 지금은 `docs/js/identity.js`의 `Identity.event()`가
+   메모리 배열에 쌓고 콘솔에 찍기만 한다. 서버로 보내는 경로가 없다
+2. 결과 카드 이미지 생성
