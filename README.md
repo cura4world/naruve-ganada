@@ -191,13 +191,15 @@ docs/                     ← GitHub Pages가 서빙하는 폴더
   version.json            빌드 번호
   css/app.css
   js/
-    data.js               문장 라이브러리      ← 문장 추가는 여기만
-    phonemes.js           모국어 설명 표       ← 설명 수정은 여기만
+    ui.js                 UI 문구 표 (한국어가 마스터본, 언어 추가는 열 하나 추가)
     identity.js           익명 UUID·세션·크레딧 캐시
     api.js                채점 서버 호출 한 곳
+    audio.js              예시 음성 재생 (파일 → 네이티브 TTS → Web Speech 순)
     mic.js                마이크 녹음·무음 절단
     pitch.js              F0 추출 (억양)
     score.js              채점 경계 (억양 + 서버)
+    data.js               문장 라이브러리      ← 문장 추가는 여기만
+    phonemes.js           모국어 설명 표       ← 설명 수정은 여기만
     app.js                화면 제어
     boot.js               서비스워커 등록, 빌드 표시
   icons/
