@@ -99,6 +99,7 @@ function paint(){
   $('result').classList.remove('noscore');
   $('l1box').classList.remove('show');
   $('intoNote').classList.remove('show');
+  if($('askCard')) $('askCard').hidden = true;
   lastRes = null;
   setHint('hintTap',false);
   $('audioNote').classList.remove('show');
@@ -273,6 +274,8 @@ function paintNoScore(res){
   note.textContent = res.error==='exhausted' ? t('creditsGone')
                    : res.error==='nothing'   ? t('scoreNothing')
                    : t('scoreServer');
+  /* 소진은 잘못이 아니라 상태다(18절). 빨강을 쓰지 않는다. */
+  note.classList.toggle('calm', res.error==='exhausted');
   note.classList.add('show');
 
   $('result').classList.add('noscore');
@@ -331,6 +334,8 @@ function paintScore(res){
     $('result').classList.add('show');
     var n=0;(function step(){n+=Math.max(1,Math.ceil((tt-n)/6));if(n>=tt)n=tt;
       $('scoreNum').textContent=n; if(n<tt) requestAnimationFrame(step);})();
+    bestPut(S[idx].k, tt);
+    maybeAskConsent(tt);
     showResult(tt);
     revealResult();
     setHint('hintAgain',false); busy=false;
@@ -475,9 +480,17 @@ function applyLang(){
   if ($('result').classList.contains('show')) showResult(lastTotal);
   if ($('browse').classList.contains('open')) { renderCols(); renderList(); }
 }
-$('l1Btn').addEventListener('click',function(){
-  L1 = LANGS[(LANGS.indexOf(L1)+1) % LANGS.length];
+/* 설정 화면과 헤더 버튼이 같은 문을 쓴다. 고른 언어는 기억한다 —
+   설정에서 고른 것이 새로고침에 사라지면 설정이 아니다. */
+var LANG_KEY = 'naruve.lang';
+function setLang(l){
+  if(LANGS.indexOf(l) < 0) return;
+  L1 = l;
+  try { localStorage.setItem(LANG_KEY, l); } catch(e){}
   applyLang();
+}
+$('l1Btn').addEventListener('click',function(){
+  setLang(LANGS[(LANGS.indexOf(L1)+1) % LANGS.length]);
 });
 
 function browsable(c){ return c.browse || (c.id==='sounds' && SHOW_SOUNDS_IN_BROWSE); }
@@ -565,43 +578,200 @@ if($('nextSent')) $('nextSent').addEventListener('click',function(){ moveBy(1, t
 })();
 $('share').addEventListener('click',function(){ alert(t('shareAlert')); });
 
-/* 설정 화면은 아직 없다. 16.6의 "내 식별자 보기·삭제 요청"이 여기 들어간다.
-   그때까지 이 자리에 예시 음성 목소리 토글 하나만 둔다 — 폰에서 두 목소리를
-   바꿔 들어보기 위한 임시 장치다. 온보딩(P6-B)이 생기면 거기서 정하고
-   이 바는 지운다. .stage 안에 있으므로 열 높이(.phone/.tabs)에 영향이 없다. */
-function paintVoiceBar(){
+/* ---------------- 설정 화면 (16.6) ---------------- */
+
+function isNativeShell(){
+  var C = window.Capacitor;
+  return !!(C && typeof C.isNativePlatform === 'function' && C.isNativePlatform());
+}
+
+/* 문장별 최고점. **클라이언트에만 있다** — 서버를 부르지 않는다.
+   18절의 "진행 기록"은 유료 항목이지만, 이건 원가 0이라 채점 개선에
+   참여한 무료 사용자에게 열어 주는 혜택이다. */
+var BEST_KEY = 'naruve.best';
+function bestAll(){
+  try { return JSON.parse(localStorage.getItem(BEST_KEY) || '{}') || {}; } catch(e){ return {}; }
+}
+function bestPut(k, score){
+  if(typeof score !== 'number') return;
+  var b = bestAll();
+  if(!(k in b) || score > b[k]){ b[k] = score;
+    try { localStorage.setItem(BEST_KEY, JSON.stringify(b)); } catch(e){} }
+}
+
+function paintSettings(){
   var v = Example.voice();
   ['m','f'].forEach(function(g){
-    var b=$('voice'+g.toUpperCase());
-    if(b) b.classList.toggle('on', v===g);
+    var b=$('voice'+g.toUpperCase()); if(b) b.classList.toggle('on', v===g);
   });
+  ['ko','en'].forEach(function(l){
+    var b=$('lang'+l.charAt(0).toUpperCase()+l.slice(1)); if(b) b.classList.toggle('on', L1===l);
+  });
+
+  var c = Identity.consent();
+  if($('consentState')) $('consentState').textContent = t(c.extended ? 'setConsentOn' : 'setConsentOff');
+  if($('consentToggle')) $('consentToggle').textContent = t(c.extended ? 'setLeave' : 'setJoin');
+
+  /* 기록은 참여자에게만. 미참여자에게는 무엇을 하면 열리는지 한 줄. */
+  var best = bestAll(), keys = Object.keys(best);
+  if($('bestNote')) $('bestNote').textContent =
+    !c.extended ? t('setBestLocked') : (keys.length ? '' : t('setBestEmpty'));
+  if($('bestList')){
+    if(!c.extended || !keys.length){ $('bestList').innerHTML=''; }
+    else {
+      var byK = {}; S.forEach(function(s){ byK[s.k]=1; });
+      var rows = keys.filter(function(k){ return byK[k]; })
+        .sort(function(a,b){ return best[b]-best[a]; }).slice(0,12);
+      $('bestList').innerHTML = rows.map(function(k){
+        return '<div>' + k.replace(/</g,'&lt;') + ' — <b>' + best[k] + '</b></div>';
+      }).join('');
+    }
+  }
+
+  if($('myUuid')) $('myUuid').textContent = Identity.uuid();
+  if($('uuidMail')){
+    $('uuidMail').href = 'mailto:support@naruve.app'
+      + '?subject=' + encodeURIComponent('삭제 요청')
+      + '&body=' + encodeURIComponent('식별자: ' + Identity.uuid());
+  }
+  if($('setVer')) $('setVer').textContent = ($('buildTag') && $('buildTag').textContent) || '—';
+  if($('setPolicy')) $('setPolicy').href = (L1==='ko') ? './privacy/' : './privacy/en/';
+  if($('setDevRow')) $('setDevRow').hidden = !isNativeShell();
 }
-if($('tabSettings') && $('voiceBar')){
+
+if($('tabSettings') && $('settings')){
   $('tabSettings').addEventListener('click',function(){
-    var bar=$('voiceBar');
-    bar.hidden = !bar.hidden;
-    if(!bar.hidden){ paintVoiceBar(); $('stage').scrollTop = 0; }
+    var s=$('settings');
+    s.hidden = !s.hidden;
+    if(!s.hidden){ paintSettings(); $('stage').scrollTop = 0; }
   });
+  if($('setClose')) $('setClose').addEventListener('click',function(){ $('settings').hidden = true; });
+
   ['m','f'].forEach(function(g){
-    var b=$('voice'+g.toUpperCase());
-    if(!b) return;
+    var b=$('voice'+g.toUpperCase()); if(!b) return;
     b.addEventListener('click',function(){
-      Example.setVoice(g); paintVoiceBar();
-      Example.stop(); resetListenBtn();
+      Example.setVoice(g); Example.stop(); resetListenBtn(); paintSettings();
     });
   });
-  if($('voiceClose')) $('voiceClose').addEventListener('click',function(){ $('voiceBar').hidden = true; });
+  ['ko','en'].forEach(function(l){
+    var b=$('lang'+l.charAt(0).toUpperCase()+l.slice(1)); if(!b) return;
+    b.addEventListener('click',function(){ setLang(l); paintSettings(); });
+  });
 
-  /* A-5: 껍데기 APK는 https://naruve.app 를 그대로 띄우므로, 웹을 배포한 뒤
-     앱을 껐다 켜면 최신이 뜬다. 이 버튼은 그걸 한 번에 하는 지름길이다.
-     브라우저에는 이미 새로고침이 있으니 네이티브에서만 보인다. */
-  if($('reloadBtn')){
-    var C = window.Capacitor;
-    var native = !!(C && typeof C.isNativePlatform === 'function' && C.isNativePlatform());
-    $('reloadBtn').hidden = !native;
-    $('reloadBtn').addEventListener('click',function(){ location.reload(); });
+  if($('consentToggle')) $('consentToggle').addEventListener('click',function(){
+    var c = Identity.consent();
+    var next = !c.extended;
+    Identity.setConsent(true, next);
+    Identity.event(next ? 'consent_prompt' : 'consent_revoke',
+                   next ? { accepted:true, from:'settings' } : { from:'settings' });
+    paintSettings();
+  });
+
+  if($('uuidCopy')) $('uuidCopy').addEventListener('click',function(){
+    copyText(Identity.uuid(), $('uuidStat'));
+  });
+
+  if($('reloadBtn')) $('reloadBtn').addEventListener('click',function(){ location.reload(); });
+}
+
+/* 클립보드는 막힐 수 있다. 막히면 막혔다고 말한다. */
+function copyText(s, statEl){
+  function done(okc){ if(statEl) statEl.textContent = t(okc ? 'copied' : 'logCopyFail'); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(s).then(function(){ done(true); }, function(){ done(legacy(s)); });
+  } else done(legacy(s));
+  function legacy(x){
+    try {
+      var ta=document.createElement('textarea');
+      ta.value=x; ta.setAttribute('readonly','');
+      ta.style.position='fixed'; ta.style.top='-1000px';
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,x.length);
+      var r=document.execCommand('copy'); ta.remove(); return r;
+    } catch(e){ return false; }
   }
 }
+
+/* ---------------- 온보딩 (16.4 + 방침 2절) ---------------- */
+
+var obPick = { l1:null, level:null, voice:'f', l1Set:false, levelSet:false };
+
+function obSelect(groupId, v, key){
+  var g=$(groupId); if(!g) return;
+  Array.prototype.slice.call(g.querySelectorAll('.ob-opt')).forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-v') === v);
+  });
+  obPick[key] = v || null;
+}
+function obRefresh(){
+  /* 필수 동의가 없으면 시작할 수 없다. 방침이 "앱을 이용하면 적용됩니다"라고
+     적은 기본 처리가 바로 이것이라, 체크 없이 들여보내면 근거가 사라진다. */
+  var ok = $('obBase') && $('obBase').checked;
+  if($('obStart')) $('obStart').disabled = !ok;
+  if($('obWarn')) $('obWarn').hidden = !!ok;
+}
+function openOnboarding(){
+  var o=$('onboard'); if(!o) return;
+  obPick.voice = Example.voice();
+  obSelect('obVoice', obPick.voice, 'voice');
+  if($('obPolicy')) $('obPolicy').href = (L1==='ko') ? './privacy/' : './privacy/en/';
+  o.hidden = false;
+  obRefresh();
+}
+if($('onboard')){
+  ['obL1','obLevel'].forEach(function(id){
+    var g=$(id); if(!g) return;
+    g.addEventListener('click',function(e){
+      var b=e.target.closest && e.target.closest('.ob-opt'); if(!b) return;
+      obSelect(id, b.getAttribute('data-v'), id==='obL1'?'l1':'level');
+    });
+  });
+  var vg=$('obVoice');
+  if(vg) vg.addEventListener('click',function(e){
+    var b=e.target.closest && e.target.closest('.ob-opt, .ob-play'); if(!b) return;
+    var v=b.getAttribute('data-v');
+    if(b.classList.contains('ob-play')){
+      /* 고르기 전에 들어볼 수 있어야 고르는 뜻이 있다. */
+      Example.setVoice(v); obSelect('obVoice', v, 'voice'); playExample();
+      return;
+    }
+    Example.setVoice(v); obSelect('obVoice', v, 'voice');
+  });
+  if($('obBase')) $('obBase').addEventListener('change', obRefresh);
+  if($('obStart')) $('obStart').addEventListener('click',function(){
+    if(!$('obBase').checked){ obRefresh(); return; }
+    var ext = !!($('obExt') && $('obExt').checked);
+    Identity.setConsent(true, ext);
+    Identity.finishOnboarding(obPick.l1, obPick.level);
+    Identity.event('consent_onboarding', { extended: ext });
+    Identity.event('onboarding_done', { l1: obPick.l1, level: obPick.level, voice: Example.voice() });
+    $('onboard').hidden = true;
+    Example.stop(); resetListenBtn();
+  });
+}
+
+/* ---------------- 후속 제안 ---------------- */
+
+/* 온보딩에서 선택 동의를 하지 않은 사람에게, **잘 나온 회차에서 한 번만** 묻는다.
+   못 나온 회차에 물으면 "이런 걸 왜 가져가나" 싶고, 매번 물으면 성가시다. */
+var ASK_MIN = 85;
+function maybeAskConsent(total){
+  var card=$('askCard'); if(!card) return;
+  if(Identity.consent().extended || Identity.consentAsked()){ card.hidden = true; return; }
+  if(typeof total !== 'number' || total < ASK_MIN){ card.hidden = true; return; }
+  card.hidden = false;
+}
+if($('askYes')) $('askYes').addEventListener('click',function(){
+  Identity.setConsent(true, true);
+  Identity.markConsentAsked();
+  Identity.event('consent_prompt', { accepted:true, from:'result' });
+  $('askCard').hidden = true;
+  var n=$('audioNote'); n.textContent=t('askThanks'); n.classList.add('calm'); n.classList.add('show');
+});
+if($('askNo')) $('askNo').addEventListener('click',function(){
+  Identity.markConsentAsked();
+  Identity.event('consent_prompt', { accepted:false, from:'result' });
+  $('askCard').hidden = true;
+});
 
 /* 타일은 A안으로 확정했다 (2026-08-19). 토글이 남긴 키만 치운다 —
    읽지 않으므로 남아 있어도 해는 없지만, 다음 사람이 이걸 보고 아직
@@ -749,6 +919,16 @@ if($('micDev')){
 if(!restorePos()){
   for(var i=0;i<S.length;i++){ if(S[i].c==='drama'){ idx=i; break; } }
 }
+(function(){
+  var saved=null;
+  try { saved = localStorage.getItem(LANG_KEY); } catch(e){}
+  if(saved && LANGS.indexOf(saved) >= 0) L1 = saved;
+})();
 applyLang();
 paintCredits();
 paint();
+
+/* 첫 실행이면 온보딩. 이미 마쳤으면 아무 일도 없다. */
+if(!Identity.onboarded()) openOnboarding();
+Identity.event('app_start', { onboarded: Identity.onboarded(),
+                              consent: Identity.consentTier() });

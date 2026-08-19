@@ -16,6 +16,11 @@
 var Identity = (function(){
   var K_UUID = 'naruve.uuid';
   var K_CREDITS = 'naruve.credits';
+  var K_CONSENT = 'naruve.consent';      /* {base, extended, at} */
+  var K_ASKED = 'naruve.consent.askedAt';/* 후속 제안을 한 번만 하기 위한 표시 */
+  var K_ONBOARDED = 'naruve.onboarded';
+  var K_L1 = 'naruve.l1';                /* ISO 639-1 · null 이면 미신고 */
+  var K_LEVEL = 'naruve.level';
   var FREE = 30;
   /* 서버가 이 값을 주면 총량을 세지 않는다는 뜻이다. worker의 DEV_CREDITS와 같은 값. */
   var UNLIMITED = -1;
@@ -75,6 +80,8 @@ var Identity = (function(){
   /* 이 실행 하나가 한 세션이다. 새로고침하면 새 세션이 된다. */
   var sessionId = uuidv4();
 
+  var EVENTS = [];
+
   return {
     /* 설정 화면(P6 예정)이 "내 식별자 보기"에 쓴다 — 16.6 삭제 요청 경로 */
     uuid: function(){ return deviceId; },
@@ -101,6 +108,59 @@ var Identity = (function(){
       set(K_CREDITS, String(r === UNLIMITED ? UNLIMITED : Math.max(0, r)));
     },
     free: FREE,
-    UNLIMITED: UNLIMITED
+    UNLIMITED: UNLIMITED,
+
+    /* ---- 온보딩 (16.4) — 자가 신고 둘은 건너뛸 수 있고, 그때 값은 null 이다 ---- */
+    onboarded: function(){ return get(K_ONBOARDED) === '1'; },
+    l1: function(){ return get(K_L1) || null; },
+    level: function(){ return get(K_LEVEL) || null; },
+    finishOnboarding: function(l1, level){
+      if (l1) set(K_L1, l1);
+      if (level) set(K_LEVEL, level);
+      set(K_ONBOARDED, '1');
+    },
+
+    /* ---- 동의 2층 (방침 2절) ----
+       base 는 채점을 위한 처리와 익명 로그. 없으면 앱을 쓸 수 없다.
+       extended 는 모델 개선을 위한 5년 보관. 없어도 모든 기능이 그대로 돈다.
+       서버는 이 값을 X-Naruve-Consent 로 받아 R2 접두어를 고른다. */
+    consent: function(){
+      var raw = get(K_CONSENT);
+      if (!raw) return { base:false, extended:false, at:null };
+      try {
+        var o = JSON.parse(raw);
+        return { base: !!o.base, extended: !!o.extended, at: o.at || null };
+      } catch(e){ return { base:false, extended:false, at:null }; }
+    },
+    setConsent: function(base, extended){
+      var o = { base: !!base, extended: !!extended, at: new Date().toISOString() };
+      set(K_CONSENT, JSON.stringify(o));
+      return o;
+    },
+    /* 서버로 보내는 값. 헤더가 없으면 서버가 base 로 본다. */
+    consentTier: function(){
+      var raw = get(K_CONSENT);
+      if (!raw) return 'base';
+      try { return JSON.parse(raw).extended ? 'extended' : 'base'; }
+      catch(e){ return 'base'; }
+    },
+    /* 후속 제안은 한 번만 한다. 거절한 사람에게 다시 묻지 않는다. */
+    consentAsked: function(){ return !!get(K_ASKED); },
+    markConsentAsked: function(){ set(K_ASKED, new Date().toISOString()); },
+
+    /* ---- 16.1 이벤트 ----
+       저장 단위는 녹음이 아니라 이벤트다. **전송 경로는 아직 없다** —
+       이벤트 저장소가 KV 냐 경량 DB 냐가 16.3 미결이라 여기서는 모양만 맞춰
+       메모리에 쌓고 콘솔에 찍는다. 서버가 생기면 이 함수 하나만 바꾼다. */
+    event: function(kind, payload, sentenceK){
+      var e = { id: deviceId, at: new Date().toISOString(), kind: kind,
+                session: sessionId, sentence: sentenceK || null,
+                payload: payload || null };
+      EVENTS.push(e);
+      if (EVENTS.length > 200) EVENTS.shift();
+      try { console.log('[event]', kind, JSON.stringify(payload || {})); } catch(x){}
+      return e;
+    },
+    events: function(n){ return EVENTS.slice(-(n || 50)); }
   };
 })();
