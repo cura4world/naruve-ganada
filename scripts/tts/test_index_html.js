@@ -200,9 +200,14 @@ const audio = (html.match(/<audio/g) || []).length;
 const smemo = (html.match(/class="smemo"/g) || []).length;
 const vmemo = (html.match(/class="vmemo"/g) || []).length;
 const stars = (html.match(/class="st"/g) || []).length;
-ok('audio = 보이스×문장', audio === VOICES.length * SENTS.length,
-  audio + ' vs ' + VOICES.length * SENTS.length);
+// 손질 회차(fix)는 변형이 없는 칸이 비어 있어 표가 성글다. 그래서 "칸을 다 채웠나"가
+// 아니라 "오디오가 있는 칸마다 메모가 있나"가 진짜 불변식이다.
+const cells = VOICES.length * SENTS.length;
+ok('audio ≤ 열×행', audio <= cells, audio + ' vs ' + cells);
+ok('audio ≥ 1', audio >= 1, String(audio));
 ok('칸 메모 input = audio 수', smemo === audio, smemo + ' vs ' + audio);
+console.log('        ' + (audio === cells
+  ? '(빈틈없는 표)' : `(성근 표 — 빈 칸 ${cells - audio}개)`));
 ok('보이스 메모 textarea = 보이스 수', vmemo === VOICES.length, vmemo + '');
 ok('별 = 보이스×5', stars === VOICES.length * 5, stars + '');
 ok('오디오 경로가 전부 상대경로',
