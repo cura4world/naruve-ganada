@@ -536,10 +536,30 @@ if($('logBtn') && $('logView')){
     var v = $('logView');
     if(v.hidden){
       var lines = (window.Example && Example._log) ? Example._log(20) : [];
-      v.textContent = lines.length ? lines.join('\n') : t('logEmpty');
+      $('logText').textContent = lines.length ? lines.join('\n') : t('logEmpty');
+      $('logStat').textContent = lines.length ? lines.length + '줄' : '';
       v.hidden = false;
       $('stage').scrollTop = 0;
     } else v.hidden = true;
+  });
+
+  /* 사람이 이 줄을 대화창에 붙여넣어야 원인을 가릴 수 있다. 폰에서 긴 <pre>를
+     손으로 긁는 것은 사실상 불가능하다. */
+  if($('logCopy')) $('logCopy').addEventListener('click',function(){
+    var txt = $('logText').textContent || '';
+    function done(okc){ $('logStat').textContent = t(okc ? 'logCopied' : 'logCopyFail'); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){ done(true); }, function(){ done(legacy(txt)); });
+    } else done(legacy(txt));
+    function legacy(s){
+      try {
+        var ta=document.createElement('textarea');
+        ta.value=s; ta.setAttribute('readonly','');
+        ta.style.position='fixed'; ta.style.top='-1000px';
+        document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,s.length);
+        var r=document.execCommand('copy'); ta.remove(); return r;
+      } catch(e){ return false; }
+    }
   });
 }
 

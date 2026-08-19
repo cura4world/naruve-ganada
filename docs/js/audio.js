@@ -277,8 +277,23 @@ var Example = (function(){
     h.onerror(inAppBrowser() ? 'inapp' : 'unsupported');
   }
 
+  /* 어떤 경로로든 마이크가 열린 채로 재생되지 않게 한다. teardown()이 이미
+     놓지만, 놓지 못한 길이 생기면 증상이 조용히 돌아온다 — 그때 로그에 남는다. */
+  function closeMicIfOpen(){
+    try {
+      if (typeof Mic === 'undefined' || !Mic.diag || !Mic.release) return;
+      var d = Mic.diag();
+      if (d.held && !d.recording){
+        console.warn('[example] mic still open at playback — closing', d.states);
+        log('mic-close', d.states);
+        Mic.release();
+      }
+    } catch(e){}
+  }
+
   return {
     play: function(s, h){
+      closeMicIfOpen();
       stop();
       var rel = audioRel(s);
       /* have === null means the manifest has not landed yet. Try the file

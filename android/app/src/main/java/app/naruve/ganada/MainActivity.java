@@ -3,6 +3,7 @@ package app.naruve.ganada;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.webkit.WebView;
 
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -30,6 +31,19 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        /* 시스템 접근성 글꼴 배율을 무시하고 100%로 고정한다.
+
+           WebView 는 시스템 글꼴 크기를 textZoom 으로 곱해 적용한다. 크롬보다
+           글자가 크게 나와 한 화면에 안 들어오고 하단 탭 글자가 잘렸다.
+           CSS 의 text-size-adjust 로는 막을 수 없다 — 그쪽은 텍스트
+           자동확대(font boosting)를 끄는 것이고 textZoom 과 다른 경로다.
+
+           **시스템 글꼴 설정을 무시하는 선택이다.** 첫 버전은 레이아웃 안정을
+           우선한다. 앱 안에 글꼴 크기 설정을 두는 것은 P6-B 이후 후보다
+           (README 참조). 그때 이 줄을 그 설정과 연결한다. */
+        WebView wv = getBridge() != null ? getBridge().getWebView() : null;
+        if (wv != null) wv.getSettings().setTextZoom(100);
 
         View content = findViewById(android.R.id.content);
 
