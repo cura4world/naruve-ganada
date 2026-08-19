@@ -17,6 +17,8 @@ var Identity = (function(){
   var K_UUID = 'naruve.uuid';
   var K_CREDITS = 'naruve.credits';
   var FREE = 30;
+  /* 서버가 이 값을 주면 총량을 세지 않는다는 뜻이다. worker의 DEV_CREDITS와 같은 값. */
+  var UNLIMITED = -1;
 
   /* Safari 프라이빗 모드 등에서 localStorage 접근 자체가 던진다.
      저장이 안 되는 것이 앱이 죽을 이유는 아니므로 메모리로 떨어진다. */
@@ -58,17 +60,26 @@ var Identity = (function(){
     session: function(){ return sessionId; },
     newRecordingId: function(){ return uuidv4(); },
 
-    /* 마지막으로 서버가 알려준 잔여. 아직 한 번도 못 받았으면 30으로 그린다. */
+    /* 마지막으로 서버가 알려준 잔여. 아직 한 번도 못 받았으면 30으로 그린다.
+       서버가 -1을 주면 "세지 않는다"는 뜻이다(개발자·테스터). 0으로 깎아 버리면
+       소진과 구별되지 않아 채점이 통째로 막힌다 — 그래서 -1만 예외로 통과시킨다. */
     credits: function(){
       var v = get(K_CREDITS);
       if (v === null) return FREE;
       var n = parseInt(v, 10);
-      return isNaN(n) ? FREE : Math.max(0, n);
+      if (isNaN(n)) return FREE;
+      return n === UNLIMITED ? UNLIMITED : Math.max(0, n);
+    },
+    unlimited: function(){
+      var v = get(K_CREDITS);
+      return v !== null && parseInt(v, 10) === UNLIMITED;
     },
     setCredits: function(n){
       if (typeof n !== 'number' || isNaN(n)) return;
-      set(K_CREDITS, String(Math.max(0, Math.round(n))));
+      var r = Math.round(n);
+      set(K_CREDITS, String(r === UNLIMITED ? UNLIMITED : Math.max(0, r)));
     },
-    free: FREE
+    free: FREE,
+    UNLIMITED: UNLIMITED
   };
 })();

@@ -141,8 +141,9 @@ var Score = (function(){
       var into = intonation(sentence, cap);
       var res = base(sentence, cap, into);
 
-      /* 18절 — 소진 상태에서는 서버를 부르지 않는다. 억양만 보여준다. */
-      if (Identity.credits() <= 0){
+      /* 18절 — 소진 상태에서는 서버를 부르지 않는다. 억양만 보여준다.
+         테스터 예외(-1)는 여기서 걸리지 않는다. */
+      if (!Identity.unlimited() && Identity.credits() <= 0){
         res.error = 'exhausted';
         res.credits = 0;
         record(sentence, res, cap);
