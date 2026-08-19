@@ -80,10 +80,29 @@ var Example = (function(){
   var el   = null;      /* THE audio element. Never a second one. */
   var live = null;      /* the take that currently owns the speakers, or null */
 
+  /* D (2026-08-19) — 예시 음성이 어떨 때는 가깝고 어떨 때는 멀고 작게 들린다.
+     가설은 마이크 스트림이 살아 있는 동안 안드로이드가 오디오 경로를 통신
+     모드로 돌린다는 것이다. 그것을 가르려면 "재생할 때 마이크가 어떤 상태였나"가
+     같은 줄에 있어야 한다. 상태를 읽기만 하고 바꾸지 않는다. */
+  function micInfo(){
+    try {
+      if (typeof Mic === 'undefined' || !Mic.diag) return 'mic=?';
+      var d = Mic.diag();
+      return 'mic=' + d.states + (d.tracks > 1 ? '(' + d.tracks + ')' : '')
+           + ' ctx=' + d.ctx + (d.recording ? ' REC' : '');
+    } catch(e){ return 'mic=err'; }
+  }
+
+  /* 폰에는 콘솔이 없다. 최근 줄을 들고 있어야 설정 탭에서 꺼내 볼 수 있다. */
+  var LOG = [];
   function log(what, detail){
-    /* kept in production: this is how the overlap bug was found, and it is
-       three lines a tap. */
-    try { console.log('[example]', what, detail === undefined ? '' : detail); } catch(e){}
+    var line = '[example] ' + what + (detail === undefined ? '' : ' ' + detail);
+    if (what === 'play') line += ' ' + micInfo();
+    var now = new Date();
+    function p2(n){ return (n<10?'0':'') + n; }
+    LOG.push(p2(now.getHours()) + ':' + p2(now.getMinutes()) + ':' + p2(now.getSeconds()) + ' ' + line);
+    if (LOG.length > 40) LOG.shift();
+    try { console.log(line); } catch(e){}
   }
 
   /* Ask once. A missing manifest used to be the normal state; now it means
@@ -279,6 +298,8 @@ var Example = (function(){
       try { localStorage.setItem(AUDIO.voiceKey, v); } catch(e){}
       return v;
     },
+    /* D: 설정 탭의 "로그 보기"가 읽는다. P6-B에서 함께 지운다. */
+    _log: function(n){ return LOG.slice(-(n || 20)); },
     /* for diagnostics and tests */
     _state: function(){
       return { native:isNative(), tts:!!nativeTTS(), web:webSpeech(),

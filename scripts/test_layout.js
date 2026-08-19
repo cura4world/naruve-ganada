@@ -130,16 +130,18 @@ ok('0점 타일이 종이와 구분된다 (1.1 이상)', cr(PAPER, bgAt(0)) >= 1
   cr(PAPER, bgAt(0)).toFixed(2));
 
 // ---------------------------------------------------------------- 4
-console.log('\n4. A/B 변형');
-ok('body.tile-b 규칙이 있다', /body\.tile-b\s+\.tile\.low/.test(css));
-ok('인라인 border-color 를 이기려면 !important 여야 한다',
-  /body\.tile-b\s+\.tile\.low\{[^}]*!important/.test(css));
+console.log('\n4. A안 확정 — 변형이 남아 있지 않다');
+ok('body.tile-b 규칙이 없다', !/body\.tile-b/.test(css));
 ok('.omit 은 손대지 않는다 (점선 유지)', /\.tile\.omit\{border-style:dashed\}/.test(css));
 const app = fs.readFileSync(path.join(DOCS, 'js/app.js'), 'utf8');
 ok('app.js 가 색을 css 변수에서 읽는다', /--tile-rgb/.test(app) && /--tile-flip/.test(app));
 ok('app.js 에 옛 먹물 rgb(17,26,34) 가 남아 있지 않다', !/rgba\(17,26,34/.test(app));
-ok('낮은 어절에 low 클래스를 단다', /classList\.add\('low'\)/.test(app));
+ok('낮은 어절에 low 클래스를 단다 (표시는 안 하지만 자리는 남긴다)',
+  /classList\.add\('low'\)/.test(app));
 ok('resetTiles 가 low 를 지운다', /classList\.remove\('low'\)/.test(app));
+ok('A/B 토글이 남아 있지 않다', !/tileA|tileB|applyTileVariant/.test(app));
+const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+ok('index.html 에 A/B 버튼이 없다', !/id="tile[AB]"/.test(html));
 
 console.log('\n=== ' + pass + ' pass / ' + fail + ' fail ===');
 process.exit(fail ? 1 : 0);

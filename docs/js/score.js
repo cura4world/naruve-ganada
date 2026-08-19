@@ -27,6 +27,15 @@
    re-wire this without changing DECISIONS.md — the two move together. */
 var SCORE_MIX = { intonation: 0.30, pronunciation: 0.70 };
 
+/* 15.10 변경 (2026-08-19, 사용자 결정) — 억양 불일치를 총점에 반영한다.
+   그전에는 억양이 자기 줄에만 있었고 큰 숫자는 PronScore 하나였다. 방향을
+   틀리게 읽어도 숫자가 그대로면 "억양은 점수가 아니다"로 읽힌다.
+
+   15는 실측 전 잠정값이다. INTO의 임계와 같은 처지라 캘리브레이션에서 같이
+   정한다. 원값은 지우지 않는다 — R2의 .azure.json과 로그의 pron이 원본이고
+   깎인 값은 화면에만 있다(16절). */
+var INTONATION_PENALTY = 15;
+
 /* Provisional. Nobody has measured a real speaker against these yet —
    that is what the calibration log is for. */
 var INTO = {
@@ -79,6 +88,16 @@ var Score = (function(){
     };
   }
 
+  /* 감점은 방향이 규범인 두 유형에만 건다. intonation()은 t가 'question'이면
+     상승, 그 밖이면 하강을 기대하는데 'exclam'이 그 "그 밖"에 싸잡혀 있다.
+     감탄문의 끝이 반드시 내려가야 하는 것은 아니므로 판정은 보여주되 점수는
+     깎지 않는다. 지금 data.js의 exclam은 둘("대박!" "말도 안 돼!")이다. */
+  function penaltyFor(sentence, into){
+    if (!into || into.measured !== true || into.ok !== false) return 0;
+    if (sentence.t !== 'question' && sentence.t !== 'statement') return 0;
+    return INTONATION_PENALTY;
+  }
+
   /* the phrase to put under the score — it says what went wrong, not
      that something did */
   function feedbackKey(into){
@@ -94,6 +113,9 @@ var Score = (function(){
     log.push({
       k: sentence.k, t: sentence.t,
       total: r.total,
+      rawTotal: r.rawTotal == null ? null : r.rawTotal,
+      penalty: r.penalty || 0,
+      /* 원값. 감점은 화면에만 있고 여기와 R2에는 남지 않는다 (16절) */
       pron: r.azure ? r.azure.pronScore : null,
       acc: r.azure ? r.azure.accuracyScore : null,
       /* words가 비어 올 일은 서버 규격상 없다(summarize가 항상 배열을 준다).
@@ -127,6 +149,8 @@ var Score = (function(){
       intonation: into,
       feedback: feedbackKey(into),
       error: null,          /* 'exhausted' | 'nothing' | 'server' | 'network' */
+      rawTotal: null,       /* 감점 전 PronScore */
+      penalty: 0,           /* 억양 불일치로 깎은 점수 */
       credits: Identity.credits(),
       capture: { ms:cap.ms, rawMs:cap.rawMs, speechMs:cap.speechMs,
                  keptMs:cap.keptMs, trimmedMs:cap.trimmedMs,
@@ -171,7 +195,10 @@ var Score = (function(){
         }
 
         res.azure = data.azure;
-        res.total = data.azure ? data.azure.pronScore : null;
+        var raw = data.azure ? data.azure.pronScore : null;
+        res.rawTotal = raw;
+        res.penalty = (typeof raw === 'number') ? penaltyFor(sentence, into) : 0;
+        res.total = (typeof raw === 'number') ? Math.max(0, raw - res.penalty) : null;
         res.r2Key = data.r2Key;
         if (typeof data.credits === 'number'){
           Identity.setCredits(data.credits);
