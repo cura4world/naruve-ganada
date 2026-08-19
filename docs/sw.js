@@ -7,7 +7,7 @@
    skipWaiting + clients.claim means a new build takes over on the next launch,
    without the user having to close every tab.                                  */
 
-const BUILD = '0.1.19';           // replaced by scripts/bump.mjs on every push
+const BUILD = '0.1.20';           // replaced by scripts/bump.mjs on every push
 const CACHE = 'naruve-' + BUILD;
 
 /* Example audio is expensive on mobile data — Indonesia is the first market —
