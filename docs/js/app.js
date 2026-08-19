@@ -151,7 +151,9 @@ function verdictFor(tt){
 function run(){
   if(Mic.isLive()){ Mic.stop(); return; }
   if(busy) return; busy=true;
-  Example.stop();
+  /* B-3: 예시가 울리는 중에도 녹음 버튼은 살아 있고, 누르면 재생이 즉시 멈춘다.
+     stop()은 'ended'를 내지 않으므로 버튼 표시는 손으로 되돌린다. */
+  Example.stop(); resetListenBtn();
   $('result').classList.remove('show'); resetTiles();
   $('audioNote').classList.remove('show');
 
@@ -301,23 +303,30 @@ function showResult(tt){
 
 /* The button only drives its own state. Which source actually makes the
    sound — recorded file, native TTS, Web Speech — is audio.js's problem. */
-$('listen').addEventListener('click',function(){
+function resetListenBtn(){
+  $('listen').classList.remove('playing');
+  $('listenLabel').textContent = t('listen');
+}
+/* 듣기 버튼과 "다음 문장"이 같은 함수를 쓴다. 자동 재생은 사용자 동작 직후에만
+   일어나야 하므로(브라우저 autoplay 정책과도 같다) paint()가 아니라 클릭
+   처리기에서만 부른다. 첫 진입·컬렉션 전환·새로고침은 paint()만 지나간다. */
+function playExample(){
   var b=$('listen'), lab=$('listenLabel'), note=$('audioNote');
   note.classList.remove('show');
   if(b.classList.contains('playing')){ Example.stop(); }
-  function done(){ b.classList.remove('playing'); lab.textContent=t('listen'); }
   Example.play(S[idx], {
     onstart:function(){ b.classList.add('playing'); lab.textContent=t('listenPlaying'); },
-    onend:done,
+    onend:resetListenBtn,
     onerror:function(kind){
-      done();
+      resetListenBtn();
       note.textContent = kind==='inapp' ? t('audioInApp')
                        : kind==='unsupported' ? t('audioUnavailable')
                        : t('audioFailed');
       note.classList.add('show');
     }
   });
-});
+}
+$('listen').addEventListener('click', playExample);
 
 $('pairLink').addEventListener('click',function(){
   idx=parseInt(this.getAttribute('data-i'),10); paint();
@@ -426,12 +435,37 @@ $('next').addEventListener('click',function(){
   var cur=S[idx].c,pool=[];
   S.forEach(function(x,i){if(x.c===cur) pool.push(i);});
   var p=pool.indexOf(idx); idx=pool[(p+1)%pool.length]; paint();
+  /* 다음 문장이 뜨자마자 들려준다. 누르고 또 눌러야 들리는 것은 한 동작이 남는다. */
+  playExample();
 });
 $('share').addEventListener('click',function(){ alert(t('shareAlert')); });
 
-/* 설정 화면은 아직 없다. 16.6의 "내 식별자 보기·삭제 요청"이 여기 들어간다. */
-if($('tabSettings')){
-  $('tabSettings').addEventListener('click',function(){ alert(t('settingsSoon')); });
+/* 설정 화면은 아직 없다. 16.6의 "내 식별자 보기·삭제 요청"이 여기 들어간다.
+   그때까지 이 자리에 예시 음성 목소리 토글 하나만 둔다 — 폰에서 두 목소리를
+   바꿔 들어보기 위한 임시 장치다. 온보딩(P6-B)이 생기면 거기서 정하고
+   이 바는 지운다. .stage 안에 있으므로 열 높이(.phone/.tabs)에 영향이 없다. */
+function paintVoiceBar(){
+  var v = Example.voice();
+  ['m','f'].forEach(function(g){
+    var b=$('voice'+g.toUpperCase());
+    if(b) b.classList.toggle('on', v===g);
+  });
+}
+if($('tabSettings') && $('voiceBar')){
+  $('tabSettings').addEventListener('click',function(){
+    var bar=$('voiceBar');
+    bar.hidden = !bar.hidden;
+    if(!bar.hidden){ paintVoiceBar(); $('stage').scrollTop = 0; }
+  });
+  ['m','f'].forEach(function(g){
+    var b=$('voice'+g.toUpperCase());
+    if(!b) return;
+    b.addEventListener('click',function(){
+      Example.setVoice(g); paintVoiceBar();
+      Example.stop(); resetListenBtn();
+    });
+  });
+  if($('voiceClose')) $('voiceClose').addEventListener('click',function(){ $('voiceBar').hidden = true; });
 }
 
 /* --- A-4: proof that the microphone is actually receiving sound.
