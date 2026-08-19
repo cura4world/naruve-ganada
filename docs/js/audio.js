@@ -19,10 +19,25 @@
    Onboarding (P6-B) will set it; until then the Settings tab has a
    temporary switch.
 
-   Android System WebView — which is what Capacitor runs — does not
-   implement Web Speech synthesis. That is why step 2 exists at all, and
-   why "no Web Speech" must never be reported as "this viewer blocks
-   audio, open it in Chrome": inside the APK there is no Chrome to open.
+   ---------------------------------------------------------------------
+   ONE ELEMENT, ONE OWNER  (fixed 2026-08-19, build 0.1.18)
+
+   0.1.17 built a fresh `new Audio(url)` per play and hung on to it through
+   a closure. On a phone that stacked into a reverb that could not be
+   stopped. The mechanism was not "we forgot to pause" — the pause was
+   there — it was the *late* rejection of the previous play() promise:
+
+     · tap 2 arrives before tap 1's play() promise settles
+     · stop() pauses element 1, which makes its play() reject (AbortError)
+     · that rejection handler then cleared the handle to element 2 and
+       started device TTS on top of it
+     · with the handle gone, every later stop() was a no-op, so tap 3, 4, 5
+       each layered another copy that nothing could pause
+
+   So there is now exactly one <audio> for the life of the page, and every
+   callback checks that it still owns the speakers (`live === mine`) before
+   touching shared state. A stale callback is normal — it must be silent,
+   not destructive.
    ===================================================================== */
 
 /* A-4: moving to external storage is this one line. Keep the trailing
@@ -62,7 +77,14 @@ function audioUrl(s, voice){ return AUDIO.base + audioRel(s, voice); }
 
 var Example = (function(){
   var have = null;      /* rel path -> 1, once the manifest is known */
-  var cur = null;       /* the thing currently making noise */
+  var el   = null;      /* THE audio element. Never a second one. */
+  var live = null;      /* the take that currently owns the speakers, or null */
+
+  function log(what, detail){
+    /* kept in production: this is how the overlap bug was found, and it is
+       three lines a tap. */
+    try { console.log('[example]', what, detail === undefined ? '' : detail); } catch(e){}
+  }
 
   /* Ask once. A missing manifest used to be the normal state; now it means
      the clips did not ship, so say so rather than silently going quiet. */
@@ -73,9 +95,9 @@ var Example = (function(){
       .then(function(list){
         have = {};
         (Array.isArray(list) ? list : (list.files || [])).forEach(function(n){ have[n]=1; });
-        if (!Object.keys(have).length) console.warn('[audio] index.json is empty — every sentence will use device TTS');
+        if (!Object.keys(have).length) console.warn('[example] index.json is empty — every sentence will use device TTS');
       })
-      .catch(function(){ have = {}; console.warn('[audio] index.json missing — every sentence will use device TTS'); });
+      .catch(function(){ have = {}; console.warn('[example] index.json missing — every sentence will use device TTS'); });
   })();
 
   function isNative(){
@@ -120,61 +142,116 @@ var Example = (function(){
     setTimeout(pickVoice, 600);
   }
 
-  function stop(){
-    if (!cur) return;
-    try { cur.stop(); } catch(e){}
-    cur = null;
+  /* The single element. Its listeners are attached once and stay for the
+     life of the page; they read `live` rather than closing over one take. */
+  function element(){
+    if (el) return el;
+    el = new Audio();
+    el.preload = 'auto';
+
+    el.addEventListener('playing', function(){
+      if (!live || live.kind !== 'file') return;
+      live.started = true;
+      live.h.onstart();
+    });
+    el.addEventListener('ended', function(){
+      if (!live || live.kind !== 'file') return;
+      log('ended', live.name);
+      var h = live.h; live = null; h.onend();
+    });
+    el.addEventListener('error', function(){
+      if (!live || live.kind !== 'file') return;
+      var take = live; live = null;
+      console.warn('[example] clip failed:', take.url);
+      if (!take.started) speak(take.s, take.h);
+      else take.h.onerror('failed');
+    });
+    return el;
   }
 
-  function playFile(url, s, h){
-    var a = new Audio(url);
-    var started = false;
-    a.addEventListener('playing', function(){ started = true; h.onstart(); });
-    a.addEventListener('ended', function(){ cur=null; h.onend(); });
-    a.addEventListener('error', function(){
-      cur = null;
-      /* the clip should exist — say which one did not, then fall through
-         rather than leaving the learner with nothing */
-      if (!started){ console.warn('[audio] clip failed, falling back to TTS:', url); speak(s, h); }
-      else h.onerror('failed');
-    });
-    cur = { stop: function(){ a.pause(); } };
-    a.play().catch(function(){
-      cur=null;
-      if(!started){ console.warn('[audio] play() rejected, falling back to TTS:', url); speak(s,h); }
-    });
+  /* Silence everything, whatever is making noise. Safe to call at any time,
+     including when nothing is playing. */
+  function stop(){
+    if (live) log('stop', live.name || live.kind);
+    live = null;
+    if (el){
+      try { el.pause(); } catch(e){}
+      try { el.currentTime = 0; } catch(e){}
+    }
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(e){}
+    var tts = nativeTTS();
+    if (tts){ try { tts.stop(); } catch(e){} }
+  }
+
+  function playFile(s, h){
+    var a   = element();
+    var rel = audioRel(s);
+    var url = AUDIO.base + rel;
+    var mine = { kind:'file', s:s, h:h, url:url, name:rel, started:false };
+
+    /* pause → rewind → swap src → play, in that order. Swapping src on a
+       still-playing element leaves the old decode running on some phones. */
+    try { a.pause(); } catch(e){}
+    try { a.currentTime = 0; } catch(e){}
+    a.src = url;
+    live = mine;
+    log('play', rel);
+
+    var p;
+    try { p = a.play(); } catch(e){ p = null; }
+    if (p && p.catch) {
+      p.catch(function(err){
+        /* A rejection here is usually AbortError: a newer take already took
+           the element. That is not an error and must not touch anything —
+           `live` no longer points at us. Reacting anyway is exactly what
+           stacked the reverb in 0.1.17. */
+        if (live !== mine) return;
+        live = null;
+        console.warn('[example] play() rejected:', (err && err.name) || err, url);
+        speak(s, h);
+      });
+    }
   }
 
   function speak(s, h){
+    var mine = { kind:'tts', s:s, h:h, name:null, started:false };
+
+    /* the file element and any previous utterance both have to go quiet
+       before a new voice starts */
+    if (el){ try { el.pause(); } catch(e){} }
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(e){}
+
     var tts = nativeTTS();
     if (tts){
+      try { tts.stop(); } catch(e){}
+      live = mine;
+      log('play', 'native-tts');
       h.onstart();
-      cur = { stop: function(){ try{ tts.stop(); }catch(e){} } };
       tts.speak({
         text: textFor(s), lang:'ko-KR',
         rate: 0.85, pitch: pitchFor(s), volume: 1.0, category:'ambient'
-      }).then(function(){ cur=null; h.onend(); },
-              function(){ cur=null; h.onerror('failed'); });
+      }).then(function(){ if (live!==mine) return; live=null; log('ended','native-tts'); h.onend(); },
+              function(){ if (live!==mine) return; live=null; h.onerror('failed'); });
       return;
     }
 
     if (webSpeech()){
-      speechSynthesis.cancel(); pickVoice();
+      pickVoice();
       var u = new SpeechSynthesisUtterance(textFor(s));
       u.lang='ko-KR'; u.rate=0.82; u.volume=1; u.pitch=pitchFor(s);
       if (koVoice) u.voice = koVoice;
-      var started=false;
+      live = mine;
+      log('play', 'web-speech');
       h.onstart();
-      u.onstart=function(){ started=true; };
-      u.onend=function(){ cur=null; h.onend(); };
-      u.onerror=function(){ cur=null; h.onerror('failed'); };
-      cur = { stop: function(){ speechSynthesis.cancel(); } };
+      u.onstart=function(){ if (live===mine) mine.started=true; };
+      u.onend=function(){ if (live!==mine) return; live=null; log('ended','web-speech'); h.onend(); };
+      u.onerror=function(){ if (live!==mine) return; live=null; h.onerror('failed'); };
       speechSynthesis.speak(u);
       /* some browsers accept the utterance and stay silent */
       setTimeout(function(){
-        if (!started && cur){ cur=null; h.onerror('failed'); }
+        if (live===mine && !mine.started){ live=null; h.onerror('failed'); }
       }, 1400);
-      setTimeout(function(){ if (cur){ cur=null; h.onend(); } }, 9000);
+      setTimeout(function(){ if (live===mine){ live=null; h.onend(); } }, 9000);
       return;
     }
 
@@ -190,8 +267,8 @@ var Example = (function(){
          a promise can cost the gesture, which is what browsers check before
          letting audio start. A wrong guess costs one failed request and
          lands in the same fallback. */
-      if (have === null || have[rel]) { playFile(AUDIO.base + rel, s, h); return; }
-      console.warn('[audio] no clip listed for', rel, '— using device TTS');
+      if (have === null || have[rel]) { playFile(s, h); return; }
+      console.warn('[example] no clip listed for', rel, '— using device TTS');
       speak(s, h);
     },
     stop: stop,
@@ -206,6 +283,8 @@ var Example = (function(){
     _state: function(){
       return { native:isNative(), tts:!!nativeTTS(), web:webSpeech(),
                inApp:inAppBrowser(), voice:audioVoice(),
+               playing: live ? live.kind : null,
+               elements: el ? 1 : 0,
                files: have ? Object.keys(have).length : null };
     }
   };

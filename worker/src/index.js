@@ -31,6 +31,28 @@ const MAX_BODY = 400 * 1024;
 // 18절 — 설치당 1회 지급되는 총량.
 const FREE_CREDITS = 30;
 
+// 개발자·테스터는 총량을 세지 않는다. 응답 credits를 이 값으로 주고
+// 클라이언트가 "∞"로 표시한다. 0 이상으로 두면 남은 회수와 구별되지 않는다.
+const DEV_CREDITS = -1;
+
+/**
+ * DEV_UUIDS — 콤마로 구분한 UUID 목록. wrangler.toml [vars]가 아니라 Secret이다.
+ * 값 자체는 익명 식별자라 비밀이 아니지만, 이 목록에 오르는 것은 "과금 없이
+ * 무제한"이라는 권한이므로 코드·저장소에 남기지 않는다. 등록 절차는 worker/README.md.
+ *
+ * 예외는 차감과 402에만 적용된다. R2 저장과 로그는 그대로다 — 테스터 음성도
+ * 데이터이고, 16.1이 채점결과 페이로드를 남기라고 한 대상에서 빠질 이유가 없다.
+ */
+function isDevUuid(env, uuid) {
+  const raw = env.DEV_UUIDS;
+  if (!raw) return false;
+  const want = uuid.toLowerCase();
+  return String(raw)
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .some((s) => s && s === want);
+}
+
 // Azure 응답을 8초까지 기다린다. 넘으면 실패로 보고 크레딧을 깎지 않는다.
 const AZURE_TIMEOUT_MS = 8000;
 
@@ -197,13 +219,19 @@ async function handleScore(request, env) {
   }
 
   // 크레딧. 키가 없으면 이번이 첫 요청이므로 30에서 시작한다.
+  // 개발자·테스터는 KV를 읽지도 쓰지도 않고 402도 맞지 않는다.
+  const dev = isDevUuid(env, uuid);
   const creditKey = `${uuid}:credits`;
-  const stored = await env.KV.get(creditKey);
-  let credits = stored === null ? FREE_CREDITS : Number(stored);
-  if (!Number.isFinite(credits) || credits < 0) credits = 0;
+  let credits = DEV_CREDITS;
 
-  if (credits <= 0) {
-    return json({ reason: "credits_exhausted", credits: 0 }, 402);
+  if (!dev) {
+    const stored = await env.KV.get(creditKey);
+    credits = stored === null ? FREE_CREDITS : Number(stored);
+    if (!Number.isFinite(credits) || credits < 0) credits = 0;
+
+    if (credits <= 0) {
+      return json({ reason: "credits_exhausted", credits: 0 }, 402);
+    }
   }
 
   // --- Azure. 실패하면 여기서 끝난다. 저장도 차감도 하지 않는다. ---
@@ -273,8 +301,11 @@ async function handleScore(request, env) {
     return json({ error: "storage_failed" }, 500);
   }
 
-  credits -= 1;
-  await env.KV.put(creditKey, String(credits));
+  // 저장까지 끝난 뒤에만 깎는다. 테스터는 깎을 것이 없다.
+  if (!dev) {
+    credits -= 1;
+    await env.KV.put(creditKey, String(credits));
+  }
 
   return json({ credits, r2Key, azure: summarize(parsed) });
 }
@@ -290,10 +321,16 @@ export default {
     if (pathname === "/health") {
       if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
       // 키 값은 절대 돌려주지 않는다. Secret이 꽂혔는지만 boolean으로 알린다.
+      // DEV_UUIDS도 값이 아니라 몇 개 들어 있는지만 — 목록을 흘리면 아무나
+      // 그 UUID를 헤더에 넣어 무제한으로 쓸 수 있다.
+      const devCount = env.DEV_UUIDS
+        ? String(env.DEV_UUIDS).split(",").map((s) => s.trim()).filter(Boolean).length
+        : 0;
       return json({
         ok: true,
         region: env.AZURE_REGION,
         hasKey: !!env.AZURE_SPEECH_KEY,
+        devUuids: devCount,
       });
     }
 

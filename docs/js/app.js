@@ -16,8 +16,11 @@ var $=function(id){return document.getElementById(id);};
    그대로 둔다 — 빌드번호가 그 안에 있고 잠금 제스처가 걸려 있다. */
 var level='native', idx=0, busy=false, browseCol='everyday', L1='en';
 
-/* 잔여 횟수의 권위는 서버다(18절). 화면에는 마지막으로 받은 값을 그린다. */
-function paintCredits(){ $('credits').textContent = Identity.credits(); }
+/* 잔여 횟수의 권위는 서버다(18절). 화면에는 마지막으로 받은 값을 그린다.
+   서버가 -1을 주면 세지 않는다는 뜻이므로 숫자 대신 ∞를 그린다. */
+function paintCredits(){
+  $('credits').textContent = Identity.unlimited() ? '∞' : Identity.credits();
+}
 
 /* --- strings. t() falls back to en, so a language may fill in the table
    a little at a time without leaving blanks on screen. --- */
@@ -313,7 +316,8 @@ function resetListenBtn(){
 function playExample(){
   var b=$('listen'), lab=$('listenLabel'), note=$('audioNote');
   note.classList.remove('show');
-  if(b.classList.contains('playing')){ Example.stop(); }
+  /* 여기서 따로 멈추지 않는다. Example.play()가 언제나 stop()을 먼저 지나가고,
+     정지 경로가 하나여야 이전 재생이 새 재생 위에 겹치지 않는다 (0.1.18). */
   Example.play(S[idx], {
     onstart:function(){ b.classList.add('playing'); lab.textContent=t('listenPlaying'); },
     onend:resetListenBtn,

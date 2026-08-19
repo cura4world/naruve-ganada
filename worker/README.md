@@ -58,6 +58,55 @@ curl https://naruve-ganada-score.cura4world.workers.dev/health
 
 `hasKey`가 `true`면 등록된 것이다. **키 값 자체는 어떤 응답에도 실리지 않는다.**
 
+### 2-1. DEV_UUIDS — 개발자·테스터 무제한 (2026-08-19)
+
+무료 30회는 설치당 총량이라(18절) 테스터가 하루에 소진한다. 그렇다고 총량을
+늘리면 실제 사용자의 원가 상한이 사라진다. 그래서 **특정 UUID만 세지 않는다.**
+
+`DEV_UUIDS`는 콤마로 구분한 UUID 목록이고 **Secret이다.** `wrangler.toml`의
+`[vars]`에 넣지 않는다 — 값 자체는 익명 식별자라 비밀이 아니지만, 이 목록에
+오르는 것은 "과금 없이 무제한"이라는 권한이라 저장소에 남기지 않는다.
+
+목록에 있는 UUID는 이렇게 처리된다.
+
+| | 목록에 있을 때 | 없을 때 |
+|---|---|---|
+| KV 읽기·차감 | **하지 않는다** | 한다 |
+| 402 credits_exhausted | **없다** | 0이면 반환 |
+| 응답 `credits` | **`-1`** (클라이언트가 `∞`로 표시) | 남은 수 |
+| R2 저장 (.wav / .azure.json) | **그대로 한다** | 한다 |
+
+테스터 음성도 데이터다. 16.1이 채점결과 페이로드를 남기라고 한 대상에서
+빠질 이유가 없으므로 저장과 로그는 건드리지 않는다.
+
+**등록 절차 (사람)**
+
+1. 테스터 폰에서 그 사람의 UUID를 얻는다.
+   설정 화면(16.6 "내 식별자 보기")이 생기면 거기서 복사한다. 그 전에는
+   브라우저 콘솔에서 `Identity.uuid()` 또는 localStorage `naruve.uuid`.
+2. 기존 목록에 **덧붙여서** 통째로 다시 넣는다. Secret은 덮어쓰기라
+   한 명만 넣으면 나머지가 지워진다.
+
+```
+cd worker
+printf 'uuid-1,uuid-2,uuid-3' | npx wrangler secret put DEV_UUIDS
+```
+
+3. 확인 — `/health`의 `devUuids`가 등록된 개수다. **값은 응답에 실리지 않는다.**
+
+```
+curl https://naruve-ganada-score.cura4world.workers.dev/health
+{"ok":true,"region":"koreacentral","hasKey":true,"devUuids":1}
+```
+
+지금 등록된 사람: 1명 (2026-08-19, 30회를 소진한 테스터).
+빼려면 그 UUID를 뺀 목록으로 다시 `secret put` 한다. 전부 없애려면
+`npx wrangler secret delete DEV_UUIDS`.
+
+**KV는 그대로 둔다.** 예외 대상은 KV를 읽지 않으므로 값이 무엇이든 상관없지만,
+나중에 목록에서 빼면 그 값부터 다시 세기 시작한다. 그래서 표시용으로 30을
+돌려놓았다.
+
 ## 3. 엔드포인트
 
 | 메서드 | 경로 | 하는 일 |
