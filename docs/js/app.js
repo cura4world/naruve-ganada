@@ -102,6 +102,8 @@ function paint(){
   lastRes = null;
   setHint('hintTap',false);
   $('audioNote').classList.remove('show');
+  paintNav();
+  savePos();
 }
 
 /* 타일 색과 글자 반전 임계는 css의 :root에만 산다. 여기서 읽어 쓰는 이유는
@@ -123,7 +125,11 @@ function inkTile(el,sc){
      최대 0.96은 예전 먹물과 같다 — 어두워지는 정도가 아니라 색이 바뀐 것이다. */
   var a=0.12+(sc/100)*0.84;
   el.style.backgroundColor='rgba('+TILE.rgb+','+a.toFixed(3)+')';
-  el.style.borderColor='rgba('+TILE.rgb+','+Math.min(a+0.14,1).toFixed(3)+')';
+  /* 테두리를 채움과 같은 알파로 둔다. 예전에는 +0.14 로 진하게 그렸는데
+     옅은 칸(낮은 점수)에서 테두리만 도드라져 점수가 아니라 윤곽이 먼저 보였다.
+     같은 색이면 칸의 크기는 유지되면서 테두리가 사라진다. 점수를 못 낸 칸의
+     var(--rule) 테두리는 resetTiles 가 그대로 준다 — 그건 "아직"의 표시다. */
+  el.style.borderColor='rgba('+TILE.rgb+','+a.toFixed(3)+')';
   el.style.color=sc>=TILE.flip?'var(--paper)':'var(--ink)';
   /* B변형이 잡을 자리. 채움은 건드리지 않고 css가 테두리만 덧칠한다. */
   if(sc<LOW_WORD) el.classList.add('low');
@@ -166,6 +172,54 @@ function verdictFor(tt){
   if(tt>=VERDICT_HIGH) return t('verdictHigh');
   if(tt>=VERDICT_MID) return t('verdictMid');
   return t('verdictLow');
+}
+
+/* ---- A-3·A-4: 컬렉션 안에서 좌우로 움직이고, 마지막 자리를 기억한다 ---- */
+
+var POS_KEY = 'naruve.pos';
+
+function poolOf(){
+  var cur=S[idx].c, pool=[];
+  S.forEach(function(x,i){ if(x.c===cur) pool.push(i); });
+  return pool;
+}
+
+/* 문장 배열의 인덱스는 data.js 가 바뀌면 밀린다. 그래서 문장 본문도 같이
+   적어 두고 복원할 때 그것을 먼저 찾는다. 인덱스는 폴백이다. */
+function savePos(){
+  try {
+    localStorage.setItem(POS_KEY, JSON.stringify({
+      c: S[idx].c, i: poolOf().indexOf(idx), k: S[idx].k
+    }));
+  } catch(e){}
+}
+function restorePos(){
+  var raw=null;
+  try { raw = localStorage.getItem(POS_KEY); } catch(e){}
+  if(!raw) return false;
+  var p; try { p = JSON.parse(raw); } catch(e){ return false; }
+  if(!p || !p.c) return false;
+  var pool=[]; S.forEach(function(x,i){ if(x.c===p.c) pool.push(i); });
+  if(!pool.length) return false;
+  for(var j=0;j<pool.length;j++) if(S[pool[j]].k === p.k){ idx=pool[j]; return true; }
+  var i = (typeof p.i === 'number' && p.i>=0 && p.i<pool.length) ? p.i : 0;
+  idx = pool[i];
+  return true;
+}
+
+/* 끝에서는 멈춘다. 다음 컬렉션으로 넘기지 않는다 — 컬렉션 이동은 Browse 다. */
+function moveBy(d, autoplay){
+  var pool=poolOf(), at=pool.indexOf(idx), n=at+d;
+  if(n<0 || n>=pool.length) return false;
+  idx=pool[n]; paint();
+  if(autoplay) playExample();
+  return true;
+}
+function paintNav(){
+  var pool=poolOf(), at=pool.indexOf(idx);
+  if($('navPos')) $('navPos').textContent = (at+1)+' / '+pool.length;
+  if($('prevSent')) $('prevSent').disabled = at<=0;
+  if($('nextSent')) $('nextSent').disabled = at>=pool.length-1;
 }
 
 /* Tap starts a real take; tap again ends it early. The take also ends
@@ -478,12 +532,37 @@ Array.prototype.slice.call(document.querySelectorAll('.sim-btn')).forEach(functi
 
 $('rec').addEventListener('click',run);
 $('next').addEventListener('click',function(){
+  /* 이 버튼만 컬렉션 안에서 돈다. 끝에서 멈추는 것은 화살표의 몫이다 —
+     "다음 문장"은 계속 연습하겠다는 뜻이라 끝에서 막히면 흐름이 끊긴다. */
   var cur=S[idx].c,pool=[];
   S.forEach(function(x,i){if(x.c===cur) pool.push(i);});
   var p=pool.indexOf(idx); idx=pool[(p+1)%pool.length]; paint();
   /* 다음 문장이 뜨자마자 들려준다. 누르고 또 눌러야 들리는 것은 한 동작이 남는다. */
   playExample();
 });
+
+if($('prevSent')) $('prevSent').addEventListener('click',function(){ moveBy(-1, true); });
+if($('nextSent')) $('nextSent').addEventListener('click',function(){ moveBy(1, true); });
+
+/* 수평 스와이프. **자동 재생하지 않는다** — 세로로 훑다가 손가락이 비스듬히
+   나가면 문장이 바뀌는데, 거기에 소리까지 나면 놀란다. 버튼은 의도가 분명하므로
+   재생하고 스와이프는 조용히 넘긴다. */
+(function(){
+  var stage=$('stage'); if(!stage) return;
+  var x0=0, y0=0, on=false;
+  stage.addEventListener('touchstart', function(e){
+    if(e.touches.length!==1){ on=false; return; }
+    on=true; x0=e.touches[0].clientX; y0=e.touches[0].clientY;
+  }, {passive:true});
+  stage.addEventListener('touchend', function(e){
+    if(!on) return; on=false;
+    var t=e.changedTouches && e.changedTouches[0]; if(!t) return;
+    var dx=t.clientX-x0, dy=t.clientY-y0;
+    /* 세로 스크롤과 다투지 않도록 가로가 세로보다 확실히 커야 한다 */
+    if(Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy)*1.6) return;
+    moveBy(dx<0 ? 1 : -1, false);
+  }, {passive:true});
+})();
 $('share').addEventListener('click',function(){ alert(t('shareAlert')); });
 
 /* 설정 화면은 아직 없다. 16.6의 "내 식별자 보기·삭제 요청"이 여기 들어간다.
@@ -664,8 +743,12 @@ if($('micDev')){
   seal.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 })();
 
-/* open on Drama — the hook */
-for(var i=0;i<S.length;i++){ if(S[i].c==='drama'){ idx=i; break; } }
+/* 마지막으로 보던 문장으로 돌아간다. 저장된 것이 없으면 Drama 로 연다 —
+   첫인상이 가장 재미있는 컬렉션이어야 한다.
+   결과 화면은 복원하지 않는다. 점수는 다시 녹음해서 받는 것이다. */
+if(!restorePos()){
+  for(var i=0;i<S.length;i++){ if(S[i].c==='drama'){ idx=i; break; } }
+}
 applyLang();
 paintCredits();
 paint();

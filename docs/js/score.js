@@ -49,6 +49,12 @@ var Score = (function(){
   var cache = {};
   var log = [];
 
+  /* 서버가 이번 실행에서 402를 준 뒤에는 다시 묻지 않는다 (17.3).
+     **메모리에만 둔다.** localStorage 에 두면 0.1.18 처럼 새로고침으로도
+     풀리지 않는 고착이 된다 — 테스터를 예외 목록에 올려도 서버에 닿지 못했다.
+     새로고침·재실행이면 이 값이 사라지고 한 번은 다시 묻는다. */
+  var exhausted = false;
+
   function fingerprint(sentence, cap){
     var h = 0x811c9dc5;
     function mix(n){ h ^= n|0; h = (h + ((h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24))) >>> 0; }
@@ -181,6 +187,16 @@ var Score = (function(){
          **앞에서** 402를 돌려준다(2026-08-19 실측 0.41초. Azure 경로는 1~3초).
          값이 나가는 것은 WAV 업로드뿐이고, 그것도 정말 소진한 사람이 계속
          녹음할 때만이다. 억양은 이 호출과 무관하게 이미 위에서 재어 두었다. */
+      /* 이번 실행에서 이미 402를 받았다. WAV 를 또 올려 같은 답을 받을 이유가 없다.
+         억양은 위에서 이미 재었으므로 그 줄은 그대로 나간다. */
+      if (exhausted){
+        res.error = 'exhausted';
+        res.credits = 0;
+        record(sentence, res, cap);
+        cb(res, false);
+        return;
+      }
+
       Api.score(sentence.k, cap.wav, {
         uuid: Identity.uuid(),
         session: Identity.session(),
@@ -188,7 +204,10 @@ var Score = (function(){
       }, function(err, data){
         if (err){
           res.error = err.kind;
-          if (err.kind === 'exhausted'){ Identity.setCredits(0); res.credits = 0; }
+          if (err.kind === 'exhausted'){
+            Identity.setCredits(0); res.credits = 0;
+            exhausted = true;
+          }
           record(sentence, res, cap);
           cb(res, false);
           return;
@@ -203,6 +222,7 @@ var Score = (function(){
         if (typeof data.credits === 'number'){
           Identity.setCredits(data.credits);
           res.credits = data.credits;
+          exhausted = false;
         }
         /* only a real, billed answer is worth caching */
         cache[key] = res;
@@ -210,9 +230,11 @@ var Score = (function(){
         cb(res, false);
       });
     },
+    /* 서버가 다시 세어 준 회차가 오면 고착을 푼다 */
     cached: function(){ return Object.keys(cache).length; },
+    exhausted: function(){ return exhausted; },
     log: function(){ return log.slice(); },
     dump: function(){ return JSON.stringify({ into:INTO, takes:log }, null, 1); },
-    reset: function(){ cache = {}; log = []; }
+    reset: function(){ cache = {}; log = []; exhausted = false; }
   };
 })();

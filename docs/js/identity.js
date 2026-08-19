@@ -48,8 +48,29 @@ var Identity = (function(){
          + h.slice(10,16).join('');
   }
 
-  var deviceId = get(K_UUID);
+  /* 개발 셸 APK 는 UUID 를 고정한다.
+
+     WebView 는 크롬과 별도 저장소를 쓰므로 앱을 지웠다 깔 때마다 새 UUID 가
+     나오고, 그때마다 테스터 예외 목록(18.2)에 다시 등록해야 했다.
+
+     개발 셸을 알아보는 법 — 네이티브이면서 원격 오리진을 띄우고 있으면 그것이다.
+     17.10 대로 개발용만 server.url 로 https://naruve.app/ 를 띄우고 출시본은
+     번들이라 localhost 다. 그래서 이 조건은 출시본에서 저절로 거짓이 된다.
+
+     값은 평범한 UUID 꼴이어야 한다. worker 의 UUID_RE 가 8-4-4-4-12 hex 만
+     받으므로 'dev-apk-' 같은 접두어를 붙이면 400 bad_uuid 로 막힌다. */
+  var DEV_SHELL_UUID = '00000000-0000-4000-8000-000000000001';
+  function isDevShell(){
+    try {
+      var C = window.Capacitor;
+      if (!(C && typeof C.isNativePlatform === 'function' && C.isNativePlatform())) return false;
+      return location.hostname === 'naruve.app';
+    } catch(e){ return false; }
+  }
+
+  var deviceId = isDevShell() ? DEV_SHELL_UUID : get(K_UUID);
   if (!deviceId){ deviceId = uuidv4(); set(K_UUID, deviceId); }
+  if (isDevShell()) set(K_UUID, deviceId);
 
   /* 이 실행 하나가 한 세션이다. 새로고침하면 새 세션이 된다. */
   var sessionId = uuidv4();

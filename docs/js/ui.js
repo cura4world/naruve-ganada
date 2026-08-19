@@ -175,7 +175,7 @@ var UI = {
     emptyList:'Nothing here yet',
 
     tabPractice:'Practice',
-    tabHonorifics:'Honorifics',
+    tabHonorifics:'Polite',
     tabYou:'You',
     tabSettings:'Settings',
     settingsSoon:'Settings are on the way.',

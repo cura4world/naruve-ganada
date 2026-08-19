@@ -95,6 +95,17 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
   padding:20px 18px calc(var(--mic-rise) + var(--hint-h) + 14px);
   -webkit-overflow-scrolling:touch}
 
+/* 문장 좌우 이동. 컬렉션 안에서만 움직이고 끝에서는 멈춘다 — 컬렉션을
+   넘나드는 것은 Browse 의 일이다. */
+.navrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 6px}
+.navbtn{width:38px;height:38px;flex:none;border:1px solid var(--rule);background:none;
+  border-radius:50%;font-family:inherit;font-size:19px;line-height:1;color:var(--ink);
+  cursor:pointer;display:grid;place-items:center}
+.navbtn:active{background:var(--sunk)}
+.navbtn[disabled]{opacity:.3;cursor:default}
+.navpos{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums}
+
 .tiles{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px;align-items:flex-end}
 .tile{position:relative;width:clamp(44px,12.6vw,54px);height:clamp(50px,14vw,60px);
   border-radius:9px;border:1px solid var(--rule);background:transparent;display:grid;place-items:center;

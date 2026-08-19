@@ -136,6 +136,9 @@ ok('.omit 은 손대지 않는다 (점선 유지)', /\.tile\.omit\{border-style:
 const app = fs.readFileSync(path.join(DOCS, 'js/app.js'), 'utf8');
 ok('app.js 가 색을 css 변수에서 읽는다', /--tile-rgb/.test(app) && /--tile-flip/.test(app));
 ok('app.js 에 옛 먹물 rgb(17,26,34) 가 남아 있지 않다', !/rgba\(17,26,34/.test(app));
+ok('테두리 알파가 채움과 같다 (옅은 칸에서 테두리만 도드라지지 않게)',
+  /borderColor='rgba\('\+TILE\.rgb\+','\+a\.toFixed\(3\)\+'\)'/.test(app),
+  '+0.14 로 진하게 그리던 것을 a 로 맞췄는지');
 ok('낮은 어절에 low 클래스를 단다 (표시는 안 하지만 자리는 남긴다)',
   /classList\.add\('low'\)/.test(app));
 ok('resetTiles 가 low 를 지운다', /classList\.remove\('low'\)/.test(app));
