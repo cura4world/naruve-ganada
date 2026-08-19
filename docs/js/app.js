@@ -104,18 +104,36 @@ function paint(){
   $('audioNote').classList.remove('show');
 }
 
+/* 타일 색과 글자 반전 임계는 css의 :root에만 산다. 여기서 읽어 쓰는 이유는
+   나중에 결과 카드 이미지를 그릴 때 같은 값을 써야 하기 때문이다 — 두 곳에
+   숫자를 적으면 카드와 화면이 갈라진다. 지금 share는 아직 alert 자리표시자라
+   색을 쓰지 않는다(15.10 보류 항목). */
+var TILE = (function(){
+  var cs = window.getComputedStyle ? getComputedStyle(document.documentElement) : null;
+  function v(name, fallback){
+    var s = cs ? (cs.getPropertyValue(name)||'').trim() : '';
+    return s || fallback;
+  }
+  var flip = parseFloat(v('--tile-flip','66'));
+  return { rgb: v('--tile-rgb','30,58,138'), flip: isNaN(flip) ? 66 : flip };
+})();
+
 function inkTile(el,sc){
-  var a=0.10+(sc/100)*0.86;
-  el.style.backgroundColor='rgba(17,26,34,'+a.toFixed(3)+')';
-  el.style.borderColor='rgba(17,26,34,'+Math.min(a+0.14,1).toFixed(3)+')';
-  el.style.color=sc>=52?'var(--paper)':'var(--ink)';
+  /* 0.12 바닥은 0점 타일도 흰 종이와 구분되게 하고, 0.84 폭이 점수를 싣는다.
+     최대 0.96은 예전 먹물과 같다 — 어두워지는 정도가 아니라 색이 바뀐 것이다. */
+  var a=0.12+(sc/100)*0.84;
+  el.style.backgroundColor='rgba('+TILE.rgb+','+a.toFixed(3)+')';
+  el.style.borderColor='rgba('+TILE.rgb+','+Math.min(a+0.14,1).toFixed(3)+')';
+  el.style.color=sc>=TILE.flip?'var(--paper)':'var(--ink)';
+  /* B변형이 잡을 자리. 채움은 건드리지 않고 css가 테두리만 덧칠한다. */
+  if(sc<LOW_WORD) el.classList.add('low');
   if(sc<80){
     el.classList.add('flag');
     var n=el.querySelector('.num');
     n.textContent=sc;
     /* the number rides on the tile's own fill, so it flips at the same
        threshold the glyph does. ink-faint disappeared into a pale tile. */
-    n.style.color=sc>=52?'var(--paper)':'var(--ink-soft)';
+    n.style.color=sc>=TILE.flip?'var(--paper)':'var(--ink-soft)';
   }
 }
 /* miscue로 빠진 단어. 회색 빈 타일로 두고 숫자를 넣지 않는다 —
@@ -137,6 +155,7 @@ function resetTiles(){
     el.style.color=el.classList.contains('punct')?'var(--ink-faint)':'var(--ink)';
     el.classList.remove('flag');
     el.classList.remove('omit');
+    el.classList.remove('low');
     var n=el.querySelector('.num'); if(n) n.textContent='';}
 }
 
@@ -471,6 +490,30 @@ if($('tabSettings') && $('voiceBar')){
   });
   if($('voiceClose')) $('voiceClose').addEventListener('click',function(){ $('voiceBar').hidden = true; });
 }
+
+/* 타일 A/B 임시 토글. 실기에서 두 안을 번갈아 보기 위한 것이고,
+   P6-B에서 하나로 정하면 이 블록과 css의 body.tile-b 규칙, index.html의
+   두 버튼을 함께 지운다. 새로고침을 견뎌야 비교가 되므로 localStorage에 남긴다. */
+var TILE_KEY = 'naruve.tiles';
+function tileVariant(){
+  try { var v = localStorage.getItem(TILE_KEY); if (v === 'a' || v === 'b') return v; } catch(e){}
+  return 'a';
+}
+function applyTileVariant(v){
+  document.body.classList.toggle('tile-a', v !== 'b');
+  document.body.classList.toggle('tile-b', v === 'b');
+  if($('tileA')) $('tileA').classList.toggle('on', v !== 'b');
+  if($('tileB')) $('tileB').classList.toggle('on', v === 'b');
+}
+applyTileVariant(tileVariant());
+['a','b'].forEach(function(v){
+  var b = $('tile'+v.toUpperCase());
+  if(!b) return;
+  b.addEventListener('click',function(){
+    try { localStorage.setItem(TILE_KEY, v); } catch(e){}
+    applyTileVariant(v);
+  });
+});
 
 /* --- A-4: proof that the microphone is actually receiving sound.
    The panel is hidden by CSS unless body.dev, so these can run always. --- */

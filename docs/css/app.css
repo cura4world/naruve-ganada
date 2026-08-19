@@ -6,11 +6,31 @@
   --ui:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   --tap:200ms cubic-bezier(.2,.8,.2,1);
 
-  /* record button docked in the middle of the tab bar */
-  --mic-size:64px;      /* diameter */
-  --mic-sink:32px;      /* how deep it sits into the bar */
-  --mic-rise:32px;      /* = mic-size - mic-sink, the part above the bar */
-  --hint-h:18px;
+  /* record button docked in the middle of the tab bar.
+     sink = size/2 keeps the button exactly half over the bar; rise is the
+     other half and .stage's padding-bottom is computed from it. Change
+     --mic-size and the other two follow by the same halves. */
+  --mic-size:74px;      /* diameter */
+  --mic-sink:37px;      /* how deep it sits into the bar (= size/2) */
+  --mic-rise:37px;      /* = mic-size - mic-sink, the part above the bar */
+  --hint-h:18px;        /* the hint's own line box. Its font did not change,
+                           so this stays 18 — the hint rides up with the
+                           button because the dock is a flex column. */
+
+  /* ---------- tile fill ----------
+     Tiles used to be ink black. Deep navy reads as "measured" rather than
+     "redacted" and stays clearly apart from --seal red, which marks the
+     recording button and question chips.
+     #1E3A8A. Both numbers below are read by app.js inkTile() so the colour
+     and its flip point have one home. */
+  --tile-rgb:30,58,138;
+  /* score at which the glyph flips from --ink to --paper. NOT 52.
+     Navy at a given alpha is much lighter than black at the same alpha, so
+     the crossover moved: measured with WCAG relative luminance, the two
+     contrasts are equal at 65.8 for navy (54.4 for the old black). At 52 a
+     navy tile still favours dark text by almost 2x (ink 5.49 vs paper 3.07),
+     so keeping 52 would have made mid tiles harder to read, not easier. */
+  --tile-flip:66;
 
   /* ---------- safe area: declared here, nowhere else ----------
      env() appears exactly twice in this file, both on the next two lines.
@@ -79,6 +99,10 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .tile.word{width:auto;min-width:clamp(44px,12.6vw,54px);padding:0 10px;
   font-size:clamp(19px,5.4vw,24px)}
 .tile.omit{border-style:dashed}
+/* B변형 — 낮은 어절(60 미만)에 테두리만 seal. 채움은 A와 같다.
+   inkTile()이 border-color를 인라인으로 쓰므로 !important 여야 이긴다.
+   P6-B에서 A와 B 중 하나를 고르고 나머지와 이 규칙을 지운다. */
+body.tile-b .tile.low{border-color:var(--seal) !important}
 .tile.punct{width:20px;border-color:transparent;color:var(--ink-faint);font-weight:700}
 .tile .num{position:absolute;bottom:4px;left:0;right:0;font-family:var(--ui);font-size:10px;font-weight:700;
   letter-spacing:.05em;opacity:0;transition:opacity 460ms ease;font-variant-numeric:tabular-nums}
@@ -141,6 +165,7 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
   padding:5px 13px;font:inherit;font-size:12px;color:inherit;cursor:pointer}
 .vb.on{border-color:var(--seal);color:var(--seal);font-weight:600}
 .vb-x{margin-left:auto;color:var(--ink-faint)}
+.vb-sep{width:1px;align-self:stretch;background:var(--rule);margin:0 2px}
 
 .result{margin-top:20px;padding-top:18px;border-top:1px solid var(--rule);
   opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity 500ms ease,transform 500ms ease}
@@ -226,12 +251,20 @@ body.dev .sim-btn{display:block}
 
 .tabs{flex:none;display:flex;border-top:1px solid var(--rule);padding:7px 0 11px;
   position:relative;background:var(--paper)}
-/* the empty middle cell the record button sits in */
-.tab-gap{flex:1}
+/* the empty middle cell the record button sits in. The button is
+   --mic-size across plus a 5px paper ring on each side, so the cell has to
+   be at least that wide or the circle sits on top of its neighbours and
+   steals their taps. min-width, not width: on a wide screen the cell keeps
+   flexing with the rest. */
+.tab-gap{flex:1;min-width:calc(var(--mic-size) + 20px)}
 .tab{flex:1;background:none;border:none;cursor:pointer;min-height:52px;font-family:inherit;font-size:10.5px;
   font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
 .tab .ico{font-family:var(--kr);font-size:17px;font-weight:500;line-height:1;letter-spacing:0;text-transform:none}
+/* the wider middle cell leaves each tab narrower. Clip rather than let a
+   long label (English "HONORIFICS") spill across the cell boundary — it
+   already did not fit before this change. */
+.tab>span:not(.ico){max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tab[aria-selected="true"]{color:var(--ink)}
 
 .browse{position:absolute;inset:0;background:var(--paper);z-index:20;display:flex;flex-direction:column;
