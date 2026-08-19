@@ -82,6 +82,7 @@ var UI = {
     voiceMale:'남자',
     voiceFemale:'여자',
     tilePick:'타일 색',
+    reloadApp:'새로고침',
 
     simLabel:'시뮬레이션',
     simNative:'원어민',
@@ -177,6 +178,7 @@ var UI = {
     voiceMale:'Male',
     voiceFemale:'Female',
     tilePick:'Tile style',
+    reloadApp:'Reload',
 
     simLabel:'Simulate',
     simNative:'Native',

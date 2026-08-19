@@ -489,6 +489,16 @@ if($('tabSettings') && $('voiceBar')){
     });
   });
   if($('voiceClose')) $('voiceClose').addEventListener('click',function(){ $('voiceBar').hidden = true; });
+
+  /* A-5: 껍데기 APK는 https://naruve.app 를 그대로 띄우므로, 웹을 배포한 뒤
+     앱을 껐다 켜면 최신이 뜬다. 이 버튼은 그걸 한 번에 하는 지름길이다.
+     브라우저에는 이미 새로고침이 있으니 네이티브에서만 보인다. */
+  if($('reloadBtn')){
+    var C = window.Capacitor;
+    var native = !!(C && typeof C.isNativePlatform === 'function' && C.isNativePlatform());
+    $('reloadBtn').hidden = !native;
+    $('reloadBtn').addEventListener('click',function(){ location.reload(); });
+  }
 }
 
 /* 타일 A/B 임시 토글. 실기에서 두 안을 번갈아 보기 위한 것이고,
