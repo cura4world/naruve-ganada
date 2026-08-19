@@ -20,18 +20,24 @@
    What comes back is what a scorer needs: pcm for pitch and timing work
    on-device, wav for anything that later goes over the network.
 
-   ## The stream is kept between takes (2026-08-18)
+   ## 녹음이 끝나면 마이크를 놓는다 (2026-08-19, 2026-08-18을 되돌림)
 
-   getUserMedia used to be called once per take and every track was
-   stopped when the take ended. In-app browsers (KakaoTalk on Android)
-   treat each new getUserMedia as a fresh request and pop the permission
-   dialog **every time the sentence changes**. Unusable.
+   ~~스트림을 take 사이에 유지한다~~ — 카카오톡 인앱 브라우저가 문장을 바꿀
+   때마다 권한 다이얼로그를 띄워서 그렇게 했었다. 그 대가가 컸다.
 
-   So the MediaStream now lives at module scope and is reused. A take
-   stops the recorder, not the microphone. The track is released only
-   when the app goes to the background or after IDLE_RELEASE_MS of not
-   recording — leaving the OS mic indicator lit forever is not acceptable
-   either. If the track has since died, the next take asks again.
+   **트랙이 live인 동안 예시 음성이 먹먹하고 작게 들린다.** 크롬과 APK 양쪽에서
+   같았고, 녹음을 한 번 한 뒤부터 시작해 지속됐다. 안드로이드가 마이크가 열려
+   있는 동안 오디오 경로를 통신 모드로 돌려 미디어 재생이 통화 스트림처럼 나가는
+   것으로 본다. 듣기가 망가지면 따라 할 표본이 망가진다 — 발음 앱에서 그건
+   권한 다이얼로그보다 큰 손해다.
+
+   그래서 take가 끝나면 트랙을 stop하고 스트림을 버린다. 다음 take는
+   getUserMedia를 다시 부른다. 크롬과 WebView는 같은 오리진의 권한을 기억하므로
+   다이얼로그가 다시 뜨지 않을 것으로 보지만 **인앱 브라우저는 실기로 확인해야
+   한다** — 이 되돌림이 그 문제를 되살릴 수 있는 유일한 자리다.
+
+   트랙을 놓는 곳은 teardown() 하나다. idle 타이머와 visibilitychange 해제는
+   지웠다 — 유지하는 스트림이 없으면 놓을 것도 없다.
    ===================================================================== */
 
 var MIC = {
@@ -44,13 +50,9 @@ var MIC = {
   outRate: 16000       /* what speech engines want */
 };
 
-/* how long an unused microphone may stay open before we let it go */
-var MIC_IDLE_RELEASE_MS = 5 * 60 * 1000;
-
 var Mic = (function(){
   var stream=null, rec=null, ctx=null, analyser=null, ticker=null;
   var chunks=[], levels=[], t0=0, live=false;
-  var idleTimer=null;
 
   function streamAlive(){
     if(!stream) return false;
@@ -60,27 +62,13 @@ var Mic = (function(){
     return true;
   }
 
-  /* The only place tracks are stopped. Not called when a take ends. */
+  /* 트랙을 놓는 유일한 곳. teardown()이 매 take마다 부르고, 예시 재생 직전에
+     혹시 열려 있으면 audio.js가 부른다. */
   function release(){
-    if(idleTimer){ clearTimeout(idleTimer); idleTimer=null; }
     if(stream){
       stream.getTracks().forEach(function(t){ try{t.stop();}catch(e){} });
       stream=null;
     }
-  }
-
-  function armIdleRelease(){
-    if(idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(function(){ idleTimer=null; if(!live) release(); },
-                           MIC_IDLE_RELEASE_MS);
-  }
-
-  /* Going to the background must not leave the indicator on. */
-  if(typeof document !== 'undefined'){
-    document.addEventListener('visibilitychange', function(){
-      if(document.visibilityState === 'hidden' && !live) release();
-    });
-    window.addEventListener('pagehide', function(){ if(!live) release(); });
   }
 
   function supported(){
@@ -96,14 +84,14 @@ var Mic = (function(){
     return '';
   }
 
-  /* Ends a take. **Does not touch the tracks** — that is release()'s job
-     and doing it here is what caused the repeated permission dialog. */
+  /* take를 끝낸다. **트랙까지 놓는다** — 열어 둔 마이크가 예시 재생을
+     먹먹하게 만든다(머리말). AudioContext도 여기서 닫는다. */
   function teardown(){
     if(ticker){ clearInterval(ticker); ticker=null; }
     if(rec && rec.state!=='inactive'){ try{ rec.stop(); }catch(e){} }
     if(ctx){ try{ ctx.close(); }catch(e){} ctx=null; }
     rec=null; analyser=null; live=false;
-    armIdleRelease();
+    release();
   }
 
   /* ---- PCM helpers: decode, find the speech, cut, resample, wrap ---- */
@@ -192,14 +180,12 @@ var Mic = (function(){
     if(!supported()){ h.onerror('unsupported'); return; }
     chunks=[]; levels=[]; live=true;
 
-    /* Reuse the open microphone. getUserMedia is called from here and
-       nowhere else, and only when there is nothing live to reuse. */
-    if(idleTimer){ clearTimeout(idleTimer); idleTimer=null; }
-    var got = streamAlive()
-      ? Promise.resolve(stream)
-      : navigator.mediaDevices.getUserMedia({
-          audio:{ channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true }
-        });
+    /* take마다 새로 연다. getUserMedia를 부르는 곳은 여기 하나뿐이다.
+       앞 take가 남긴 것이 있으면(있으면 안 되지만) 먼저 놓는다. */
+    release();
+    var got = navigator.mediaDevices.getUserMedia({
+      audio:{ channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+    });
 
     got.then(function(st){
       stream=st;

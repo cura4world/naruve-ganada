@@ -48,6 +48,10 @@
 /* Nothing in this app should ever scroll sideways. Anything wider than the
    column is a bug, not something to swipe past — the guard is here at the
    root so a new component cannot reintroduce it further down. */
+/* WebView·모바일 사파리의 텍스트 자동확대(font boosting)를 끈다.
+   **이것은 시스템 접근성 글꼴 배율과 다른 것이다** — 그쪽은 WebView 의
+   textZoom 이고 CSS 로 막을 수 없다. MainActivity 에서 100으로 고정한다. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{height:100%;max-width:100%;overflow-x:hidden}
 body{background:var(--paper);color:var(--ink);font-family:var(--ui);
   display:flex;justify-content:center;overscroll-behavior:none;-webkit-text-size-adjust:100%}
@@ -168,11 +172,20 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .vb.on{border-color:var(--seal);color:var(--seal);font-weight:600}
 .vb-x{margin-left:auto;color:var(--ink-faint)}
 .vb-sep{width:1px;align-self:stretch;background:var(--rule);margin:0 2px}
-/* D: 임시 계측 창. P6-B에서 이 규칙과 index.html의 #logView를 함께 지운다. */
-.logview{margin:0 0 14px;padding:9px 10px;border:1px solid var(--rule);border-radius:8px;
-  background:#fff;font-family:ui-monospace,monospace;font-size:10px;line-height:1.55;
-  color:var(--ink-soft);white-space:pre-wrap;word-break:break-all;max-height:190px;overflow-y:auto}
-.logview[hidden]{display:none}
+/* D: 임시 계측 창. P6-B에서 이 규칙과 index.html의 #logView를 함께 지운다.
+
+   flex:none 이 핵심이다. .stage 는 flex column 이고 이 상자는 그 직계
+   자식이라 기본값이 flex-shrink:1 이다. stage 내용이 넘치면 이 상자가 가장
+   많이 줄어들어 한 줄 높이로 눌리고, 그렇게 눌린 뒤에는 overflow-y:auto 가
+   스크롤할 높이 자체를 못 가진다. 0.1.22에서 실제로 그렇게 안 보였다. */
+.logbox{flex:none;margin:0 0 14px;padding:8px 9px;border:1px solid var(--rule);
+  border-radius:8px;background:#fff;display:flex;flex-direction:column;gap:7px}
+.logbox[hidden]{display:none}
+.logbar{display:flex;align-items:center;gap:8px;flex:none}
+.logbar .lstat{font-size:10.5px;color:var(--ink-faint)}
+.logtext{flex:none;max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  margin:0;font-family:ui-monospace,monospace;font-size:10px;line-height:1.55;
+  color:var(--ink-soft);white-space:pre-wrap;overflow-wrap:anywhere}
 /* B: 감점 줄. 억양 안내 바로 아래 작게. */
 .into-penalty{display:none;margin-top:5px;font-size:11.5px;font-weight:700;
   letter-spacing:.04em;color:var(--seal)}

@@ -83,6 +83,9 @@ var UI = {
     voiceFemale:'여자',
     reloadApp:'새로고침',
     logShow:'로그 보기',
+    logCopy:'복사',
+    logCopied:'복사했어요',
+    logCopyFail:'복사가 막혔어요. 길게 눌러 선택하세요',
     logEmpty:'(아직 재생 기록이 없다)',
     intoPenalty:'억양 −{n}',
 
@@ -181,6 +184,9 @@ var UI = {
     voiceFemale:'Female',
     reloadApp:'Reload',
     logShow:'Log',
+    logCopy:'Copy',
+    logCopied:'Copied',
+    logCopyFail:'Copy blocked. Long-press to select.',
     logEmpty:'(nothing played yet)',
     intoPenalty:'Intonation −{n}',
 
