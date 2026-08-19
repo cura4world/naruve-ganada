@@ -505,8 +505,8 @@ docs/js/boot.js에는 번호가 없다. boot.js는 version.json을 fetch해서 �
 
 **docs/js/에 파일을 새로 만들었으면 두 곳에 등록한다.** 등록하지 않으면
 브라우저에서는 되는데 오프라인·APK에서만 조용히 없는 파일이 된다.
-- docs/index.html 의 script 태그 (로드 순서: ui → audio → mic → pitch →
-  score → data → phonemes → app → boot. app.js는 다른 전역을 다 쓰므로 뒤에 온다)
+- docs/index.html 의 script 태그 (로드 순서: ui → identity → api → audio → mic →
+  pitch → score → data → phonemes → app → boot. app.js는 다른 전역을 다 쓰므로 뒤에 온다)
 - docs/sw.js 의 `PRECACHE` 배열
 
 작업 순서:
