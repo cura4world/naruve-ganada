@@ -1,0 +1,38 @@
+{
+  "_comment": "Typecast 청취 샘플용 문장. 10개는 docs/js/data.js에서 골랐고 3개(s01·s03·s08)는 2026-08-18 Azure 비교와 맞추기 위한 대조용이다.",
+  "_selection_rule": "4컬렉션 골고루 / 의문·감탄·평서·15자 이상이 각 2개 이상. 감탄은 data.js 전체에 '대박!'과 '말도 안 돼!' 둘뿐이고 후자가 s03이라, 10개 안에서는 1개이고 13개 전체에서 2개다.",
+  "_source": "docs/js/data.js (build 0.1.16). s08만 저장소 밖 문장이다.",
+
+  "sentences": [
+    { "id": "std_gov",    "collection": "standard", "type": "statement", "text": "외국인등록증을 발급받으려고 합니다.",
+      "why": "최장 평서. 긴 호흡에서 억양이 무너지는지 본다" },
+    { "id": "std_road",   "collection": "standard", "type": "question",  "text": "지하철역이 어디에 있습니까?",
+      "why": "-까 상승. 철역→처려 연음" },
+    { "id": "std_sick",   "collection": "standard", "type": "statement", "text": "어제부터 목이 아팠습니다.",
+      "why": "격음 ㅍ + 습니다 폐쇄" },
+
+    { "id": "evd_gov",    "collection": "everyday", "type": "statement", "text": "외국인등록증 신청하러 왔는데요.",
+      "why": "왔는→완는 비음화. -는데요 말끝 흐림" },
+    { "id": "evd_phone",  "collection": "everyday", "type": "question",  "text": "여보세요? 과장님 계세요?",
+      "why": "한 발화 안에 의문 둘. 둘 다 올리는지" },
+    { "id": "evd_sick",   "collection": "everyday", "type": "statement", "text": "어제부터 목이 아파요.",
+      "why": "std_sick의 해요체 짝. 문체만 바뀔 때 톤 차이를 본다" },
+
+    { "id": "drm_daebak", "collection": "drama",    "type": "exclam",    "text": "대박!",
+      "why": "최단 감탄. 3자에서 감정이 실리는지" },
+    { "id": "drm_mwoya",  "collection": "drama",    "type": "question",  "text": "뭐야, 이게?",
+      "why": "하강 뒤 상승. 한 문장 안 방향 반전" },
+
+    { "id": "snd_silla",  "collection": "sounds",   "type": "question",  "text": "신라면 먹을래요?",
+      "why": "신라→실라 유음화. DECISIONS 9절 벤더 기준 2번" },
+    { "id": "snd_closed", "collection": "sounds",   "type": "statement", "text": "반갑습니다.",
+      "why": "반갑습니다→반갑씀니다. DECISIONS 9절 벤더 기준 2번" },
+
+    { "id": "s01",        "collection": "drama",    "type": "question",  "text": "어디 가세요?",
+      "why": "2026-08-18 Azure 비교 대조" },
+    { "id": "s03",        "collection": "drama",    "type": "exclam",    "text": "말도 안 돼!",
+      "why": "2026-08-18 Azure 비교 대조" },
+    { "id": "s08",        "collection": "(ref)",    "type": "statement", "text": "한국에 온 지 벌써 삼 년이 됐는데, 아직도 존댓말이 제일 어려워요.",
+      "why": "2026-08-18 Azure 비교 대조. 최장·쉼표 포함. data.js에는 없는 문장이다" }
+  ]
+}
