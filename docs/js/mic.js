@@ -265,8 +265,23 @@ var Mic = (function(){
     else teardown();
   }
 
+  /* D: 예시 재생이 먹먹해지는 조건을 가르려고 상태만 읽는다. 아무것도 바꾸지
+     않는다 — 계측이 대상을 건드리면 그 계측은 못 믿는다. */
+  function diag(){
+    var ts = stream ? stream.getAudioTracks() : [];
+    var states = [];
+    for (var i=0;i<ts.length;i++) states.push(ts[i].readyState);
+    return {
+      tracks: ts.length,
+      states: states.join('/') || 'none',
+      held: streamAlive(),
+      ctx: ctx ? ctx.state : 'none',
+      recording: live
+    };
+  }
+
   return { supported:supported, record:record, stop:stop,
-           release:release,
+           release:release, diag:diag,
            held:function(){ return streamAlive(); },
            isLive:function(){ return live; } };
 })();

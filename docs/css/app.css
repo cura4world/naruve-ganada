@@ -21,16 +21,19 @@
      Tiles used to be ink black. Deep navy reads as "measured" rather than
      "redacted" and stays clearly apart from --seal red, which marks the
      recording button and question chips.
-     #1E3A8A. Both numbers below are read by app.js inkTile() so the colour
+     #172554. 0.1.20의 #1E3A8A보다 어둡다 — 만점 타일이 확실히 진해야
+     "다 맞았다"가 눈에 들어온다. 100점 배경이 rgb(39,66,142) -> rgb(32,46,90),
+     종이 대비 8.94 -> 12.61. 0점 쪽은 1.23 -> 1.26으로 사실상 그대로다.
+     Both numbers below are read by app.js inkTile() so the colour
      and its flip point have one home. */
-  --tile-rgb:30,58,138;
+  --tile-rgb:23,37,84;
   /* score at which the glyph flips from --ink to --paper. NOT 52.
      Navy at a given alpha is much lighter than black at the same alpha, so
      the crossover moved: measured with WCAG relative luminance, the two
-     contrasts are equal at 65.8 for navy (54.4 for the old black). At 52 a
-     navy tile still favours dark text by almost 2x (ink 5.49 vs paper 3.07),
-     so keeping 52 would have made mid tiles harder to read, not easier. */
-  --tile-flip:66;
+     contrasts are equal at 57.5 for #172554 (65.8 for the lighter #1E3A8A,
+     54.4 for the original black). 색을 바꿀 때마다 다시 재야 하는 값이다 —
+     node scripts/test_layout.js 가 재고 +-2를 넘으면 실패한다. */
+  --tile-flip:58;
 
   /* ---------- safe area: declared here, nowhere else ----------
      env() appears exactly twice in this file, both on the next two lines.
@@ -99,10 +102,9 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .tile.word{width:auto;min-width:clamp(44px,12.6vw,54px);padding:0 10px;
   font-size:clamp(19px,5.4vw,24px)}
 .tile.omit{border-style:dashed}
-/* B변형 — 낮은 어절(60 미만)에 테두리만 seal. 채움은 A와 같다.
-   inkTile()이 border-color를 인라인으로 쓰므로 !important 여야 이긴다.
-   P6-B에서 A와 B 중 하나를 고르고 나머지와 이 규칙을 지운다. */
-body.tile-b .tile.low{border-color:var(--seal) !important}
+/* A안 확정 (2026-08-19). 낮은 어절에 seal 테두리를 덧대는 B안은 버렸다 —
+   채움만으로 이미 읽히고, 테두리를 더하면 seal이 "녹음 중"이라는 뜻과 겹쳤다.
+   .low 클래스는 남겨 둔다: 나중에 낮은 어절을 다시 표시할 자리다. */
 .tile.punct{width:20px;border-color:transparent;color:var(--ink-faint);font-weight:700}
 .tile .num{position:absolute;bottom:4px;left:0;right:0;font-family:var(--ui);font-size:10px;font-weight:700;
   letter-spacing:.05em;opacity:0;transition:opacity 460ms ease;font-variant-numeric:tabular-nums}
@@ -166,6 +168,15 @@ body.tile-b .tile.low{border-color:var(--seal) !important}
 .vb.on{border-color:var(--seal);color:var(--seal);font-weight:600}
 .vb-x{margin-left:auto;color:var(--ink-faint)}
 .vb-sep{width:1px;align-self:stretch;background:var(--rule);margin:0 2px}
+/* D: 임시 계측 창. P6-B에서 이 규칙과 index.html의 #logView를 함께 지운다. */
+.logview{margin:0 0 14px;padding:9px 10px;border:1px solid var(--rule);border-radius:8px;
+  background:#fff;font-family:ui-monospace,monospace;font-size:10px;line-height:1.55;
+  color:var(--ink-soft);white-space:pre-wrap;word-break:break-all;max-height:190px;overflow-y:auto}
+.logview[hidden]{display:none}
+/* B: 감점 줄. 억양 안내 바로 아래 작게. */
+.into-penalty{display:none;margin-top:5px;font-size:11.5px;font-weight:700;
+  letter-spacing:.04em;color:var(--seal)}
+.into-penalty.show{display:block}
 
 .result{margin-top:20px;padding-top:18px;border-top:1px solid var(--rule);
   opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity 500ms ease,transform 500ms ease}

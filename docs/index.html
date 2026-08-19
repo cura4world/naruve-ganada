@@ -43,13 +43,13 @@
       <button class="vb" id="voiceM" data-i18n="voiceMale">Male</button>
       <button class="vb" id="voiceF" data-i18n="voiceFemale">Female</button>
       <span class="vb-sep"></span>
-      <span class="vb-lab" data-i18n="tilePick">Tile style</span>
-      <button class="vb" id="tileA">A</button>
-      <button class="vb" id="tileB">B</button>
-      <span class="vb-sep"></span>
       <button class="vb" id="reloadBtn" data-i18n="reloadApp" hidden>Reload</button>
+      <button class="vb" id="logBtn" data-i18n="logShow">Log</button>
       <button class="vb vb-x" id="voiceClose" data-i18n="close">Close</button>
     </div>
+
+    <!-- D: 임시 계측 창. 먹먹한 소리의 원인을 가른 뒤 지운다. -->
+    <pre class="logview" id="logView" hidden></pre>
 
     <div class="tiles" id="tiles"></div>
     <div class="meta-row" id="metaRow"></div>
@@ -79,6 +79,7 @@
       </div>
       <!-- B-3: what the final contour actually did, in the learner's language -->
       <div class="into-note" id="intoNote"></div>
+      <div class="into-penalty" id="intoPenalty"></div>
       <p class="note" id="note"></p>
       <div class="l1box" id="l1box">
         <div class="l1-lab" id="l1Lab">Why this happens</div>

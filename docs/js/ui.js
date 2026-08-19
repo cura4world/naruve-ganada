@@ -81,8 +81,10 @@ var UI = {
     voicePick:'예시 음성',
     voiceMale:'남자',
     voiceFemale:'여자',
-    tilePick:'타일 색',
     reloadApp:'새로고침',
+    logShow:'로그 보기',
+    logEmpty:'(아직 재생 기록이 없다)',
+    intoPenalty:'억양 −{n}',
 
     simLabel:'시뮬레이션',
     simNative:'원어민',
@@ -177,8 +179,10 @@ var UI = {
     voicePick:'Example voice',
     voiceMale:'Male',
     voiceFemale:'Female',
-    tilePick:'Tile style',
     reloadApp:'Reload',
+    logShow:'Log',
+    logEmpty:'(nothing played yet)',
+    intoPenalty:'Intonation −{n}',
 
     simLabel:'Simulate',
     simNative:'Native',

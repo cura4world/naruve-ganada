@@ -246,11 +246,25 @@ function paintScore(res){
      타일을 소비하지 않고, Omission은 타일을 소비하되 회색으로 남는다. */
   var tiles=Array.prototype.slice.call(document.querySelectorAll('.tile.word'));
   var words=res.azure.words||[], ti=0, painted=0;
-  words.forEach(function(w){
+
+  /* B: 억양은 문장 끝에서 재므로 감점도 끝 어절이 진다. Omission은 점수가
+     없는 칸이라 건너뛰고, 점수가 매겨진 마지막 어절 하나만 골라 둔다.
+     깎는 것은 **표시뿐이다** — res.azure.words의 값은 그대로 두고 여기서만
+     뺀다. R2의 .azure.json과 dev 로그의 pron이 원본이다 (16절). */
+  var lastScored = -1;
+  words.forEach(function(w,i){
+    if(w.errorType!=='Insertion' && w.errorType!=='Omission') lastScored = i;
+  });
+
+  words.forEach(function(w,i){
     if(w.errorType==='Insertion') return;
     var el=tiles[ti++]; if(!el) return;
     if(w.errorType==='Omission'){ setTimeout(function(){ omitTile(el); }, painted*80); }
-    else { (function(e,sc,d){ setTimeout(function(){ inkTile(e, sc); }, d*80); })(el, w.accuracyScore, painted); }
+    else {
+      var sc = w.accuracyScore;
+      if (res.penalty > 0 && i === lastScored) sc = Math.max(0, sc - res.penalty);
+      (function(e,s,d){ setTimeout(function(){ inkTile(e, s); }, d*80); })(el, sc, painted);
+    }
     painted++;
   });
   if(ti !== tiles.length){
@@ -287,12 +301,21 @@ function lowWords(res){
 /* 15.10 (3) — 억양 방향. 잴 수 없었으면 줄 자체를 넣지 않는다.
    "데이터 부족" 같은 안내를 채워 넣지 않는다. */
 function showIntoNote(){
-  var box=$('intoNote');
+  var box=$('intoNote'), pen=$('intoPenalty');
   if(lastRes && lastRes.feedback){
     box.textContent = t(lastRes.feedback);
     box.classList.add('show');
     if(lastRes.intonation.ok) box.classList.remove('miss'); else box.classList.add('miss');
   } else box.classList.remove('show');
+
+  /* 감점이 있었으면 얼마를 깎았는지 밝힌다. 숫자가 왜 낮은지 모르는 채로
+     두면 채점이 임의로 보인다. 감점이 없으면 줄 자체를 넣지 않는다. */
+  if(pen){
+    if(lastRes && lastRes.penalty > 0){
+      pen.textContent = t('intoPenalty').replace('{n}', lastRes.penalty);
+      pen.classList.add('show');
+    } else pen.classList.remove('show');
+  }
 }
 
 function showResult(tt){
@@ -501,29 +524,24 @@ if($('tabSettings') && $('voiceBar')){
   }
 }
 
-/* 타일 A/B 임시 토글. 실기에서 두 안을 번갈아 보기 위한 것이고,
-   P6-B에서 하나로 정하면 이 블록과 css의 body.tile-b 규칙, index.html의
-   두 버튼을 함께 지운다. 새로고침을 견뎌야 비교가 되므로 localStorage에 남긴다. */
-var TILE_KEY = 'naruve.tiles';
-function tileVariant(){
-  try { var v = localStorage.getItem(TILE_KEY); if (v === 'a' || v === 'b') return v; } catch(e){}
-  return 'a';
-}
-function applyTileVariant(v){
-  document.body.classList.toggle('tile-a', v !== 'b');
-  document.body.classList.toggle('tile-b', v === 'b');
-  if($('tileA')) $('tileA').classList.toggle('on', v !== 'b');
-  if($('tileB')) $('tileB').classList.toggle('on', v === 'b');
-}
-applyTileVariant(tileVariant());
-['a','b'].forEach(function(v){
-  var b = $('tile'+v.toUpperCase());
-  if(!b) return;
-  b.addEventListener('click',function(){
-    try { localStorage.setItem(TILE_KEY, v); } catch(e){}
-    applyTileVariant(v);
+/* 타일은 A안으로 확정했다 (2026-08-19). 토글이 남긴 키만 치운다 —
+   읽지 않으므로 남아 있어도 해는 없지만, 다음 사람이 이걸 보고 아직
+   변형이 있는 줄 알면 안 된다. */
+try { localStorage.removeItem('naruve.tiles'); } catch(e){}
+
+/* D: 폰에는 콘솔이 없다. 먹먹할 때와 깨끗할 때의 [example] 줄을 눈으로
+   비교하려면 화면에 띄울 수단이 있어야 한다. 원인을 가른 뒤 지운다. */
+if($('logBtn') && $('logView')){
+  $('logBtn').addEventListener('click',function(){
+    var v = $('logView');
+    if(v.hidden){
+      var lines = (window.Example && Example._log) ? Example._log(20) : [];
+      v.textContent = lines.length ? lines.join('\n') : t('logEmpty');
+      v.hidden = false;
+      $('stage').scrollTop = 0;
+    } else v.hidden = true;
   });
-});
+}
 
 /* --- A-4: proof that the microphone is actually receiving sound.
    The panel is hidden by CSS unless body.dev, so these can run always. --- */
