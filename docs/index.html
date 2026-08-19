@@ -34,19 +34,126 @@
     </div>
   </div>
 
+  <!-- 온보딩. 첫 실행에 한 번만. 16.4 두 문항 + 목소리 + 동의 2층. -->
+  <div class="onboard" id="onboard" hidden>
+    <div class="ob-card">
+      <h2 class="ob-title" data-i18n="obTitle">Before we start</h2>
+      <p class="ob-sub" data-i18n="obSub"></p>
+
+      <div class="ob-q">
+        <div class="ob-lab" data-i18n="obL1">Native language</div>
+        <div class="ob-note" data-i18n="obL1Note"></div>
+        <div class="ob-opts" id="obL1">
+          <button type="button" class="ob-opt" data-v="id">Bahasa Indonesia</button>
+          <button type="button" class="ob-opt" data-v="en">English</button>
+          <button type="button" class="ob-opt" data-v="ko">한국어</button>
+          <button type="button" class="ob-opt" data-v="other" data-i18n="obOther">Other</button>
+          <button type="button" class="ob-opt ob-skip" data-v="" data-i18n="obLater">Later</button>
+        </div>
+      </div>
+
+      <div class="ob-q">
+        <div class="ob-lab" data-i18n="obLevel">Korean level</div>
+        <div class="ob-opts" id="obLevel">
+          <button type="button" class="ob-opt" data-v="beginner" data-i18n="obBeginner">Beginner</button>
+          <button type="button" class="ob-opt" data-v="intermediate" data-i18n="obIntermediate">Intermediate</button>
+          <button type="button" class="ob-opt" data-v="advanced" data-i18n="obAdvanced">Advanced</button>
+          <button type="button" class="ob-opt ob-skip" data-v="" data-i18n="obLater">Later</button>
+        </div>
+      </div>
+
+      <div class="ob-q">
+        <div class="ob-lab" data-i18n="obVoice">Voice to imitate</div>
+        <div class="ob-note" data-i18n="obVoiceNote"></div>
+        <div class="ob-opts" id="obVoice">
+          <button type="button" class="ob-opt on" data-v="f" data-i18n="obFemale">Female</button>
+          <button type="button" class="ob-play" data-v="f" data-i18n="obPlay">Listen</button>
+          <button type="button" class="ob-opt" data-v="m" data-i18n="obMale">Male</button>
+          <button type="button" class="ob-play" data-v="m" data-i18n="obPlay">Listen</button>
+        </div>
+      </div>
+
+      <label class="ob-consent" for="obBase">
+        <input type="checkbox" id="obBase">
+        <span data-i18n="consentBase"></span>
+      </label>
+      <label class="ob-consent" for="obExt">
+        <input type="checkbox" id="obExt">
+        <span data-i18n="consentExt"></span>
+      </label>
+
+      <a class="ob-policy" id="obPolicy" href="./privacy/" target="_blank" rel="noopener"
+         data-i18n="policyLink">Privacy policy</a>
+      <div class="ob-warn" id="obWarn" hidden data-i18n="consentNeed"></div>
+      <button class="btn primary ob-start" id="obStart" data-i18n="obStart" disabled>Start</button>
+    </div>
+  </div>
+
   <main class="stage" id="stage">
     <!-- 임시. 설정 화면(16.6)과 온보딩(P6-B)이 생기면 지운다.
          .stage 안이라 열 높이에 영향이 없다 — CLAUDE.md "레이아웃과 safe-area" 참조. -->
-    <div class="voicebar" id="voiceBar" hidden>
-      <span class="vb-note" data-i18n="settingsSoon">Settings are on the way.</span>
-      <span class="vb-lab" data-i18n="voicePick">Example voice</span>
-      <button class="vb" id="voiceM" data-i18n="voiceMale">Male</button>
-      <button class="vb" id="voiceF" data-i18n="voiceFemale">Female</button>
-      <span class="vb-sep"></span>
-      <button class="vb" id="reloadBtn" data-i18n="reloadApp" hidden>Reload</button>
-      <button class="vb" id="logBtn" data-i18n="logShow">Log</button>
-      <button class="vb vb-x" id="voiceClose" data-i18n="close">Close</button>
-    </div>
+    <section class="settings" id="settings" hidden>
+      <div class="set-head">
+        <b data-i18n="setTitle">Settings</b>
+        <button class="vb vb-x" id="setClose" data-i18n="close">Close</button>
+      </div>
+
+      <div class="set-row">
+        <span class="set-lab" data-i18n="setVoice">Voice</span>
+        <span class="set-ctl">
+          <button class="vb" id="voiceF" data-v="f" data-i18n="obFemale">Female</button>
+          <button class="vb" id="voiceM" data-v="m" data-i18n="obMale">Male</button>
+        </span>
+      </div>
+
+      <div class="set-row">
+        <span class="set-lab" data-i18n="setLang">Language</span>
+        <span class="set-ctl">
+          <button class="vb" id="langKo" data-v="ko">한국어</button>
+          <button class="vb" id="langEn" data-v="en">English</button>
+        </span>
+      </div>
+
+      <div class="set-row">
+        <span class="set-lab" data-i18n="setConsent">Improve scoring</span>
+        <span class="set-ctl">
+          <span class="set-state" id="consentState"></span>
+          <button class="vb" id="consentToggle"></button>
+        </span>
+      </div>
+
+      <div class="set-block">
+        <div class="set-lab" data-i18n="setBest">My records</div>
+        <div class="set-note" id="bestNote"></div>
+        <div class="set-best" id="bestList"></div>
+      </div>
+
+      <div class="set-block">
+        <div class="set-lab" data-i18n="setId">My identifier</div>
+        <div class="set-note" data-i18n="setIdNote"></div>
+        <code class="set-uuid" id="myUuid"></code>
+        <div class="set-ctl">
+          <button class="vb" id="uuidCopy" data-i18n="setCopy">Copy</button>
+          <a class="vb" id="uuidMail" href="#" data-i18n="setMail">Write deletion request</a>
+          <span class="set-state" id="uuidStat"></span>
+        </div>
+      </div>
+
+      <div class="set-row">
+        <span class="set-lab" data-i18n="setVersion">Version</span>
+        <span class="set-ctl"><span class="set-state" id="setVer">—</span>
+          <a class="vb" href="./privacy/" target="_blank" rel="noopener" id="setPolicy"
+             data-i18n="policyLink">Privacy policy</a></span>
+      </div>
+
+      <div class="set-row" id="setDevRow" hidden>
+        <span class="set-lab" data-i18n="setDev">Developer</span>
+        <span class="set-ctl">
+          <button class="vb" id="reloadBtn" data-i18n="reloadApp">Reload</button>
+          <button class="vb" id="logBtn" data-i18n="logShow">Log</button>
+        </span>
+      </div>
+    </section>
 
     <!-- D: 임시 계측 창. 먹먹한 소리의 원인을 가른 뒤 지운다. -->
     <div class="logbox" id="logView" hidden>
@@ -92,6 +199,15 @@
       <!-- B-3: what the final contour actually did, in the learner's language -->
       <div class="into-note" id="intoNote"></div>
       <div class="into-penalty" id="intoPenalty"></div>
+
+      <!-- 후속 제안. 온보딩에서 선택 동의를 안 한 사람에게 첫 85점 이상에서 한 번만. -->
+      <div class="ask" id="askCard" hidden>
+        <div class="ask-t" data-i18n="askTitle"></div>
+        <div class="ask-b">
+          <button class="vb" id="askYes" data-i18n="askYes">Yes</button>
+          <button class="vb" id="askNo" data-i18n="askNo">No thanks</button>
+        </div>
+      </div>
       <p class="note" id="note"></p>
       <div class="l1box" id="l1box">
         <div class="l1-lab" id="l1Lab">Why this happens</div>

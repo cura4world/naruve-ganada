@@ -166,7 +166,54 @@ PA 설정 다섯 줄의 뜻:
 
 `ProsodyScore`는 켜지 않는다 — ko-KR 응답에 오지 않는다(8절 실측). 타임아웃 8초.
 
-**저장물** (16.6 — UUID가 앞)
+**저장물** (2026-08-19 — 동의 층이 키의 맨 앞)
+
+| 키 | 내용 |
+|---|---|
+| `base/{UUID}/{YYYY-MM-DD}/{세션}/{녹음}.wav` | 필수 동의만 받은 녹음. **7일 뒤 R2가 지운다** |
+| `ext/{UUID}/{YYYY-MM-DD}/{세션}/{녹음}.wav` | 선택 동의까지 받은 녹음. 방침상 5년, 삭제는 수동 |
+| 각각의 `.azure.json` | **Azure 응답 전체** (음절·음소 점수 포함). 16.1 |
+
+층은 요청 헤더 `X-Naruve-Consent: base|extended` 가 정한다. **헤더가 없으면 base다** —
+동의를 못 받은 요청을 5년 보관 쪽에 넣지 않는다. 두 객체의 `customMetadata` 에
+`consent` 가 함께 들어가므로 접두어가 옮겨져도 근거가 남는다.
+
+**왜 층이 UUID 앞인가.** 방침 2·4·10절이 미동의자 음성을 7일 이내에 파기한다고
+약속하고, 그 약속은 우리 코드가 아니라 저장소가 지켜야 한다. 그런데 R2 lifecycle
+조건은 **리터럴 접두어 하나**뿐이라(와일드카드 없음) `{UUID}/base/` 는 규칙으로
+잡을 수 없다. DECISIONS 16.6의 "UUID가 앞"은 그 목적("한 사용자 것을 통째로
+지운다")이 접두어 두 개로 그대로 달성되므로 문구만 다음 갱신에서 정정한다.
+
+### lifecycle 규칙
+
+```
+npx wrangler r2 bucket lifecycle list naruve-ganada-audio
+npx wrangler r2 bucket lifecycle add naruve-ganada-audio base-7d "base/" --expire-days 7
+```
+
+현재 걸린 규칙은 `base-7d` (prefix `base/`, 7일 만료)와 기본 multipart abort 둘이다.
+`ext/` 에는 규칙이 없다 — 5년은 방침상 기간이고 삭제는 아래 절차로 사람이 한다.
+
+**접두어 없는 옛 객체**(2026-08-19 이전, `{UUID}/…` 꼴)는 어느 규칙에도 걸리지
+않는다. 개발자 본인과 CC 시험 음성뿐이라 그대로 두고 필요할 때 손으로 지운다.
+
+### 삭제 요청 처리 (사람)
+
+방침 7절대로 이용자가 `support@naruve.app` 으로 식별자를 적어 보낸다.
+**서버 API는 없다** — 앱은 `mailto:` 링크만 연다. 받은 UUID로 이렇게 지운다.
+
+```
+# 1. 음성과 응답 (두 접두어 모두)
+#    wrangler 에 목록 명령이 없으므로 대시보드의 R2 > 버킷 > 개체 탐색기에서
+#    base/{UUID}/ 와 ext/{UUID}/ 를 찾아 지우거나, 키를 알면 개별 삭제한다
+npx wrangler r2 object delete "naruve-ganada-audio/ext/{UUID}/{날짜}/{세션}/{녹음}.wav" --remote
+
+# 2. 크레딧 카운터
+npx wrangler kv key delete "{UUID}:credits" --namespace-id=7bba6faac92e4a2c9f40e82ddeee025a --remote
+```
+
+방침은 요청받은 날로부터 10일 이내 조치와 회신을 약속한다.
+
 
 | 키 | 내용 |
 |---|---|

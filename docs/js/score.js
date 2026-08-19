@@ -200,7 +200,8 @@ var Score = (function(){
       Api.score(sentence.k, cap.wav, {
         uuid: Identity.uuid(),
         session: Identity.session(),
-        recording: Identity.newRecordingId()
+        recording: Identity.newRecordingId(),
+        consent: Identity.consentTier()
       }, function(err, data){
         if (err){
           res.error = err.kind;

@@ -42,7 +42,10 @@ var Api = (function(){
         'X-Naruve-UUID': ids.uuid,
         'X-Naruve-Session': ids.session,
         'X-Naruve-Recording': ids.recording,
-        'X-Naruve-Ref': encodeURIComponent(refText)
+        'X-Naruve-Ref': encodeURIComponent(refText),
+        /* 이 값이 R2 접두어를 고른다 — base/ 는 7일 뒤 지워지고 ext/ 는 남는다.
+           헤더를 빼면 서버가 base 로 본다. 동의를 못 받은 것을 5년 쪽에 넣지 않는다. */
+        'X-Naruve-Consent': ids.consent || 'base'
       },
       body: wavBlob,
       signal: ctl ? ctl.signal : undefined

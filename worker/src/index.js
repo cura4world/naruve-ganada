@@ -62,6 +62,28 @@ const AZURE_TIMEOUT_MS = 8000;
 // 태우고 R2 put에서 터진다 — 실제로 그렇게 터졌다.
 const MAX_REF_CHARS = 120;
 
+/**
+ * 동의 층 → R2 접두어 (2026-08-19).
+ *
+ * 방침 2·4·10절이 **서비스 개선에 동의하지 않은 이용자의 음성은 7일 이내에
+ * 파기한다**고 약속한다. 그 약속은 우리 코드가 아니라 저장소가 지켜야 하므로
+ * R2 lifecycle 규칙에 맡긴다. 그런데 lifecycle 조건은 **리터럴 접두어 하나**뿐이라
+ * (와일드카드 없음) 층이 키의 맨 앞에 와야 규칙 하나로 잡힌다.
+ *
+ *   base/{UUID}/{날짜}/{세션}/{녹음}.wav   ← lifecycle 'base-7d' 가 7일 뒤 지운다
+ *   ext/{UUID}/{날짜}/{세션}/{녹음}.wav    ← 규칙 없음. 5년은 방침상 기간이고 삭제는 수동
+ *
+ * DECISIONS 16.6은 "저장 키는 UUID가 앞"이라고 적어 두었다. 그 목적("이 사용자
+ * 것 전부를 한 번에 지운다")은 접두어 두 개를 훑는 것으로 그대로 달성된다.
+ * 문구 정정은 다음 갱신에 들어간다.
+ *
+ * **헤더가 없으면 base다.** 동의를 못 받은 요청을 5년 보관 쪽에 넣지 않는다.
+ */
+function tierOf(request) {
+  const v = (request.headers.get("X-Naruve-Consent") || "").trim().toLowerCase();
+  return v === "extended" ? "ext" : "base";
+}
+
 // 8-4-4-4-12 hex. 버전·variant 자리는 묶지 않는다 — 클라이언트가 어떤 UUID
 // 생성기를 쓰든 형식만 맞으면 받는다. 지금은 crypto.randomUUID()(v4)다.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -73,7 +95,7 @@ const CORS = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Content-Type, X-Naruve-UUID, X-Naruve-Session, X-Naruve-Recording, X-Naruve-Ref",
+    "Content-Type, X-Naruve-UUID, X-Naruve-Session, X-Naruve-Recording, X-Naruve-Ref, X-Naruve-Consent",
   "Access-Control-Max-Age": "86400",
   Vary: "Origin",
 };
@@ -274,7 +296,8 @@ async function handleScore(request, env) {
   }
 
   // --- 성공했을 때만 저장하고 깎는다. ---
-  const base = `${uuid}/${today()}/${session}/${recording}`;
+  const tier = tierOf(request);
+  const base = `${tier}/${uuid}/${today()}/${session}/${recording}`;
   const r2Key = `${base}.wav`;
 
   // 참조 텍스트는 한글이라 customMetadata에 그대로 넣으면 헤더 인코딩에 걸린다.
@@ -283,6 +306,8 @@ async function handleScore(request, env) {
     ref: encodeURIComponent(ref),
     sessionId: session,
     recordingId: recording,
+    // 어느 동의로 받은 것인지 객체 자체에 남긴다. 접두어가 옮겨져도 근거가 남는다.
+    consent: tier === "ext" ? "extended" : "base",
   };
 
   // 저장이 실패하면 차감하지 않는다. 예외를 그냥 두면 Workers가 1101을 던져
@@ -307,7 +332,7 @@ async function handleScore(request, env) {
     await env.KV.put(creditKey, String(credits));
   }
 
-  return json({ credits, r2Key, azure: summarize(parsed) });
+  return json({ credits, r2Key, tier, azure: summarize(parsed) });
 }
 
 export default {
