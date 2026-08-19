@@ -7,7 +7,7 @@ Typecast 청취 샘플 생성기 — DECISIONS.md 9절 TTS 벤더 선정용.
 언어·모델·포맷은 config.json, 보이스는 voices.json, 문장은 sentences.json에 있다.
 이 파일에는 한국어도 특정 보이스도 박혀 있지 않다 — 다른 언어로 갈 때 설정만 바꾼다.
 
-    python scripts/tts/typecast_gen.py --out "D:/aihub_work/tts_typecast_candidates_20260819"
+    python scripts/tts/typecast_gen.py --out "D:/aihub_work/tts_typecast_v1_20260819"
     python scripts/tts/typecast_gen.py --out "..." --dry-run    # 호출 없이 계획만
     python scripts/tts/typecast_gen.py --out "..." --reindex    # 호출 없이 문서만 다시 만든다
 
@@ -18,9 +18,18 @@ Typecast 청취 샘플 생성기 — DECISIONS.md 9절 TTS 벤더 선정용.
 재실행 안전: 이미 있고 크기가 0이 아닌 파일은 건너뛴다.
 부분 파일이 완성본으로 오해되지 않도록 .part로 받아서 rename 한다.
 
+**구독의 used_credits는 생성 직후에 바로 오르지 않는다.** 그래서 값이 멈출
+때까지 기다렸다가 읽는다. 기다리지 않으면 과금을 실제보다 적게 적는다.
+2026-08-19에 실제로 그렇게 틀렸다 — 156칸을 만든 직후에는 970이 올라 있었고
+정착값은 2016이었다. settle_credits()가 그 실수를 막는다.
+
 index.html은 듣기만 하는 표가 아니라 **받아적는 표**다. 보이스별 메모·별점과
 칸별 한 줄 메모를 localStorage에 담고 텍스트로 내보내고 다시 불러온다.
 폰과 PC는 저장소가 따로라 서로 보이지 않으므로 옮기는 수단이 내보내기/불러오기다.
+템플릿을 고쳤으면 scripts/tts/test_index_html.js 를 돌린다.
+
+문장의 화면 텍스트와 TTS 입력 텍스트는 다를 수 있다. `k`가 화면, `tts`가 입력이다.
+억양이 이상해서 표기를 손질할 때 `tts`만 바꾸면 앱 화면은 그대로 남는다.
 """
 
 import argparse
@@ -44,7 +53,7 @@ HERE = Path(__file__).resolve().parent
 # 라이트 플랜의 concurrency_limit이 5다. 설정이 더 큰 값을 줘도 여기서 막는다.
 HARD_CONCURRENCY_CAP = 5
 
-# 메모 저장 키의 앞자리. 뒤에 생성 날짜(YYYYMMDD)가 붙는다.
+# 메모 저장 키의 앞자리. 뒤에 생성 날짜(YYYYMMDD)와 config의 memo_key_suffix가 붙는다.
 MEMO_KEY_PREFIX = "naruve.tts.memo."
 
 
@@ -76,7 +85,7 @@ def load_api_key():
     )
 
 
-# ---------------------------------------------------------------- 설정
+# ---------------------------------------------------------------- 설정·문장
 
 def load_json(path, label):
     p = Path(path)
@@ -86,6 +95,22 @@ def load_json(path, label):
         return json.loads(p.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
         sys.exit(f"{label} 파일 JSON 오류: {p}\n  {e}")
+
+
+def sent_tts(s):
+    """TTS에 실제로 넣는 텍스트. tts > text > k 순으로 찾는다.
+    tts를 먼저 보는 이유: 표기를 손질했으면 그것이 의도한 입력이다.
+    text만 읽으면 tts만 고친 사람이 아무 일도 일어나지 않는 것을 보게 된다."""
+    for key in ("tts", "text", "k"):
+        v = s.get(key)
+        if v:
+            return v
+    raise KeyError(f"문장에 tts/text/k 가 모두 없다: {s.get('id')}")
+
+
+def sent_disp(s):
+    """화면에 보이는 텍스트. 손질 전 원문이다."""
+    return s.get("k") or sent_tts(s)
 
 
 def slug(s):
@@ -110,6 +135,32 @@ def voice_labels(voices):
         for v in lst:
             out[v["voice_id"]] = short if len(lst) == 1 else voice_dir_name(v)
     return out
+
+
+def memo_key_for(cfg, meta):
+    suffix = (cfg.get("memo_key_suffix") or "").strip()
+    key = MEMO_KEY_PREFIX + meta["generated"][:10].replace("-", "")
+    return key + ("." + suffix if suffix else "")
+
+
+def nested_run_dirs(out_root):
+    """out_root 안에 자기 manifest.json을 가진 하위 폴더 = 별도의 실행이다.
+    (예: 본작업 폴더 아래의 knobs/) 길이 측정과 zip에서 빼지 않으면
+    본작업 수치에 남의 오디오가 섞여 조용히 틀린다."""
+    root = out_root.resolve()
+    dirs = set()
+    for p in out_root.rglob("manifest.json"):
+        d = p.parent.resolve()
+        if d != root:
+            dirs.add(d)
+    return dirs
+
+
+def in_nested(path, nested):
+    if not nested:
+        return False
+    rp = str(path.resolve())
+    return any(rp.startswith(str(d) + os.sep) for d in nested)
 
 
 def build_request(models, cfg, voice_id, text):
@@ -173,7 +224,7 @@ def synth_one(client, models, cfg, voice, sentence, out_root, ext):
     for attempt in range(1, int(cfg.get("max_retries", 4)) + 1):
         try:
             resp = client.text_to_speech(
-                build_request(models, cfg, voice["voice_id"], sentence["text"])
+                build_request(models, cfg, voice["voice_id"], sent_tts(sentence))
             )
             data = resp.audio_data
             if not data:
@@ -201,15 +252,54 @@ def synth_one(client, models, cfg, voice, sentence, out_root, ext):
     return False, False, f"{status_of(last) or 'err'}: {last}", None
 
 
+# ---------------------------------------------------------------- 크레딧 정착
+
+def settle_credits(client, before_used, interval=10.0, stable_needed=3, timeout=180.0):
+    """구독의 used_credits가 멈출 때까지 기다렸다가 읽는다.
+
+    생성이 끝난 직후에 읽으면 아직 반영 중인 값이 나온다. 2026-08-19에
+    156칸을 만든 직후 값은 970이었고 20초쯤 뒤 2016으로 확정됐다. 그때
+    970을 그대로 적어 '과금이 길이 기준'이라는 틀린 결론을 냈다.
+    글자수 × 1이 맞았다.
+
+    (구독, 걸린 초)를 돌려준다. timeout 안에 안 멈추면 마지막 값을 준다."""
+    t0 = time.time()
+    sub = client.get_my_subscription()
+    last = sub.credits.used_credits
+    stable = 0
+    while True:
+        if time.time() - t0 > timeout:
+            say(f"  크레딧 정착을 {timeout:.0f}초 안에 못 봤다. 마지막 값을 쓴다 (used={last}).")
+            break
+        if last > before_used and stable >= stable_needed:
+            break
+        time.sleep(interval)
+        sub = client.get_my_subscription()
+        u = sub.credits.used_credits
+        if u == last:
+            stable += 1
+        else:
+            stable = 0
+            last = u
+    return sub, round(time.time() - t0, 1)
+
+
 # ---------------------------------------------------------------- 길이 실측
 
-def measure_seconds(out_root, ext):
-    """ffprobe로 총 재생 길이를 잰다. 과금이 길이 기준이므로 단가 산출의 근거가 된다.
+def measure_seconds(out_root, ext, nested=None):
+    """ffprobe로 총 재생 길이를 잰다.
+
+    단가와는 무관하다 — 과금은 글자수 기준이다. 그래도 재는 이유는 두 가지다.
+    보이스마다 같은 문장을 얼마나 빨리 읽는지가 청취 판단의 근거이고,
+    knobs에서 audio_tempo 같은 손잡이가 실제로 먹었는지 확인하는 유일한 수치다.
+
     ffprobe가 없으면 None을 돌려주고, 문서에서는 그 줄을 비운다 — 추정치를 쓰지 않는다."""
     if not shutil.which("ffprobe"):
         return None
     total = 0.0
     for f in sorted(out_root.rglob(f"*.{ext}")):
+        if in_nested(f, nested):
+            continue
         try:
             r = subprocess.run(
                 ["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -267,6 +357,7 @@ td { width:var(--col); min-width:var(--col); max-width:var(--col); }
 .sid { font-size:10px; color:#8b939a; font-family:ui-monospace,monospace; }
 .stx { font-size:14px; font-weight:600; margin:2px 0; line-height:1.45; }
 .swy { font-size:11px; color:#5b6670; line-height:1.4; }
+.stts { font-size:11px; color:var(--seal); line-height:1.4; margin-top:2px; }
 
 .stars { display:flex; justify-content:center; align-items:center; gap:1px; margin-bottom:4px; }
 .st { font-size:15px; line-height:1; padding:2px 1px; border:0; background:none;
@@ -561,7 +652,8 @@ def write_index_html(out_root, sentences, voices, ext, cfg, meta):
                 .replace('"', "&quot;"))
 
     labels = voice_labels(voices)
-    memo_key = MEMO_KEY_PREFIX + meta["generated"][:10].replace("-", "")
+    memo_key = memo_key_for(cfg, meta)
+    tag = cfg.get("memo_key_suffix")
 
     # 열 머리 — 이름 / 별점 / 보이스 전체 메모
     heads = []
@@ -595,10 +687,13 @@ def write_index_html(out_root, sentences, voices, ext, cfg, meta):
                 f'data-sid="{esc(s["id"])}" placeholder="{esc(s["id"])} 한 줄 메모">'
                 "</td>"
             )
+        disp, tts = sent_disp(s), sent_tts(s)
+        tts_line = f'<div class="stts">TTS 입력: {esc(tts)}</div>' if tts != disp else ""
         rows.append(
             '<tr><th class="sent">'
             f'<div class="sid">{esc(s["id"])} · {esc(s.get("type",""))}</div>'
-            f'<div class="stx">{esc(s["text"])}</div>'
+            f'<div class="stx">{esc(disp)}</div>'
+            f'{tts_line}'
             f'<div class="swy">{esc(s.get("why",""))}</div>'
             "</th>" + "".join(cells) + "</tr>"
         )
@@ -620,13 +715,13 @@ def write_index_html(out_root, sentences, voices, ext, cfg, meta):
 <html lang="ko">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Typecast 후보 보이스 청취 — {esc(meta['generated'][:10])}</title>
+<title>Typecast 청취 — {esc(meta['generated'][:10])}{esc(' · ' + tag if tag else '')}</title>
 <style>{INDEX_CSS}</style>
 
-<h1>Typecast 후보 보이스 {len(voices)}개 × 문장 {len(sentences)}개</h1>
+<h1>Typecast 보이스 {len(voices)}개 × 문장 {len(sentences)}개{esc(' — ' + tag if tag else '')}</h1>
 <p class="meta">
-모델 {esc(cfg['model'])} · 언어 {esc(cfg.get('language') or 'auto')} · {esc(ext)} ·
-감정/속도 기본값(요청에 넣지 않음)<br>
+모델 {esc(cfg['model'])} · 언어 {esc(cfg.get('language') or 'auto')} · {esc(ext)}
+{esc(cfg.get('note') or '')}<br>
 생성 {esc(meta['generated'])} · 사용 크레딧 {esc(meta.get('credits_used', '?'))}<br>
 가로로 밀면 보이스가 더 있다. 왼쪽 문장 칸은 고정된다.
 </p>
@@ -645,7 +740,7 @@ def write_index_html(out_root, sentences, voices, ext, cfg, meta):
 <div id="imppanel" hidden>
   <p>내보내기로 만든 텍스트를 그대로 붙여넣고 <b>채우기</b>를 누른다.
   형식이 맞지 않으면 아무것도 바꾸지 않는다.</p>
-  <textarea id="imptext" placeholder="# TTS 후보 청취 메모 (...)&#10;## 남_강일 ★★★★☆&#10;전체: ...&#10;- s01: ..."></textarea>
+  <textarea id="imptext" placeholder="# TTS 후보 청취 메모 (...)&#10;## 남_강일 ★★★★☆&#10;전체: ...&#10;- std01: ..."></textarea>
   <div class="bar" style="margin-top:8px">
     <button type="button" id="impok">채우기</button>
     <button type="button" id="impcancel">취소</button>
@@ -674,7 +769,12 @@ def write_out_readme(out_root, sentences, voices, ext, cfg, meta):
         for v in voices
     )
     srows = "\n".join(
-        f"| `{s['id']}` | {s.get('collection','')} | {s.get('type','')} | {len(s['text'])} | {s['text']} |"
+        "| `{id}` | {coll} | {typ} | {n} | {txt} |".format(
+            id=s["id"], coll=s.get("collection", ""), typ=s.get("type", ""),
+            n=len(sent_tts(s)),
+            txt=(sent_disp(s) if sent_tts(s) == sent_disp(s)
+                 else f"{sent_disp(s)} → **TTS:** {sent_tts(s)}"),
+        )
         for s in sentences
     )
     fail_block = (
@@ -685,74 +785,53 @@ def write_out_readme(out_root, sentences, voices, ext, cfg, meta):
 
     secs = meta.get("audio_seconds")
     used = meta.get("credits_used")
-    chars = sum(len(s["text"]) for s in sentences)
-    memo_key = MEMO_KEY_PREFIX + meta["generated"][:10].replace("-", "")
+    chars = sum(len(sent_tts(s)) for s in sentences)
+    expect = chars * len(voices)
+    memo_key = memo_key_for(cfg, meta)
 
-    if secs and isinstance(used, int) and used > 0:
-        per_sec = used / secs
-        per_char = used / (chars * len(voices))
-        rate_block = f"""실행 전후 구독 조회로 잰 실제 차감은 **{used}**이고,
-ffprobe로 잰 총 재생 길이는 **{secs}초**다. 나누면 **초당 {per_sec:.2f} 크레딧**이다.
+    if isinstance(used, int) and used > 0:
+        diff = used - expect
+        agree = "정확히 일치한다" if diff == 0 else f"{diff:+d} 차이가 난다"
+        rate_block = f"""**과금은 입력 글자당 1크레딧이다.** 공백과 문장부호를 포함한
+글자수를 그대로 센다. 이번 실행은 {chars}자 × {len(voices)}보이스 = {expect}자이고
+실제 차감은 **{used}**로 {agree}.
 
-글자수 기준으로 보면 {chars}자 × {len(voices)}보이스 = {chars*len(voices)}자에 {used}이므로
-**글자당 약 {per_char:.2f}**다. 즉 "글자당 1"은 실제보다 두 배 넘게 비싸게 잡는 값이다.
+총 재생 길이 {secs if secs else '(측정 못 함)'}초는 단가와 무관하다.
+보이스마다 읽는 속도를 비교하려고 남겨둔 값이다.
 
-**과금 기준은 글자수가 아니라 오디오 길이다.** 근거: 12개 보이스에 넣은 텍스트가
-완전히 같은데도 총 차감이 12로 나눠떨어지지 않는다({used} ÷ 12 = {used/len(voices):.2f}).
-텍스트 기반이라면 보이스마다 값이 같아야 하므로 나눠떨어져야 한다.
-길이 × 3으로 계산하면 {secs} × 3 = {secs*3:.1f}이고, 실제와 {abs(secs*3-used)/used*100:.1f}% 차이다.
-
-이 규칙은 Typecast 문서에 적혀 있지 않다. 이 실행 한 번에서 얻은 실측이다.
-`config.json`의 `credits_per_char`는 실행 전 잔량 확인용 상한이라 1로 둔다 —
-넉넉하게 잡아야 중간에 402로 끊기지 않는다."""
-        avg = secs / len(voices) / len(sentences)
+**주의 — 구독의 used_credits는 생성 직후 바로 오르지 않는다.**
+끝나자마자 읽으면 반영 중인 값이 나온다. 그래서 스크립트는 값이 멈출 때까지
+기다렸다가 적는다(이번엔 {meta.get('credits_settle_sec','?')}초). 기다리지 않아
+2026-08-19에 실제로 틀린 수치를 기록한 적이 있다."""
         proj = f"""
 ## 문장 1000개로 갈 때 (DECISIONS 9절 기준 4 — 단가)
 
-이 {len(sentences)}문장의 평균 길이는 보이스 평균 {avg:.2f}초다.
-문장 1000개를 보이스 하나로 읽히면 약 {avg*1000:.0f}초이고,
-초당 {per_sec:.2f}를 곱하면 **약 {avg*1000*per_sec:,.0f} 크레딧**이다.
-이번 실행 뒤 남은 {meta.get('credits_after_remaining',0):,} 안에 들어간다.
-
-단, 이 평균은 `s08`(38자)이 섞인 값이라 실제 문장 분포와 다를 수 있다. 추정이다."""
+이 {len(sentences)}문장의 평균 길이는 {chars/len(sentences):.1f}자다.
+문장 1000개를 보이스 하나로 읽히면 약 **{chars/len(sentences)*1000:,.0f} 크레딧**이고,
+보이스 둘이면 그 두 배다. 이번 실행 뒤 남은 {meta.get('credits_after_remaining',0):,} 안에 들어간다."""
     else:
-        rate_block = ("길이를 재지 못해(ffprobe 없음) 초당 단가를 내지 않았다. "
-                      f"실제 차감은 {used}다.")
+        rate_block = (f"이번 실행에서는 새로 만든 파일이 없어 차감이 없다"
+                      f"(예상 {expect} = {chars}자 × {len(voices)}보이스).")
         proj = ""
 
-    md = f"""# Typecast 후보 보이스 청취 샘플 ({meta['generated'][:10]})
+    title = cfg.get("title") or "Typecast 청취 샘플"
 
-DECISIONS.md 9절 TTS 벤더 선정용. 사람이 듣고 2개를 고르기 위한 자료다.
+    md = f"""# {title} ({meta['generated'][:10]})
+
+DECISIONS.md 9절 TTS 벤더 선정용. 사람이 듣고 고르기 위한 자료다.
 **여기서는 품질 판단을 하지 않는다.**
 
 ## 어떻게 듣나
 
 `index.html`을 브라우저로 연다. 행이 문장, 열이 보이스이고 칸마다 재생 버튼이 있다.
 외부 리소스를 쓰지 않으므로 zip을 풀어 그대로 열면 된다.
-가로로 밀면 보이스가 더 나오고, 왼쪽 문장 칸은 고정된다.
 
 ## 들으면서 적는다
 
 - **열 머리** — 별점 1~5(눌렀던 별을 다시 누르거나 × 로 지운다)와 그 보이스 전체 메모
-- **각 칸** — 오디오 아래 한 줄 메모. `s01 물음표 좋음` 같은 것
+- **각 칸** — 오디오 아래 한 줄 메모
 - 적는 즉시 localStorage에 저장된다(키 `{memo_key}`). 새로고침·재시작해도 남는다
-- **폰과 PC는 저장소가 다르다.** 한쪽에서 쓴 것이 다른 쪽에 보이지 않는다
-
-옮기려면 **메모 내보내기**를 누른다. 클립보드 복사와 `memo_YYYYMMDD_HHMM.txt`
-내려받기가 함께 일어난다. 반대쪽 기기에서 **메모 불러오기**에 그 텍스트를
-붙여넣으면 그대로 복원된다. 형식이 맞지 않으면 아무것도 바꾸지 않고 알린다.
-
-내보내기 형식:
-
-```
-# TTS 후보 청취 메모 (2026-08-19 14:30)
-## 남_강일 ★★★★☆
-전체: 차분하고 문말이 안정적
-- s01: 물음표 좋음
-- s08: 긴 문장에서 흔들림
-## 여_유진
-(메모 없음)
-```
+- **폰과 PC는 저장소가 다르다.** 옮기려면 **메모 내보내기** → 반대쪽에서 **메모 불러오기**
 
 ## 생성 조건
 
@@ -762,7 +841,8 @@ DECISIONS.md 9절 TTS 벤더 선정용. 사람이 듣고 2개를 고르기 위�
 | 모델 | `{cfg['model']}` |
 | 언어 | `{cfg.get('language') or '(자동 판별)'}` (ISO 639-3) |
 | 포맷 | {ext} {meta.get('format_note','')} |
-| 감정·속도 | 넣지 않음 — 표준 톤 확인이 목적 |
+| 감정 | {cfg.get('emotion') or '넣지 않음'} |
+| audio_pitch / audio_tempo | {cfg.get('audio_pitch')} / {cfg.get('audio_tempo')} |
 | 플랜 | {meta.get('plan','?')} |
 | 동시 호출 | {meta.get('concurrency','?')} |
 | 칸 | {len(sentences)} × {len(voices)} = {meta.get('cells','?')} |
@@ -773,10 +853,10 @@ DECISIONS.md 9절 TTS 벤더 선정용. 사람이 듣고 2개를 고르기 위�
 
 | 항목 | 값 |
 |---|---|
+| 입력 글자수 × 보이스 | {chars} × {len(voices)} = {expect} |
+| **실제 차감** | **{used}** |
 | 실행 전 잔량 | {meta.get('credits_before_remaining','?'):,} |
 | 실행 후 잔량 | {meta.get('credits_after_remaining','?'):,} |
-| **실제 차감** | **{used}** |
-| 글자당 1로 잡은 사전 추정 | {meta.get('credits_estimate','?'):,} |
 
 {rate_block}
 {proj}
@@ -794,12 +874,7 @@ DECISIONS.md 9절 TTS 벤더 선정용. 사람이 듣고 2개를 고르기 위�
 
 ## 문장 {len(sentences)}
 
-10개는 저장소 `docs/js/data.js`에서 골랐고, `s01`·`s03`·`s08`은 2026-08-18 Azure
-비교와 맞추기 위한 대조용이다. `s08`은 data.js에 없는 문장이다.
-
-고른 기준은 4컬렉션 골고루 / 의문·감탄·평서·15자 이상이 각 2개 이상이다.
-감탄은 data.js 전체에 `대박!`과 `말도 안 돼!` 둘뿐이고 후자가 `s03`이라,
-10개 안에서는 1개이고 {len(sentences)}개 전체에서 2개다.
+`k`가 화면 텍스트, `tts`가 TTS 입력이다. 둘이 다르면 아래 표에 **TTS:** 로 함께 적힌다.
 
 | id | 컬렉션 | 유형 | 자수 | 문장 |
 |---|---|---|---:|---|
@@ -817,16 +892,18 @@ DECISIONS.md 9절 TTS 벤더 선정용. 사람이 듣고 2개를 고르기 위�
 python scripts/tts/typecast_gen.py --out "{out_root.as_posix()}"
 ```
 
-저장소 `scripts/tts/`의 `config.json`·`voices.json`·`sentences.json`이 입력이고,
-같은 사본이 이 폴더의 `manifest.json`·`sentences.json`·`voices.json`에 있다.
+입력 사본이 이 폴더의 `manifest.json`·`sentences.json`·`voices.json`·`config.used.json`에 있다.
 이미 있는 파일은 건너뛰므로 다시 돌려도 크레딧이 나가지 않는다.
-문서만 다시 만들려면 `--reindex`를 붙인다. **`--reindex`는 오디오도 메모도
-건드리지 않는다** — 메모는 브라우저 localStorage에 있지 파일에 있지 않다.
+문서만 다시 만들려면 `--reindex`를 붙인다. 오디오도 메모도 건드리지 않는다 —
+메모는 브라우저 localStorage에 있지 파일에 있지 않다.
+
+하위 폴더가 자기 `manifest.json`을 가지면 별도 실행으로 보고 길이 측정과
+zip에서 제외한다. 그래서 `knobs/` 같은 곁실험이 본작업 수치를 오염시키지 않는다.
 """
     (out_root / "README.md").write_text(md, encoding="utf-8")
 
 
-def write_input_copies(out_root, sentences, voices):
+def write_input_copies(out_root, sentences, voices, cfg):
     """입력 사본을 산출물 옆에 남긴다. 저장소의 파일이 나중에 바뀌어도 이 폴더가 무엇으로
     만들어졌는지 남아 있어야 한다 (CLAUDE.md '평가 산출물' — 설정 전체를 같은 위치에)."""
     (out_root / "sentences.json").write_text(
@@ -835,16 +912,22 @@ def write_input_copies(out_root, sentences, voices):
     (out_root / "voices.json").write_text(
         json.dumps({"voices": voices}, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    (out_root / "config.used.json").write_text(
+        json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
-def make_zip(out_root, zip_path):
+def make_zip(out_root, zip_path, nested=None):
     zip_path = Path(zip_path)
     if zip_path.exists():
         zip_path.unlink()
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
         for p in sorted(out_root.rglob("*")):
-            if p.is_file() and p.suffix != ".part" and p.resolve() != zip_path.resolve():
-                z.write(p, p.relative_to(out_root).as_posix())
+            if not p.is_file() or p.suffix == ".part":
+                continue
+            if p.resolve() == zip_path.resolve() or in_nested(p, nested):
+                continue
+            z.write(p, p.relative_to(out_root).as_posix())
     return zip_path
 
 
@@ -873,7 +956,7 @@ def main():
     out_root = Path(args.out)
     out_root.mkdir(parents=True, exist_ok=True)
 
-    total_chars = sum(len(s["text"]) for s in sentences)
+    total_chars = sum(len(sent_tts(s)) for s in sentences)
     cells = len(sentences) * len(voices)
     est = total_chars * len(voices) * int(cfg.get("credits_per_char", 1))
 
@@ -883,29 +966,43 @@ def main():
     if dup:
         sys.exit(f"보이스 폴더명이 겹친다: {sorted(dup)}")
 
+    # 문장 id가 겹치면 같은 파일에 덮어쓴다.
+    sids = [s["id"] for s in sentences]
+    sdup = {n for n in sids if sids.count(n) > 1}
+    if sdup:
+        sys.exit(f"문장 id가 겹친다: {sorted(sdup)}")
+
     # ---- reindex: 호출 없이 문서만
     if args.reindex:
         mpath = out_root / "manifest.json"
         if not mpath.exists():
             sys.exit(f"manifest.json이 없다: {mpath}. 먼저 한 번 생성해야 한다.")
         meta = json.loads(mpath.read_text(encoding="utf-8"))
-        secs = measure_seconds(out_root, ext)
+        nested = nested_run_dirs(out_root)
+        secs = measure_seconds(out_root, ext, nested)
         if secs:
             meta["audio_seconds"] = secs
+        # 처음 생성할 때는 없던 하위 실행이 나중에 생길 수 있다. 기록을 지금 상태로 맞춘다.
+        meta["nested_runs_excluded"] = sorted(d.name for d in nested)
         meta["reindexed"] = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
         mpath.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
-        write_input_copies(out_root, sentences, voices)
+        write_input_copies(out_root, sentences, voices, cfg)
         write_index_html(out_root, sentences, voices, ext, cfg, meta)
         write_out_readme(out_root, sentences, voices, ext, cfg, meta)
-        zp = None if args.no_zip else make_zip(out_root, args.zip or out_root.parent / f"{out_root.name}.zip")
+        zp = None if args.no_zip else make_zip(
+            out_root, args.zip or out_root.parent / f"{out_root.name}.zip", nested)
         print(f"reindex 완료 · 총 길이 {secs}초 · 문서 다시 씀 (오디오는 건드리지 않았다)")
+        if nested:
+            print(f"  하위 실행 {len(nested)}개는 제외했다: {sorted(d.name for d in nested)}")
         if zp:
             print(f"zip {zp} ({zp.stat().st_size/1e6:.2f} MB)")
         return 0
 
     print(f"보이스 {len(voices)} × 문장 {len(sentences)} = {cells}칸")
-    print(f"문장 총 글자수 {total_chars} → 예상 크레딧 상한 {est} (글자당 {cfg.get('credits_per_char',1)})")
+    print(f"문장 총 글자수 {total_chars} → 예상 크레딧 {est} (글자당 {cfg.get('credits_per_char',1)})")
     print(f"모델 {cfg['model']} · 언어 {cfg.get('language') or '(자동)'} · {ext}")
+    if cfg.get("emotion") or cfg.get("audio_pitch") is not None or cfg.get("audio_tempo") is not None:
+        print(f"파라미터 emotion={cfg.get('emotion')} pitch={cfg.get('audio_pitch')} tempo={cfg.get('audio_tempo')}")
     print(f"출력 {out_root}")
 
     if args.dry_run:
@@ -941,9 +1038,9 @@ def main():
     print(f"플랜 {plan} · 잔량 {before_remaining} · 동시 한도 {limit}")
 
     if before_remaining < est:
-        sys.exit(f"크레딧이 모자란다: 잔량 {before_remaining} < 상한 추정 {est}. 중단한다.")
+        sys.exit(f"크레딧이 모자란다: 잔량 {before_remaining} < 예상 {est}. 중단한다.")
 
-    # 보이스 ID가 이 모델에서 실제로 쓸 수 있는지 먼저 확인한다. 156칸을 돌다가 400을 맞지 않기 위함.
+    # 보이스 ID가 이 모델에서 실제로 쓸 수 있는지 먼저 확인한다. 돌다가 400을 맞지 않기 위함.
     try:
         catalog = client.voices_v2(tc_models.VoicesV2Filter(model=cfg["model"]))
         known = {v.voice_id for v in catalog}
@@ -985,12 +1082,17 @@ def main():
             else:
                 failures.append({"voice": voice_dir_name(v), "sentence": s["id"], "note": note})
                 say(f"  실패 {voice_dir_name(v)}/{s['id']} — {note}")
-            if done % 20 == 0 or done == len(tasks):
+            if done % 25 == 0 or done == len(tasks):
                 say(f"  {done}/{len(tasks)}  (생성 {ok} / 건너뜀 {skipped} / 실패 {len(failures)})")
 
     elapsed = round(time.time() - t0, 1)
 
-    sub_after = client.get_my_subscription()
+    # 새로 만든 것이 없으면 기다릴 이유가 없다. 있으면 값이 멈출 때까지 기다린다.
+    if ok:
+        print("\n크레딧 정착 대기 중…")
+        sub_after, settle_sec = settle_credits(client, before_used)
+    else:
+        sub_after, settle_sec = client.get_my_subscription(), 0.0
     after_used = sub_after.credits.used_credits
     after_remaining = sub_after.credits.plan_credits - after_used
     credits_used = after_used - before_used
@@ -1005,7 +1107,8 @@ def main():
             elif f.stat().st_size == 0:
                 empty.append(f"{voice_dir_name(v)}/{s['id']}")
 
-    audio_seconds = measure_seconds(out_root, ext)
+    nested = nested_run_dirs(out_root)
+    audio_seconds = measure_seconds(out_root, ext, nested)
 
     meta = {
         "generated": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
@@ -1028,17 +1131,19 @@ def main():
         "total_chars": total_chars,
         "credits_estimate": est,
         "credits_used": credits_used,
+        "credits_settle_sec": settle_sec,
         "credits_plan_total": sub_after.credits.plan_credits,
         "credits_before_remaining": before_remaining,
         "credits_after_remaining": after_remaining,
         "audio_seconds": audio_seconds,
         "api_durations": api_durations,
+        "nested_runs_excluded": sorted(d.name for d in nested),
         "config": {k: v for k, v in cfg.items() if not k.startswith("_")},
     }
     (out_root / "manifest.json").write_text(
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    write_input_copies(out_root, sentences, voices)
+    write_input_copies(out_root, sentences, voices, cfg)
 
     if not args.no_index:
         write_index_html(out_root, sentences, voices, ext, cfg, meta)
@@ -1046,13 +1151,15 @@ def main():
 
     zip_path = None
     if not args.no_zip:
-        zip_path = make_zip(out_root, args.zip or out_root.parent / f"{out_root.name}.zip")
+        zip_path = make_zip(out_root, args.zip or out_root.parent / f"{out_root.name}.zip", nested)
 
     print(f"\n생성 {ok} / 건너뜀 {skipped} / 실패 {len(failures)}  — {elapsed}초")
-    print(f"크레딧 사용 {credits_used} (상한 추정 {est}) · 남은 {after_remaining}")
+    print(f"크레딧 사용 {credits_used} (예상 {est}, 정착까지 {settle_sec}초) · 남은 {after_remaining}")
     if audio_seconds:
-        print(f"총 재생 {audio_seconds}초 → 초당 {credits_used/audio_seconds:.2f} 크레딧")
+        print(f"총 재생 {audio_seconds}초 (단가와 무관 — 과금은 글자수)")
     print(f"검증: 없음 {len(missing)} / 빈 파일 {len(empty)}")
+    if nested:
+        print(f"하위 실행 제외: {sorted(d.name for d in nested)}")
     if zip_path:
         print(f"zip {zip_path} ({zip_path.stat().st_size/1e6:.2f} MB)")
 

@@ -1,22 +1,11 @@
 {
-  "_comment": "Typecast 후보 보이스. 선정이 끝나면 채택된 2개만 남기고 나머지는 지운다.",
+  "_comment": "Typecast 확정 후보. 2026-08-19 청취(후보 12개)에서 셋으로 좁혔다.",
   "_dir_pattern": "{gender_ko}_{name}_{voice_id 뒤 6자리}",
-  "_selected": null,
-  "_selected_note": "선정 결과를 여기에 voice_id 배열로 적는다. 아직 사람이 듣지 않았다.",
+  "_history": "1차 후보 12개(남 필재·강일·원우·건석·원호·우성 / 여 자인·이현·은솔·진희·주영·유진)는 tts_typecast_candidates_20260819 폴더에 청취 샘플이 남아 있다. 여기서는 제거했다.",
 
   "voices": [
-    { "name": "필재", "gender": "male",   "gender_ko": "남", "voice_id": "tc_68257f68bc6e3c161ab5078d" },
-    { "name": "강일", "gender": "male",   "gender_ko": "남", "voice_id": "tc_68d4b115f0486108a7eefb37" },
-    { "name": "원우", "gender": "male",   "gender_ko": "남", "voice_id": "tc_686dc43ebd6351e06ee64d74" },
-    { "name": "건석", "gender": "male",   "gender_ko": "남", "voice_id": "tc_6731b2e0855f351b98d30c48" },
-    { "name": "원호", "gender": "male",   "gender_ko": "남", "voice_id": "tc_66bf0dadd3f21fab24da6708" },
     { "name": "우성", "gender": "male",   "gender_ko": "남", "voice_id": "tc_668f4f533ea5c6ce5e43fd48" },
-
-    { "name": "자인", "gender": "female", "gender_ko": "여", "voice_id": "tc_6809c111e5e8c73f8a0237b2" },
-    { "name": "이현", "gender": "female", "gender_ko": "여", "voice_id": "tc_68ddea1e462b169ddd20b74d" },
-    { "name": "은솔", "gender": "female", "gender_ko": "여", "voice_id": "tc_67db72eb93add6902ea41e5c" },
-    { "name": "진희", "gender": "female", "gender_ko": "여", "voice_id": "tc_6731b2b2478a48710ecc9158" },
-    { "name": "주영", "gender": "female", "gender_ko": "여", "voice_id": "tc_66f4ecb5b1a24ceec9f6ccf0" },
-    { "name": "유진", "gender": "female", "gender_ko": "여", "voice_id": "tc_64818767272f62f8ddb73948" }
+    { "name": "강일", "gender": "male",   "gender_ko": "남", "voice_id": "tc_68d4b115f0486108a7eefb37" },
+    { "name": "이현", "gender": "female", "gender_ko": "여", "voice_id": "tc_68ddea1e462b169ddd20b74d" }
   ]
 }
