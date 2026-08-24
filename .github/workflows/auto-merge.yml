@@ -1,6 +1,7 @@
-# 이 저장소 안에서 만들어진 브랜치의 PR을 열리자마자 squash 병합한다.
-# 폰에서 고치고 PR만 올리면 main까지 자동으로 흘러가게 하는 것이 목적이다.
-# 포크에서 온 PR은 head.repo가 달라서 아래 if에 걸러진다.
+# 이 저장소 안에서 만들어진 브랜치의 PR을 검사 통과 시 squash 병합한다.
+# 검사는 "깨진 것이 실서비스로 나가는 것"만 막는다 — JS 문법, 핵심 파일 존재.
+# 통과하면 지금처럼 즉시 병합된다. 폰 PR 워크플로는 그대로다.
+# 포크에서 온 PR은 head.repo가 달라서 if에 걸러진다.
 
 name: auto-merge
 
@@ -13,7 +14,21 @@ permissions:
   pull-requests: write
 
 jobs:
+  check:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core files exist
+        run: |
+          test -f docs/index.html
+          test -d docs/privacy
+      - name: JS syntax check
+        run: |
+          find docs -name "*.js" -print0 | xargs -0 -n1 node --check
+
   merge:
+    needs: check
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
