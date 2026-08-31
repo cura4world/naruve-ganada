@@ -4,6 +4,9 @@
 여기 기록된 결정과 어긋나는 제안은 하지 않는다.
 새 결정이 생기면 수정안을 제시하고 승인을 받는다.
 DECISIONS.md는 사용자 승인 없이 수정하지 않는다.
+이 줄은 **결정 본문**을 가리킨다. 사실 정정·상호참조·형식·지문·변경 이력 한 줄은
+대화 Claude가 B층으로 지시하면 승인 없이 한다 (저장소 밖 · playbook 6절 "편집 3층", 2026-08-31).
+CC 스스로 판단해 고치는 것은 여전히 없다 — 지시받은 것만.
 
 ## 프로젝트
 한국어 학습자용 발음·억양 점수 앱. PWA로 만들고 나중에 Capacitor로 Android 앱화.
@@ -21,6 +24,9 @@ DECISIONS.md는 사용자 승인 없이 수정하지 않는다.
 - 레이아웃을 고칠 때, 기존 safe-area 관련 코드를 제거하거나 옮기기 전에
   반드시 `git log -S`로 그 코드가 왜 생겼는지 먼저 확인한다. 아래 "레이아웃과 safe-area" 참조.
 - 파일 수정은 부분 패치가 아니라 해당 파일 전체를 다시 써서 교체한다.
+- DECISIONS.md·CLAUDE.md를 고쳤으면 `npm run check:docs` 가 통과해야 PR을 연다.
+  DECISIONS.md 헤더의 지문 줄은 손으로 세지 않는다 — `npm run check:docs -- --fix` 가 채운다.
+  같은 검사가 auto-merge의 병합 전 검사에도 있어 실패하면 병합이 막힌다 (DECISIONS 12절, 2026-08-31).
 - 근거 없는 수치를 쓰지 않는다. 추정이면 추정이라고 밝힌다.
 - DECISIONS.md·CLAUDE.md에서 저장소 밖 문서(COMPANY.md, 전략서, playbook)를 참조할 때는
   '저장소 밖'을 명시한다.
@@ -558,6 +564,8 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - data/probe_set.json     프로브 문장 (DECISIONS.md 8.5 표. 임의로 더하지 않는다)
 - scripts/bump.mjs        빌드번호(서비스워커 캐시) 올리는 스크립트
 - scripts/bump-apk.mjs    versionCode 올리는 스크립트. bump.mjs와 섞지 않는다
+- scripts/check_docs.mjs  DECISIONS.md 지문 재계산·대조, CLAUDE.md "현재 상태" ↔ 코드 숫자 대조,
+                          제어문자 검사. `--fix`는 지문 줄만 고친다. PR 전과 병합 전에 돈다
 - scripts/icon-layers.mjs 원본 1장에서 아이콘 전체를 다시 만든다
 - scripts/icon-verify.mjs 생성 결과 검사 (크기·배경색·아트 출처)
 - scripts/tts_gen.py      프로브 오류 샘플 생성
@@ -695,4 +703,4 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 `renderL1`은 정의만 남고 호출되지 않는다. s.w에 박힌 확정 설명이라
 정밀도 65%를 넘긴 L1부터 켠다.
 
-**versionCode** 1. 첫 `npm run apk`에서 2가 된다.
+**versionCode** 3 (`android/app/build.gradle` 실측 2026-08-31). `npm run apk`마다 +1.
