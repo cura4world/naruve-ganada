@@ -570,7 +570,7 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - scripts/bump.mjs        빌드번호(서비스워커 캐시) 올리는 스크립트
 - scripts/bump-apk.mjs    versionCode 올리는 스크립트. bump.mjs와 섞지 않는다
 - scripts/check_docs.mjs  DECISIONS.md 지문 재계산·대조, CLAUDE.md "현재 상태" ↔ 코드 숫자 대조,
-                          제어문자 검사, audio/index.json ↔ mp3 고아·미등록 대조. `--fix`는 지문 줄만 고친다. PR 전과 병합 전에 돈다
+                          제어문자 검사, audio/index.json ↔ mp3 고아·미등록 대조, 문장 필드(t:/w:/lb/tr) 수 대조. `--fix`는 지문 줄만 고친다. PR 전과 병합 전에 돈다
 - scripts/icon-layers.mjs 원본 1장에서 아이콘 전체를 다시 만든다
 - scripts/icon-verify.mjs 생성 결과 검사 (크기·배경색·아트 출처)
 - scripts/tts_gen.py      프로브 오류 샘플 생성
