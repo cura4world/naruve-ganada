@@ -99,6 +99,17 @@ if (state) {
     row('빌드', mBuild[1], real, mBuild[1] === real);
   }
 
+  // data.js는 두 검사가 같이 쓰므로 한 번만 읽는다
+  let _S = null;
+  const sentences = () => {
+    if (_S) return _S;
+    const src = read('docs', 'js', 'data.js');
+    const sb = {};
+    new Function('with(this){' + src + '}; this.__S = S; this.__C = COLLECTIONS;').call(sb);
+    return (_S = sb.__S);
+  };
+  const has = (x, k) => x[k] !== undefined && x[k] !== null && x[k] !== '';
+
   // 문장 총수 · 컬렉션별 — G0 계산법을 그대로 옮긴다
   const mSent = pick(
     '문장 수',
@@ -106,14 +117,34 @@ if (state) {
     state
   );
   if (mSent) {
-    const src = read('docs', 'js', 'data.js');
-    const sb = {};
-    new Function('with(this){' + src + '}; this.__S = S; this.__C = COLLECTIONS;').call(sb);
-    const S = sb.__S;
+    const S = sentences();
     const byId = (id) => S.filter((x) => x.c === id).length;
     const real = [S.length, byId('standard'), byId('everyday'), byId('drama'), byId('sounds')];
     const doc = mSent.slice(1, 6).map(Number);
     const labels = ['문장 총수', 'Standard', 'Everyday', 'Drama', 'Sounds'];
+    labels.forEach((L, i) => row(L, doc[i], real[i], doc[i] === real[i]));
+  }
+
+  // 문장 필드 t:/w:/lb/tr — 문면이 두 줄에 걸쳐 있어 줄바꿈을 \s+ 로 받는다
+  const mFields = pick(
+    '문장 필드',
+    /`t:` 태그 (\d+)개\(question (\d+) \/ statement (\d+) \/ exclam (\d+)\),\s+`w:` (\d+)개,\s+`lb` 역할 라벨 (\d+)개,\s+`tr` 흐림 어미 (\d+)개/,
+    state
+  );
+  if (mFields) {
+    const S = sentences();
+    const byT = (v) => S.filter((x) => x.t === v).length;
+    const real = [
+      S.filter((x) => has(x, 't')).length,
+      byT('question'),
+      byT('statement'),
+      byT('exclam'),
+      S.filter((x) => Array.isArray(x.w) && x.w.length > 0).length,
+      S.filter((x) => has(x, 'lb')).length,
+      S.filter((x) => has(x, 'tr')).length,
+    ];
+    const doc = mFields.slice(1, 8).map(Number);
+    const labels = ['t: 태그', 't: question', 't: statement', 't: exclam', 'w: 약점 음절', 'lb 역할 라벨', 'tr 흐림 어미'];
     labels.forEach((L, i) => row(L, doc[i], real[i], doc[i] === real[i]));
   }
 
