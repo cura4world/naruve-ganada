@@ -11,7 +11,8 @@
     "apk": "node scripts/bump-apk.mjs && npx cap sync android && cd android && .\\gradlew.bat assembleDebug",
     "apk:nobump": "npx cap sync android && cd android && .\\gradlew.bat assembleDebug",
     "icons": "node scripts/icon-layers.mjs && node scripts/icon-verify.mjs",
-    "icons:verify": "node scripts/icon-verify.mjs"
+    "icons:verify": "node scripts/icon-verify.mjs",
+    "check:docs": "node scripts/check_docs.mjs"
   },
   "dependencies": {
     "@capacitor-community/text-to-speech": "^8.0.2",

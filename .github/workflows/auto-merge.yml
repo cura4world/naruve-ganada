@@ -26,6 +26,8 @@ jobs:
       - name: JS syntax check
         run: |
           find docs -name "*.js" -print0 | xargs -0 -n1 node --check
+      - name: Docs match code
+        run: node scripts/check_docs.mjs
 
   merge:
     needs: check
