@@ -426,6 +426,11 @@ DECISIONS.md 13절의 착수 금지 목록이 이 목록보다 우선한다.
 - **인도네시아어 UI 완성** — ui.js의 `id` 열에 억양 6키 말고 나머지를 채운다.
   컬렉션 이름·설명(`col`)의 id 열도 같이 채운다.
 
+**다음 docs/ 변경에 얹을 것** (빌드를 따로 내지 않는다 — 데이터만이고 화면 영향 없음, 2026-08-31)
+- `docs/js/data.js` "오늘 조퇴를 해도 될까요?"(standard, f=haeyo)의 `lb: 직장` 제거.
+  lb는 합쇼체 역할 라벨이다(DECISIONS 20.6). 20.6이 전환한 12문장 중 하나인데 전환 뒤 라벨이 남았다
+- `docs/js/data.js` 컬렉션 구분 주석 `/* --- STANDARD (15) --- */` 등이 배치 0 값이다. 네 컬렉션 전부 확인해 60/60/50/30으로
+
 ## 배포 경로
 이 저장소는 GitHub Pages로 배포된다. 소스는 main 브랜치의 /docs 폴더다.
 따라서 main에 들어간 docs/ 내용이 곧 폰에서 보이는 화면이다. 빌드 단계가 따로 없다.
@@ -565,7 +570,7 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - scripts/bump.mjs        빌드번호(서비스워커 캐시) 올리는 스크립트
 - scripts/bump-apk.mjs    versionCode 올리는 스크립트. bump.mjs와 섞지 않는다
 - scripts/check_docs.mjs  DECISIONS.md 지문 재계산·대조, CLAUDE.md "현재 상태" ↔ 코드 숫자 대조,
-                          제어문자 검사. `--fix`는 지문 줄만 고친다. PR 전과 병합 전에 돈다
+                          제어문자 검사, audio/index.json ↔ mp3 고아·미등록 대조. `--fix`는 지문 줄만 고친다. PR 전과 병합 전에 돈다
 - scripts/icon-layers.mjs 원본 1장에서 아이콘 전체를 다시 만든다
 - scripts/icon-verify.mjs 생성 결과 검사 (크기·배경색·아트 출처)
 - scripts/tts_gen.py      프로브 오류 샘플 생성

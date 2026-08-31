@@ -137,6 +137,29 @@ if (state) {
   }
 }
 
+// audio/index.json ↔ 실제 mp3 — 9.4의 "고아 참조 0"을 지키는 검사.
+// index.json은 "m/<해시>.mp3" 꼴 문자열의 평면 배열이다(2026-08-31 확인).
+// CLAUDE.md 패턴에 기대지 않으므로 "## 현재 상태" 절이 없어도 돈다.
+{
+  const idx = JSON.parse(read('docs', 'audio', 'index.json'));
+  if (!Array.isArray(idx) || idx.some((x) => typeof x !== 'string')) {
+    row('audio index 구조', '문자열 배열', Array.isArray(idx) ? '원소 타입 불일치' : typeof idx, false);
+  } else {
+    const onDisk = new Set();
+    for (const d of ['m', 'f']) {
+      for (const f of fs.readdirSync(rel('docs', 'audio', d))) {
+        if (f.endsWith('.mp3')) onDisk.add(`${d}/${f}`);
+      }
+    }
+    const inIndex = new Set(idx);
+    const orphan = [...inIndex].filter((k) => !onDisk.has(k));   // index엔 있는데 파일이 없다
+    const unlisted = [...onDisk].filter((k) => !inIndex.has(k)); // 파일은 있는데 index에 없다
+    const show = (a) => a.slice(0, 10).join(' ') + (a.length > 10 ? ` … 외 ${a.length - 10}개` : '');
+    row('audio 고아 참조', 0, orphan.length, orphan.length === 0, orphan.length ? show(orphan) : '');
+    row('audio 미등록', 0, unlisted.length, unlisted.length === 0, unlisted.length ? show(unlisted) : '');
+  }
+}
+
 /* ---------- 검사 3 — 제어문자 ---------- */
 const CTRL = /[\x00-\x08\x0B\x0C\x0E-\x1F]/;
 for (const f of ['DECISIONS.md', 'CLAUDE.md']) {
