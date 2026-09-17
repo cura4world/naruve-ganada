@@ -10,7 +10,7 @@
     "ship": "node scripts/bump.mjs && git add -A && git commit -m \"build\" && git push",
     "apk": "node scripts/bump-apk.mjs && npx cap sync android && cd android && .\\gradlew.bat assembleDebug",
     "apk:nobump": "npx cap sync android && cd android && .\\gradlew.bat assembleDebug",
-    "icons": "node -e \"const {spawnSync}=require('child_process');const a=process.argv.slice(1);for(const f of ['scripts/icon-layers.mjs','scripts/icon-verify.mjs']){const r=spawnSync(process.execPath,[f,...a],{stdio:'inherit'});if(r.status!==0)process.exit(r.status??1)}\"",
+    "icons:base": "node scripts/icon-layers.mjs",
     "icons:2g": "node scripts/icon-layers.mjs && node scripts/icon-fg-image.mjs assets/icon-2g-foreground.png assets/icon-2g-full.png && node scripts/icon-bg-image.mjs assets/icon-2g-background.png",
     "icons:verify": "node scripts/icon-verify.mjs",
     "check:docs": "node scripts/check_docs.mjs"

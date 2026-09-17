@@ -18,6 +18,9 @@
         and has at least 2 colours — a gradient that collapsed to one colour
         means a flat fill got through
      5. ic_launcher.xml and ic_launcher_round.xml still inset both layers 16.7%
+     6. assets/play-store-512.png is 512x512 and is the full original resized —
+        icon-layers.mjs rewrites it from the old master in step 1, so if step 2
+        did not run (or ran first) the store icon silently goes back to the old art
 
    Removed with 19.7 (2026-09-17) and why
      · background layer == the master's corner colour — the background is a
@@ -26,9 +29,10 @@
        still written by icon-layers.mjs from the old master, but the layer is
        then overwritten from icon-2g-foreground.png; check 3 replaces this.
      · inked extent inside the 66dp safe circle — that measured the padding
-       icon-layers.mjs applies. The 2G foreground is supplied already laid out,
-       and whether the 16.7% XML inset double-applies to it is an open item in
-       DECISIONS 19.7, not something this script should settle.            */
+       icon-layers.mjs applies. The 2G foreground is supplied already laid out.
+       The 16.7% XML inset was expected to render it smaller than intended, but
+       on a real phone it came out larger; the cause is not established and the
+       current size is kept (DECISIONS 19.7 open item). Not this script's call. */
 
 import sharp from 'sharp';
 import fs from 'node:fs';
@@ -38,6 +42,8 @@ const [FG, BG, FULL] = process.argv.length > 2
   ? process.argv.slice(2, 5)
   : ['assets/icon-2g-foreground.png', 'assets/icon-2g-background.png', 'assets/icon-2g-full.png'];
 const RES = 'android/app/src/main/res';
+const STORE = 'assets/play-store-512.png';
+const STORE_SIZE = 512;
 const MAD_LIMIT = 2;   // mean abs difference per channel, /255
 
 const EXPECT = {
@@ -131,6 +137,19 @@ for (const f of ['ic_launcher.xml', 'ic_launcher_round.xml']) {
   const insets = xml.match(/android:inset="[^"]*"/g) ?? [];
   if (insets.length !== 2 || insets.some((s) => s !== 'android:inset="16.7%"')) fail(`${f} insets ${insets.join(' ') || 'none'}, want 16.7% on both layers`);
   else pass(`${f.padEnd(27)} inset 16.7% on both layers`);
+}
+
+/* ---- 6. store listing icon came from the full original ---- */
+console.log('\n6. store listing icon');
+if (!fs.existsSync(STORE)) fail(`${STORE} missing`);
+else {
+  const gen = await rgba(STORE);
+  if (gen.info.width !== STORE_SIZE || gen.info.height !== STORE_SIZE) fail(`${STORE} is ${gen.info.width}x${gen.info.height}, want ${STORE_SIZE}`);
+  else {
+    const d = mad((await rgba(FULL, STORE_SIZE)).data, gen.data);
+    if (d > MAD_LIMIT) fail(`${STORE} differs from ${FULL} (mean abs diff ${d.toFixed(3)}) — old art? run npm run icons:2g`);
+    else pass(`${STORE}  ${STORE_SIZE}  matches ${FULL}  (${d.toFixed(3)})`);
+  }
 }
 
 console.log(failed === 0 ? '\nALL CHECKS PASSED' : `\n${failed} CHECK(S) FAILED`);

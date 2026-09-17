@@ -27,7 +27,15 @@
      ic_launcher_foreground.png   <- <foreground.png>  (must have alpha)
      ic_launcher.png              <- <full.png>        legacy square icon
      ic_launcher_round.png        <- <full.png>        legacy round icon
+   and once:
+     assets/play-store-512.png    <- <full.png>        store listing icon, 512x512
    The background layer and the mipmap-anydpi-v26 XML are left as they are.
+
+   play-store-512.png is written here and not earlier on purpose: step 1
+   (icon-layers.mjs) writes it from the old master before it runs
+   capacitor-assets, and capacitor-assets does not read that file name, so
+   nothing touches it after step 1. Overwriting it in step 2 is the first
+   point where the result sticks. icon-verify.mjs checks it came from <full.png>.
 
    Legacy icon shapes copy what capacitor-assets 3.0.5 wrote, measured from
    the files it produced (generateLegacyLauncherIcon / generateRoundLauncherIcon):
@@ -36,8 +44,8 @@
      ic_launcher_round.png  full image at w x w, circle mask r = w/2
    Both therefore have alpha 0 in the corners, which icon-verify.mjs checks.
 
-   Each file is resized to the pixel size the existing file already has, so
-   the density table lives in one place (capacitor-assets' templates).      */
+   Each mipmap file is resized to the pixel size the existing file already has,
+   so the density table lives in one place (capacitor-assets' templates).   */
 
 import sharp from 'sharp';
 import fs from 'node:fs';
@@ -50,6 +58,8 @@ const FOREGROUND = 'ic_launcher_foreground.png';   // names written by capacitor
 const SQUARE = 'ic_launcher.png';
 const ROUND = 'ic_launcher_round.png';
 const LEGACY_PAD = 8;                              // px, as capacitor-assets pads ic_launcher.png
+const STORE = 'assets/play-store-512.png';
+const STORE_SIZE = 512;
 
 if (!FG || !FULL) { console.error('usage: node scripts/icon-fg-image.mjs <foreground.png> <full.png>'); process.exit(1); }
 for (const f of [FG, FULL]) if (!fs.existsSync(f)) { console.error(`not found: ${f}`); process.exit(1); }
@@ -119,5 +129,9 @@ for (const dir of dirs) {
     count++;
   }
 }
+
+fs.writeFileSync(STORE, await sharp(FULL).resize(STORE_SIZE, STORE_SIZE, { fit: 'fill' }).png().toBuffer());
+console.log(`wrote ${STORE.padEnd(43)} ${STORE_SIZE}x${STORE_SIZE}  <- ${FULL}`);
+count++;
 
 console.log(`\n${count} file(s) replaced`);
