@@ -67,6 +67,35 @@ if (!fp) {
   }
 }
 
+/* ---------- 검사 1-b — DECISIONS.md 최종 갱신 ↔ 변경 이력 마지막 날짜 ---------- */
+// 왜 있는가 — 2026-09-17에 변경 이력만 한 줄 늘고 머리의 "최종 갱신"은 08-31에 멈춰 있었다.
+// 지문 줄은 행 수와 건수만 보므로 이 어긋남을 잡지 못한다.
+// --fix는 이 줄을 고치지 않는다 — 날짜는 사람이 정하는 값이고, 지문처럼 재계산되는 값이 아니다.
+{
+  const UP_RE = /^최종 갱신: (\d{4}-\d{2}-\d{2})$/m;
+  const up = dec.match(UP_RE);
+  const hIdx2 = dec.search(/^## 변경 이력\s*$/m);
+
+  if (!up) {
+    row('DECISIONS 최종 갱신 줄', '패턴 없음', '-', false, String(UP_RE));
+  } else if (hIdx2 === -1) {
+    row('DECISIONS 최종 갱신', up[1], '패턴 없음', false, '"## 변경 이력" 헤딩을 못 찾았다');
+  } else {
+    // 항목이 여러 줄에 걸쳐 있으므로 날짜로 시작하는 줄만 항목으로 센다
+    const dates = (dec.slice(hIdx2).match(/^- (\d{4}-\d{2}-\d{2})/gm) || []).map((s) => s.slice(2));
+    if (dates.length === 0) {
+      row('DECISIONS 최종 갱신', up[1], '항목 없음', false, '변경 이력에 "- YYYY-MM-DD" 항목이 없다');
+    } else {
+      const last = dates[dates.length - 1];
+      const ok = up[1] === last;
+      const note = ok ? ''
+        : last > up[1] ? '변경 이력이 더 뒤다 — 최종 갱신을 이력 마지막 날짜로 맞춘다'
+        : '최종 갱신이 이력 마지막보다 뒤다';
+      row('DECISIONS 최종 갱신', up[1], last, ok, note);
+    }
+  }
+}
+
 /* ---------- 검사 2 — CLAUDE.md "## 현재 상태" ↔ 코드 ---------- */
 const claude = read('CLAUDE.md');
 
