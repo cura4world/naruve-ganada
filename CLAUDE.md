@@ -109,42 +109,82 @@ position:fixed로 되돌리지 않는다. 고정하면 탭바 높이를 상수�
   360×740 세로 예산표를 뽑는다 (0.1.20 기준 .stage 가용 445px)
 
 ## 아이콘
-아이콘은 `npm run icons` 한 번으로 끝난다. capacitor-assets를 손으로 부르지 않는다.
-원본은 assets/GANADA고딕_icon.v5.png 하나(1024 정사각)이고 나머지는 전부 파생물이다.
+아이콘은 **2G 독립체 그라데이션**이다 (DECISIONS 19.7, 2026-09-17).
+생성은 두 명령이다. capacitor-assets를 손으로 부르지 않는다.
+
+```
+npm run icons:2g       # 3단계 생성
+npm run icons:verify   # 검사. 하나라도 어긋나면 non-zero
+```
+
+**원본은 3장이다.** 셋 다 1024 정사각이고, 나머지 아이콘 파일은 전부 파생물이다.
+- `assets/icon-2g-foreground.png`  적응형 전경. 투명 바탕 위 크림 원·'가나다'·마이크
+- `assets/icon-2g-background.png`  적응형 배경. `#B3342B` 계열 그라데이션, 불투명
+- `assets/icon-2g-full.png`        합본. 레거시 아이콘(ic_launcher, ic_launcher_round)용
+
+`assets/GANADA고딕_icon.v5.png`는 19.7 이전 원본이다. 이력이고 되돌릴 근거라 남긴다.
+지금도 `icon-layers.mjs`의 기본 원본이라 1단계의 기준 세트를 까는 데 쓰인다.
+
+**3단계 순서** — `npm run icons:2g`가 이 순서로 돌고 하나라도 실패하면 멈춘다.
+1. `node scripts/icon-layers.mjs` — 옛 원본으로 전체 세트를 만든다. XML·스플래시·
+   모든 밀도의 파일이 여기서 깔린다. 배경은 이 단계에선 단색(#C0392F)이다
+2. `node scripts/icon-fg-image.mjs <전경> <합본>` — 각 밀도의 적응형 전경을 전경
+   원본으로, 레거시 두 장을 합본으로 덮어쓴다
+3. `node scripts/icon-bg-image.mjs <배경>` — 각 밀도의 적응형 배경을 배경 원본으로 덮어쓴다
+
+2·3단계는 기존 파일의 픽셀 크기를 읽어 그 크기로 리사이즈한다. 밀도표는
+capacitor-assets 템플릿 한 곳에만 있다. 배경 레이어와 XML은 2단계가, 전경·레거시·XML은
+3단계가 건드리지 않는다.
+
+**왜 icon-layers.mjs만으로 안 되나.** capacitor-assets 3.0.5는 적응형 배경을
+`--iconBackgroundColor` 색 문자열로만 받는다. 올바른 108~432px 레이어가 나오는 것은
+logo 경로뿐이고, 그 경로에 배경 이미지를 넣을 인자가 없다. 이미지 경로
+(`icon-background.png`)는 아래 도구 버그로 192px가 된다. 그래서 capacitor-assets로
+파일 세트를 깔고 그 위에 레이어를 갈아끼운다. 도구가 logo 경로에서 배경 이미지를
+받게 되거나 배경이 단색으로 돌아가기 전에는 이 구조를 지우지 않는다.
+`icons:2g`를 빼고 `npm run icons`만 돌리면 19.7 이전 세트가 나오고 검사에서 실패한다.
 
 **assets/icon.png, icon-foreground.png, icon-background.png는 존재하면 안 된다.**
-스크립트가 발견하면 지운다. 이유가 각각 다르다.
+`icon-layers.mjs`가 발견하면 지운다. 이유가 각각 다르다. 도구 버그는 그대로다.
 
 - icon-foreground.png / icon-background.png를 주면 capacitor-assets 3.0.5의
   `generateAdaptiveIconForeground`가 템플릿을 `kind === 'icon'`으로 고른다.
   그건 레거시 템플릿(36~192)이라 어댑티브 레이어가 192px로 나온다. 도구 버그다.
   "adaptive 레이어가 192px로 깨진다"의 진짜 원인이며, 덮어쓰기 문제가 아니다.
+  2G 원본(`icon-2g-*`)은 인식 목록에 없는 파일명이라 capacitor-assets가 읽지 않는다.
+  이름을 `icon-foreground.png` 등으로 바꾸면 이 버그를 탄다.
 - icon.png는 logo 폴백으로 읽혀서(project.js loadLogoInputAsset) 진짜 logo.png를 이긴다.
 
-그래서 쓰는 파일은 이것뿐이다.
-- assets/logo.png       패딩된 포그라운드. logo 경로가 432px 어댑티브 템플릿을 쓴다
-- assets/icon-only.png  레거시 정사각 아이콘 (ic_launcher, ic_launcher_round)
-- assets/splash.png / splash-dark.png
-
-처리 순서가 logo → icon → splash라서, logo가 부수적으로 만든 레거시 아이콘과
-스플래시는 뒤따르는 icon-only.png와 splash.png가 덮어쓴다. 의도된 동작이다.
+**레거시 아이콘 모양은 capacitor-assets가 만들던 그대로다.** 기존 생성물에서 실측했다.
+- `ic_launcher.png` — 합본을 (w−16)² 로 줄이고 사방 8px 투명 여백. 모서리를 둥글리지 않는다
+- `ic_launcher_round.png` — 합본을 w² 로 줄이고 반경 w/2 원형 마스크
+둘 다 모서리 알파가 0이다. 이 파일들은 적응형 아이콘을 모르는 런처만 쓴다.
 
 **안전 영역 이중 인셋 주의.** 생성된 ic_launcher.xml이 두 레이어를
 `inset="16.7%"`로 감싼다. 즉 레이어 이미지는 108dp 중 중앙 72dp에 그려진다.
-그 인셋이 곧 안전영역 패딩이므로, 이미지 기준 목표는 66/72 = 91.7%다.
-66/108 = 61.1%로 잡으면 인셋이 두 번 걸려 마크가 42dp로 작아진다.
+`icon-layers.mjs`는 그 인셋을 안전영역 패딩으로 보고 이미지 기준 66/72 = 91.7%에
+맞춘다(66/108 = 61.1%로 잡으면 인셋이 두 번 걸려 마크가 42dp로 작아진다).
 XML이 inset="0%"로 바뀌면 icon-layers.mjs의 SAFE를 66/108로 바꾼다.
+**2G 전경·배경은 108dp를 채우도록 만들어졌는데 이 인셋이 다시 72dp로 눌러 넣는다.**
+DECISIONS 19.7의 미결 항목이다. 실측 전에는 XML을 고치지 않는다.
 
-배경색은 원본 모서리에서 뽑아 `--iconBackgroundColor`로 넘긴다. 하드코딩하지 않는다.
-현재 값은 #C0392F이고 네 모서리가 일치하는지도 스크립트가 확인한다.
+**`npm run icons:verify`가 검사하는 것** (인자 없으면 2G 원본 3장 기준)
+1. 적응형 전경·배경 각 6장이 81/108/162/216/324/432
+2. 레거시 `ic_launcher.png`·`ic_launcher_round.png` 각 6장이 36/48/72/96/144/192이고
+   네 모서리 알파가 0
+3. 각 밀도의 전경이 전경 원본을 그 크기로 리사이즈한 것과 같다
+4. 각 밀도의 배경이 배경 원본을 그 크기로 리사이즈한 것과 같고, 색이 2개 이상이다
+   (그라데이션이 단색으로 뭉개지지 않았다)
+5. ic_launcher.xml·ic_launcher_round.xml의 두 레이어 inset이 16.7%
 
-올바른 결과: 레이어 81/108/162/216/324/432, 레거시 36/48/72/96/144/192.
-`npm run icons:verify`가 크기, 배경색 일치, 레이어가 실제로 logo.png에서 왔는지를
-검사하고 하나라도 어긋나면 non-zero로 끝난다.
+19.7에서 뺀 검사는 파일 머리 주석에 이유와 함께 있다 — 원본 모서리 단색 대조,
+logo.png 출처 대조, 66dp 안전원 안 여부.
 
-assets/icon-round.png와 play-store-512.png는 capacitor-assets가 읽지 않는 파일명이다
+assets/logo.png·icon-only.png·icon-round.png·play-store-512.png는 1단계가
+**옛 원본에서** 다시 만드는 파일이다. 2G 아이콘이 아니다.
+icon-round.png와 play-store-512.png는 capacitor-assets가 읽지 않는 파일명이다
 (인식 목록: logo, logo-dark, icon-only, icon-foreground, icon-background, splash, splash-dark).
-스토어 등록용으로만 쓴다.
+스토어 등록에 쓰기 전에 그림을 확인한다.
 
 아이콘을 바꾸면 APK를 다시 빌드해야 폰에 반영된다. `npm run apk`.
 
@@ -708,4 +748,4 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 `renderL1`은 정의만 남고 호출되지 않는다. s.w에 박힌 확정 설명이라
 정밀도 65%를 넘긴 L1부터 켠다.
 
-**versionCode** 3 (`android/app/build.gradle` 실측 2026-08-31). `npm run apk`마다 +1.
+**versionCode** 8 (`android/app/build.gradle` 실측 2026-09-17). `npm run apk`마다 +1.

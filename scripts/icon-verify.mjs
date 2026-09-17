@@ -1,26 +1,44 @@
-/* Naruve — check what capacitor-assets actually wrote.
+/* Naruve — check what the icon pipeline actually wrote.
 
-   Run:  npm run icons:verify   (or: node scripts/icon-verify.mjs [master.png])
+   Run:  npm run icons:verify
+         (or: node scripts/icon-verify.mjs [foreground.png background.png full.png])
+   With no arguments it checks against the adopted 2G set (DECISIONS 19.7):
+     assets/icon-2g-foreground.png · icon-2g-background.png · icon-2g-full.png
 
-   Three things go wrong with launcher icons in this project, so all three are
-   checked and the script exits non-zero if any fails:
+   Run it after  npm run icons:2g  (icon-layers.mjs -> icon-fg-image.mjs ->
+   icon-bg-image.mjs). Exits non-zero if any check fails.
 
-     1. adaptive layers silently drop to legacy sizes (see scripts/icon-layers.mjs)
-     2. the generated layer is auto-derived from the square master instead of
-        the padded artwork that was prepared
-     3. the flat background layer drifts from the master's red                */
+   Checks
+     1. adaptive foreground and background layers are 81/108/162/216/324/432
+        — they silently drop to 192px on capacitor-assets' legacy path
+     2. legacy ic_launcher.png / ic_launcher_round.png are 36/48/72/96/144/192
+        and every corner is alpha 0 (padded square / circle, not a flat tile)
+     3. each foreground layer is the foreground original resized to that size
+     4. each background layer is the background original resized to that size,
+        and has at least 2 colours — a gradient that collapsed to one colour
+        means a flat fill got through
+     5. ic_launcher.xml and ic_launcher_round.xml still inset both layers 16.7%
+
+   Removed with 19.7 (2026-09-17) and why
+     · background layer == the master's corner colour — the background is a
+       gradient image now; there is no single field colour to compare against.
+     · foreground came from assets/logo.png, not the raw master — logo.png is
+       still written by icon-layers.mjs from the old master, but the layer is
+       then overwritten from icon-2g-foreground.png; check 3 replaces this.
+     · inked extent inside the 66dp safe circle — that measured the padding
+       icon-layers.mjs applies. The 2G foreground is supplied already laid out,
+       and whether the 16.7% XML inset double-applies to it is an open item in
+       DECISIONS 19.7, not something this script should settle.            */
 
 import sharp from 'sharp';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const MASTER = process.argv[2] ?? 'assets/GANADA고딕_icon.v5.png';
+const [FG, BG, FULL] = process.argv.length > 2
+  ? process.argv.slice(2, 5)
+  : ['assets/icon-2g-foreground.png', 'assets/icon-2g-background.png', 'assets/icon-2g-full.png'];
 const RES = 'android/app/src/main/res';
-/* ic_launcher.xml insets each layer by 16.7%, so a layer image is painted
-   into the centre 72dp of the 108dp icon. Content filling 66/72 of the image
-   therefore lands exactly on the 66dp safe circle. */
-const SAFE = 66 / 72;
-const XML_INSET_DP = 72;
+const MAD_LIMIT = 2;   // mean abs difference per channel, /255
 
 const EXPECT = {
   'mipmap-ldpi': { layer: 81, legacy: 36 },
@@ -35,78 +53,85 @@ let failed = 0;
 const fail = (m) => { console.log(`  FAIL  ${m}`); failed++; };
 const pass = (m) => console.log(`  ok    ${m}`);
 
-/* ---- 1. sizes ---- */
-console.log('1. mipmap pixel sizes');
+console.log(`foreground    ${FG}`);
+console.log(`background    ${BG}`);
+console.log(`full          ${FULL}\n`);
+for (const f of [FG, BG, FULL]) {
+  if (!f || !fs.existsSync(f)) { console.log(`  FAIL  original not found: ${f}`); process.exit(1); }
+}
+
+const rgba = async (f, w) => {
+  const pipe = sharp(f);
+  if (w) pipe.resize(w, w, { fit: 'fill' });
+  return pipe.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+};
+const mad = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]); return s / a.length; };
+
+/* ---- 1. adaptive layer sizes ---- */
+console.log('1. adaptive layer sizes');
 for (const [dir, exp] of Object.entries(EXPECT)) {
-  for (const [f, want] of [
-    ['ic_launcher_foreground.png', exp.layer],
-    ['ic_launcher_background.png', exp.layer],
-    ['ic_launcher.png', exp.legacy],
-    ['ic_launcher_round.png', exp.legacy],
-  ]) {
+  for (const f of ['ic_launcher_foreground.png', 'ic_launcher_background.png']) {
     const p = path.join(RES, dir, f);
     if (!fs.existsSync(p)) { fail(`${dir}/${f} missing`); continue; }
     const m = await sharp(p).metadata();
-    if (m.width !== want || m.height !== want) fail(`${dir}/${f} is ${m.width}x${m.height}, want ${want}`);
-    else pass(`${dir.padEnd(15)} ${f.padEnd(27)} ${want}`);
+    if (m.width !== exp.layer || m.height !== exp.layer) fail(`${dir}/${f} is ${m.width}x${m.height}, want ${exp.layer}`);
+    else pass(`${dir.padEnd(15)} ${f.padEnd(27)} ${exp.layer}`);
   }
 }
 
-/* ---- 2. background layer colour == master's field colour ---- */
-console.log('\n2. background layer colour');
-const mrgb = await sharp(MASTER).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-const mc = [mrgb.data[(3 * mrgb.info.width + 3) * 4], mrgb.data[(3 * mrgb.info.width + 3) * 4 + 1], mrgb.data[(3 * mrgb.info.width + 3) * 4 + 2]];
-const hex = (a) => '#' + a.map((v) => v.toString(16).padStart(2, '0')).join('');
-console.log(`  master field colour ${hex(mc)} rgb(${mc})`);
-for (const dir of Object.keys(EXPECT)) {
+/* ---- 2. legacy icons: size and transparent corners ---- */
+console.log('\n2. legacy icons');
+for (const [dir, exp] of Object.entries(EXPECT)) {
+  for (const f of ['ic_launcher.png', 'ic_launcher_round.png']) {
+    const p = path.join(RES, dir, f);
+    if (!fs.existsSync(p)) { fail(`${dir}/${f} missing`); continue; }
+    const { data, info } = await rgba(p);
+    if (info.width !== exp.legacy || info.height !== exp.legacy) { fail(`${dir}/${f} is ${info.width}x${info.height}, want ${exp.legacy}`); continue; }
+    const W = info.width;
+    const A = (x, y) => data[(y * W + x) * 4 + 3];
+    const corners = [A(0, 0), A(W - 1, 0), A(0, W - 1), A(W - 1, W - 1)];
+    if (corners.some((a) => a !== 0)) fail(`${dir}/${f} corner alpha ${corners}, want 0`);
+    else pass(`${dir.padEnd(15)} ${f.padEnd(27)} ${exp.legacy}  corners transparent`);
+  }
+}
+
+/* ---- 3. foreground layers derive from the foreground original ---- */
+console.log('\n3. foreground provenance');
+for (const [dir, exp] of Object.entries(EXPECT)) {
+  const p = path.join(RES, dir, 'ic_launcher_foreground.png');
+  if (!fs.existsSync(p)) continue;
+  const gen = await rgba(p);
+  if (gen.info.width !== exp.layer) continue;
+  const d = mad((await rgba(FG, exp.layer)).data, gen.data);
+  if (d > MAD_LIMIT) fail(`${dir} foreground differs from ${FG} (mean abs diff ${d.toFixed(3)})`);
+  else pass(`${dir.padEnd(15)} matches ${FG}  (${d.toFixed(3)})`);
+}
+
+/* ---- 4. background layers derive from the background original, not flat ---- */
+console.log('\n4. background provenance');
+for (const [dir, exp] of Object.entries(EXPECT)) {
   const p = path.join(RES, dir, 'ic_launcher_background.png');
   if (!fs.existsSync(p)) continue;
-  const b = await sharp(p).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const gen = await rgba(p);
+  if (gen.info.width !== exp.layer) continue;
+  const d = mad((await rgba(BG, exp.layer)).data, gen.data);
   const seen = new Set();
-  for (let i = 0; i < b.data.length; i += 4) seen.add(`${b.data[i]},${b.data[i + 1]},${b.data[i + 2]}`);
-  const only = [...seen];
-  if (only.length !== 1) fail(`${dir} background has ${only.length} colours, want 1 (${only.slice(0, 3)})`);
-  else if (only[0] !== mc.join(',')) fail(`${dir} background is rgb(${only[0]}), want rgb(${mc})`);
-  else pass(`${dir.padEnd(15)} flat ${hex(mc)}`);
+  for (let i = 0; i < gen.data.length; i += 4) seen.add(`${gen.data[i]},${gen.data[i + 1]},${gen.data[i + 2]}`);
+  if (d > MAD_LIMIT) fail(`${dir} background differs from ${BG} (mean abs diff ${d.toFixed(3)})`);
+  else if (seen.size < 2) fail(`${dir} background has ${seen.size} colour — the gradient collapsed to a flat fill`);
+  else pass(`${dir.padEnd(15)} matches ${BG}  (${d.toFixed(3)}, ${seen.size} colours)`);
 }
 
-/* ---- 3. foreground layer came from assets/logo.png, not from the master ---- */
-console.log('\n3. foreground provenance');
-const size = 432;
-const raw = async (f) => sharp(f).resize(size, size, { fit: 'fill' }).ensureAlpha().raw().toBuffer();
-const mad = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]); return s / a.length; };
-
-const genPath = path.join(RES, 'mipmap-xxxhdpi', 'ic_launcher_foreground.png');
-const dLogo = mad(await raw('assets/logo.png'), await raw(genPath));
-const dMaster = mad(await raw(MASTER), await raw(genPath));
-console.log(`  mean abs diff vs assets/logo.png : ${dLogo.toFixed(3)} /255`);
-console.log(`  mean abs diff vs master          : ${dMaster.toFixed(3)} /255`);
-if (dLogo > 2) fail(`generated layer does not match assets/logo.png (${dLogo.toFixed(3)})`);
-else pass('generated layer matches the prepared artwork');
-if (!(dMaster > dLogo * 3)) fail('generated layer looks like the raw master, not the padded logo');
-else pass('generated layer is not the raw master');
-
-const g = await sharp(genPath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-const A = (x, y) => g.data[(y * g.info.width + x) * 4 + 3];
-const corners = [A(0, 0), A(size - 1, 0), A(0, size - 1), A(size - 1, size - 1)];
-if (corners.some((a) => a !== 0)) fail(`layer corners are not transparent: ${corners}`);
-else pass('layer corners transparent');
-
-let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
-for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-  if (A(x, y) > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+/* ---- 5. the XML must still be the inset flavour ---- */
+console.log('\n5. adaptive icon XML');
+for (const f of ['ic_launcher.xml', 'ic_launcher_round.xml']) {
+  const p = path.join(RES, 'mipmap-anydpi-v26', f);
+  if (!fs.existsSync(p)) { fail(`${f} missing`); continue; }
+  const xml = fs.readFileSync(p, 'utf8');
+  const insets = xml.match(/android:inset="[^"]*"/g) ?? [];
+  if (insets.length !== 2 || insets.some((s) => s !== 'android:inset="16.7%"')) fail(`${f} insets ${insets.join(' ') || 'none'}, want 16.7% on both layers`);
+  else pass(`${f.padEnd(27)} inset 16.7% on both layers`);
 }
-const extent = Math.max(x1 - x0 + 1, y1 - y0 + 1) / size;
-const renderedDp = extent * XML_INSET_DP;
-console.log(`  inked extent ${(extent * 100).toFixed(1)}% of the layer -> ${renderedDp.toFixed(1)}dp of 108 once the XML inset is applied`);
-if (renderedDp > 66.5) fail(`content renders at ${renderedDp.toFixed(1)}dp, past the 66dp safe circle`);
-else if (renderedDp < 55) fail(`content renders at only ${renderedDp.toFixed(1)}dp — safe circle is 66dp, mark will look small`);
-else pass(`content renders at ${renderedDp.toFixed(1)}dp, inside the 66dp safe circle`);
-
-/* the XML must still be the inset flavour this maths assumes */
-const xml = fs.readFileSync(path.join(RES, 'mipmap-anydpi-v26', 'ic_launcher.xml'), 'utf8');
-if (!xml.includes('android:inset="16.7%"')) fail('ic_launcher.xml no longer insets 16.7% — SAFE in icon-layers.mjs must change');
-else pass('ic_launcher.xml still insets 16.7%');
 
 console.log(failed === 0 ? '\nALL CHECKS PASSED' : `\n${failed} CHECK(S) FAILED`);
 process.exit(failed === 0 ? 0 : 1);
