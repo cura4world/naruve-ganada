@@ -130,9 +130,10 @@ npm run icons:verify   # 검사. 하나라도 어긋나면 non-zero
 **3단계 순서** — `npm run icons:2g`가 이 순서로 돌고 하나라도 실패하면 멈춘다.
 1. `node scripts/icon-layers.mjs` — 옛 원본으로 전체 세트를 만든다. XML·스플래시·
    모든 밀도의 파일이 여기서 깔린다. 배경은 이 단계에선 단색(#C0392F)이다
-2. `node scripts/icon-fg-image.mjs <전경> <배경> --scale 0.90` — 전경을 scale 배로
-   줄여 가운데 놓은 것으로 각 밀도의 적응형 전경을, 그것을 배경 위에 합성한 것으로
-   레거시 두 장과 `assets/play-store-512.png`를 덮어쓴다
+2. `node scripts/icon-fg-image.mjs <전경> <배경> --scale 0.90 --dx -23` — 전경을 원본
+   좌표에서 (dx, dy)만큼 옮기고(`--dy` 기본 0, 마크가 잘리면 멈춘다) scale 배로 줄여
+   가운데 놓은 것으로 각 밀도의 적응형 전경을, 그것을 배경 위에 합성한 것으로
+   레거시 두 장과 `assets/play-store-512.png`를 덮어쓴다. dx −23은 크림 원 중심 보정이다
 3. `node scripts/icon-bg-image.mjs <배경>` — 각 밀도의 적응형 배경을 배경 원본으로 덮어쓴다
 
 2·3단계는 기존 파일의 픽셀 크기를 읽어 그 크기로 리사이즈한다. 밀도표는
@@ -177,7 +178,7 @@ XML이 inset="0%"로 바뀌면 icon-layers.mjs의 SAFE를 66/108로 바꾼다.
 인셋 XML은 그대로 둔다.
 
 **`npm run icons:verify`가 검사하는 것** (인자 없으면 2G 원본 2장 기준)
-0. `package.json`의 `icons:2g`가 같은 원본 2장을 넘기고 `--scale`이 (0, 1]이다. scale은 여기서 읽는다
+0. `package.json`의 `icons:2g`가 같은 원본 2장을 넘기고 `--scale`이 (0, 1], `--dx`·`--dy`가 정수다. 세 값은 여기서 읽는다
 1. 적응형 전경·배경 각 6장이 81/108/162/216/324/432
 2. 레거시 `ic_launcher.png`·`ic_launcher_round.png` 각 6장이 36/48/72/96/144/192이고
    네 모서리 알파가 0이며, 전경(scale)+배경 합성본에서 만든 것과 같다

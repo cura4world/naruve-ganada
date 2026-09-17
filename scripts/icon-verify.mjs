@@ -4,23 +4,25 @@
          (or: node scripts/icon-verify.mjs [foreground.png background.png])
    With no arguments it checks against the adopted 2G set (DECISIONS 19.7):
      assets/icon-2g-foreground.png · assets/icon-2g-background.png
-   The scale is read from the "icons:2g" script in package.json (the one place
-   the value is written), so the check can never drift from what was generated.
+   The scale and the dx/dy offset are read from the "icons:2g" script in
+   package.json (the one place the values are written), so the check can never
+   drift from what was generated.
 
    Run it after  npm run icons:2g  (icon-layers.mjs -> icon-fg-image.mjs ->
    icon-bg-image.mjs). Exits non-zero if any check fails.
 
    Checks
-     0. package.json "icons:2g" passes the same two originals to icon-fg-image.mjs
-        and a readable --scale in (0, 1] (none means 1)
+     0. package.json "icons:2g" passes the same two originals to icon-fg-image.mjs,
+        a readable --scale in (0, 1] (none means 1) and integer --dx/--dy
+        (none means 0)
      1. adaptive foreground and background layers are 81/108/162/216/324/432
         — they silently drop to 192px on capacitor-assets' legacy path
      2. legacy ic_launcher.png / ic_launcher_round.png are 36/48/72/96/144/192,
         every corner is alpha 0 (padded square / circle, not a flat tile), and
-        each is the foreground-at-scale over the background, shaped as
+        each is the moved-and-scaled foreground over the background, shaped as
         icon-fg-image.mjs shapes it
-     3. each foreground layer is the foreground original at that scale, centred
-        on a transparent canvas, resized to that size
+     3. each foreground layer is the foreground original moved by (dx, dy),
+        scaled, centred on a transparent canvas, resized to that size
      4. each background layer is the background original resized to that size,
         and has at least 2 colours — a gradient that collapsed to one colour
         means a flat fill got through
@@ -30,7 +32,8 @@
         did not run (or ran first) the store icon silently goes back to the old art
 
    The sources are rebuilt here exactly as icon-fg-image.mjs builds them —
-   change both together.
+   change both together. (A move that would clip the mark is refused by
+   icon-fg-image.mjs itself, so it never reaches this script.)
 
    Removed with 19.7 (2026-09-17) and why
      · background layer == the master's corner colour — the background is a
@@ -78,26 +81,36 @@ for (const f of [FG, BG]) {
   if (!f || !fs.existsSync(f)) { console.log(`  FAIL  original not found: ${f}`); process.exit(1); }
 }
 
-/* ---- 0. scale and originals as package.json generates them ---- */
+/* ---- 0. scale, offset and originals as package.json generates them ---- */
 console.log('\n0. package.json icons:2g');
 const script = JSON.parse(fs.readFileSync('package.json', 'utf8')).scripts?.['icons:2g'] ?? '';
 const fgCall = script.split('&&').map((s) => s.trim()).find((s) => s.includes('icon-fg-image.mjs'));
 let SCALE = NaN;
+let DX = NaN;
+let DY = NaN;
 if (!fgCall) fail('icons:2g does not call icon-fg-image.mjs');
 else {
   const words = fgCall.split(/\s+/);
-  const si = words.indexOf('--scale');
-  SCALE = si === -1 ? 1 : Number(words[si + 1]);
-  const files = words.slice(words.indexOf('scripts/icon-fg-image.mjs') + 1).filter((w, i, a) => !w.startsWith('--') && a[i - 1] !== '--scale');
-  if (!(SCALE > 0 && SCALE <= 1)) fail(`icons:2g --scale is ${si === -1 ? 'missing' : words[si + 1]}, want a number in (0, 1]`);
+  const opt = (flag, fallback) => { const i = words.indexOf(flag); return i === -1 ? fallback : words[i + 1]; };
+  const scaleArg = opt('--scale', '1');
+  const dxArg = opt('--dx', '0');
+  const dyArg = opt('--dy', '0');
+  SCALE = Number(scaleArg);
+  DX = Number(dxArg);
+  DY = Number(dyArg);
+  const files = words.slice(words.indexOf('scripts/icon-fg-image.mjs') + 1).filter((w, i, a) => !w.startsWith('--') && !(a[i - 1] ?? '').startsWith('--'));
+  if (!(SCALE > 0 && SCALE <= 1)) fail(`icons:2g --scale is ${scaleArg}, want a number in (0, 1]`);
   else pass(`scale ${SCALE}`);
+  if (!Number.isInteger(DX) || !Number.isInteger(DY)) fail(`icons:2g --dx ${dxArg} --dy ${dyArg}, want integers`);
+  else pass(`offset dx ${DX} dy ${DY}`);
   if (files[0] !== FG || files[1] !== BG) fail(`icons:2g passes ${files.slice(0, 2).join(' ')}, this check uses ${FG} ${BG}`);
   else pass(`originals match icons:2g`);
 }
-if (!(SCALE > 0 && SCALE <= 1)) {
+if (!(SCALE > 0 && SCALE <= 1) || !Number.isInteger(DX) || !Number.isInteger(DY)) {
   console.log(`\n${failed} CHECK(S) FAILED`);
   process.exit(1);
 }
+const XF = `dx ${DX} dy ${DY} x${SCALE}`;
 
 const rgba = async (f, w) => {
   const pipe = sharp(f);
@@ -107,10 +120,23 @@ const rgba = async (f, w) => {
 const mad = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]); return s / a.length; };
 
 /* sources, built as icon-fg-image.mjs builds them */
+let shiftedSrc = FG;
+if (DX !== 0 || DY !== 0) {
+  const base = await sharp(FG).resize(CANVAS, CANVAS, { fit: 'fill' }).ensureAlpha().raw().toBuffer();
+  /* two pipelines: within one, sharp runs extract before extend */
+  const padded = await sharp(base, { raw: { width: CANVAS, height: CANVAS, channels: 4 } })
+    .extend({ left: Math.max(DX, 0), right: Math.max(-DX, 0), top: Math.max(DY, 0), bottom: Math.max(-DY, 0), background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+  shiftedSrc = await sharp(padded)
+    .extract({ left: Math.max(-DX, 0), top: Math.max(-DY, 0), width: CANVAS, height: CANVAS })
+    .png()
+    .toBuffer();
+}
 const size = Math.round(CANVAS * SCALE);
 const off = Math.round((CANVAS - size) / 2);
 const markSrc = await sharp({ create: { width: CANVAS, height: CANVAS, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-  .composite([{ input: await sharp(FG).resize(size, size, { fit: 'fill' }).png().toBuffer(), left: off, top: off }])
+  .composite([{ input: await sharp(shiftedSrc).resize(size, size, { fit: 'fill' }).png().toBuffer(), left: off, top: off }])
   .png()
   .toBuffer();
 const compSrc = await sharp(await sharp(BG).resize(CANVAS, CANVAS, { fit: 'fill' }).ensureAlpha().png().toBuffer())
@@ -155,12 +181,12 @@ for (const [dir, exp] of Object.entries(EXPECT)) {
     const corners = [A(0, 0), A(W - 1, 0), A(0, W - 1), A(W - 1, W - 1)];
     const d = mad((await rgba(await expectLegacy(f, W))).data, data);
     if (corners.some((a) => a !== 0)) fail(`${dir}/${f} corner alpha ${corners}, want 0`);
-    else if (d > MAD_LIMIT) fail(`${dir}/${f} differs from foreground x${SCALE} over background (mean abs diff ${d.toFixed(3)})`);
-    else pass(`${dir.padEnd(15)} ${f.padEnd(27)} ${exp.legacy}  corners transparent, composite x${SCALE} (${d.toFixed(3)})`);
+    else if (d > MAD_LIMIT) fail(`${dir}/${f} differs from foreground ${XF} over background (mean abs diff ${d.toFixed(3)})`);
+    else pass(`${dir.padEnd(15)} ${f.padEnd(27)} ${exp.legacy}  corners transparent, composite ${XF} (${d.toFixed(3)})`);
   }
 }
 
-/* ---- 3. foreground layers derive from the foreground original at scale ---- */
+/* ---- 3. foreground layers derive from the foreground original, moved and scaled ---- */
 console.log('\n3. foreground provenance');
 for (const [dir, exp] of Object.entries(EXPECT)) {
   const p = path.join(RES, dir, 'ic_launcher_foreground.png');
@@ -168,8 +194,8 @@ for (const [dir, exp] of Object.entries(EXPECT)) {
   const gen = await rgba(p);
   if (gen.info.width !== exp.layer) continue;
   const d = mad((await rgba(markSrc, exp.layer)).data, gen.data);
-  if (d > MAD_LIMIT) fail(`${dir} foreground differs from ${FG} x${SCALE} (mean abs diff ${d.toFixed(3)})`);
-  else pass(`${dir.padEnd(15)} matches ${FG} x${SCALE}  (${d.toFixed(3)})`);
+  if (d > MAD_LIMIT) fail(`${dir} foreground differs from ${FG} ${XF} (mean abs diff ${d.toFixed(3)})`);
+  else pass(`${dir.padEnd(15)} matches ${FG} ${XF}  (${d.toFixed(3)})`);
 }
 
 /* ---- 4. background layers derive from the background original, not flat ---- */
@@ -206,8 +232,8 @@ else {
   if (gen.info.width !== STORE_SIZE || gen.info.height !== STORE_SIZE) fail(`${STORE} is ${gen.info.width}x${gen.info.height}, want ${STORE_SIZE}`);
   else {
     const d = mad((await rgba(compSrc, STORE_SIZE)).data, gen.data);
-    if (d > MAD_LIMIT) fail(`${STORE} differs from foreground x${SCALE} over background (mean abs diff ${d.toFixed(3)}) — old art? run npm run icons:2g`);
-    else pass(`${STORE}  ${STORE_SIZE}  composite x${SCALE}  (${d.toFixed(3)})`);
+    if (d > MAD_LIMIT) fail(`${STORE} differs from foreground ${XF} over background (mean abs diff ${d.toFixed(3)}) — old art? run npm run icons:2g`);
+    else pass(`${STORE}  ${STORE_SIZE}  composite ${XF}  (${d.toFixed(3)})`);
   }
 }
 
