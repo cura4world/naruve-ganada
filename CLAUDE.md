@@ -620,7 +620,7 @@ README의 APK 경로가 BEL 둘로 깨진 채 몇 주를 지났다.
 - 억양 채점은 F0 분석으로 단말에서 처리 — 원가 0원이므로 무료 사용자에게도 열어준다.
 - 모국어 설명은 결핍만 지적하지 않는다. 이미 가진 것을 찾아 쓴다.
   (예: 인도네시아어에는 불파 종성이 있다 — anak, sebab)
-- 색: ink #111A22 / paper #FBFAF6 / seal #C0392F
+- 색: ink #111A22 / paper #FBFAF6 / seal #B3342B (브랜드 색, DECISIONS 19.6)
 - 한글은 Noto Serif KR, 라틴은 Archivo
 
 ## 저작권 경계
@@ -648,7 +648,7 @@ versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로
 지메일 설정은 저장소 밖이라 빌드와 무관하다.
 
 ## 현재 상태
-빌드 0.1.27 기준.
+빌드 0.1.28 기준.
 
 **문장** 200개 (Standard 60 / Everyday 60 / Drama 50 / Sounds 30) — 배치 1 (#76, 2026-08-26).
 `t:` 태그 200개(question 84 / statement 112 / exclam 4), `w:` 200개,
