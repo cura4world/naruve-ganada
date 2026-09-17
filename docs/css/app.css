@@ -1,7 +1,7 @@
 :root{
   --ink:#111A22; --ink-soft:#4A5561; --ink-faint:#8A939C;
   --paper:#FBFAF6; --rule:#DFDCD2; --sunk:#EFEDE6;
-  --seal:#C0392F; --seal-deep:#9E2D25;
+  --seal:#B3342B; --seal-deep:#9E2D25;
   --kr:'Noto Serif KR','Apple SD Gothic Neo','Malgun Gothic','Nanum Gothic',serif;
   --ui:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   --tap:200ms cubic-bezier(.2,.8,.2,1);
