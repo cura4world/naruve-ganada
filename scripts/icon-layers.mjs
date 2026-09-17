@@ -1,6 +1,8 @@
 /* Naruve — rebuild every launcher icon from one 1024 master.
 
-   Run:  npm run icons          (or: node scripts/icon-layers.mjs [master.png])
+   Run:  npm run icons:base     (or: node scripts/icon-layers.mjs [master.png])
+         This is step 1 of  npm run icons:2g  — the adopted icon (DECISIONS 19.7)
+         needs steps 2-3 on top; see scripts/icon-fg-image.mjs.
 
    Read this before changing anything here
    ---------------------------------------

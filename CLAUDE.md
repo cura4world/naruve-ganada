@@ -142,7 +142,8 @@ logo 경로뿐이고, 그 경로에 배경 이미지를 넣을 인자가 없다.
 (`icon-background.png`)는 아래 도구 버그로 192px가 된다. 그래서 capacitor-assets로
 파일 세트를 깔고 그 위에 레이어를 갈아끼운다. 도구가 logo 경로에서 배경 이미지를
 받게 되거나 배경이 단색으로 돌아가기 전에는 이 구조를 지우지 않는다.
-`icons:2g`를 빼고 `npm run icons`만 돌리면 19.7 이전 세트가 나오고 검사에서 실패한다.
+세 스크립트의 관계: `icons:base`는 1단계만(옛 원본 세트, 단독으로는 검사에 실패한다),
+`icons:2g`는 1~3단계 전체, `icons:verify`는 그 결과를 2G 원본 3장과 대조한다.
 
 **assets/icon.png, icon-foreground.png, icon-background.png는 존재하면 안 된다.**
 `icon-layers.mjs`가 발견하면 지운다. 이유가 각각 다르다. 도구 버그는 그대로다.
@@ -165,8 +166,11 @@ logo 경로뿐이고, 그 경로에 배경 이미지를 넣을 인자가 없다.
 `icon-layers.mjs`는 그 인셋을 안전영역 패딩으로 보고 이미지 기준 66/72 = 91.7%에
 맞춘다(66/108 = 61.1%로 잡으면 인셋이 두 번 걸려 마크가 42dp로 작아진다).
 XML이 inset="0%"로 바뀌면 icon-layers.mjs의 SAFE를 66/108로 바꾼다.
-**2G 전경·배경은 108dp를 채우도록 만들어졌는데 이 인셋이 다시 72dp로 눌러 넣는다.**
-DECISIONS 19.7의 미결 항목이다. 실측 전에는 XML을 고치지 않는다.
+2G 전경·배경은 108dp를 채우도록 만들어졌고, 이 인셋이 다시 72dp로 눌러 넣는다.
+마크가 의도보다 작게 나올 것으로 보았으나 **실기에서는 반대로 크게 나왔다**
+(2026-09-17). 원인은 규명되지 않았다. 크게 나오는 쪽이 가독성에 유리하다는
+판단으로 현 상태를 유지한다 — DECISIONS 19.7 미결 항목이다. 실측 전에는
+XML을 고치지 않는다.
 
 **`npm run icons:verify`가 검사하는 것** (인자 없으면 2G 원본 3장 기준)
 1. 적응형 전경·배경 각 6장이 81/108/162/216/324/432
@@ -176,15 +180,19 @@ DECISIONS 19.7의 미결 항목이다. 실측 전에는 XML을 고치지 않는�
 4. 각 밀도의 배경이 배경 원본을 그 크기로 리사이즈한 것과 같고, 색이 2개 이상이다
    (그라데이션이 단색으로 뭉개지지 않았다)
 5. ic_launcher.xml·ic_launcher_round.xml의 두 레이어 inset이 16.7%
+6. `assets/play-store-512.png`가 512이고 합본 원본을 그 크기로 리사이즈한 것과 같다
 
 19.7에서 뺀 검사는 파일 머리 주석에 이유와 함께 있다 — 원본 모서리 단색 대조,
 logo.png 출처 대조, 66dp 안전원 안 여부.
 
-assets/logo.png·icon-only.png·icon-round.png·play-store-512.png는 1단계가
-**옛 원본에서** 다시 만드는 파일이다. 2G 아이콘이 아니다.
-icon-round.png와 play-store-512.png는 capacitor-assets가 읽지 않는 파일명이다
+**`assets/play-store-512.png`는 스토어 등록용이고 2G 합본에서 온다.** 1단계가 이 파일을
+옛 원본으로 먼저 만들지만(icon-layers.mjs), capacitor-assets는 이 파일명을 읽지 않으므로
+2단계 `icon-fg-image.mjs`가 합본을 512로 줄여 덮어쓴다. 옛 내용으로 되돌아가면
+`icons:verify`가 잡는다.
+
+assets/logo.png·icon-only.png·icon-round.png는 1단계가 **옛 원본에서** 다시 만드는
+파일이다. 2G 아이콘이 아니다. icon-round.png도 capacitor-assets가 읽지 않는 파일명이다
 (인식 목록: logo, logo-dark, icon-only, icon-foreground, icon-background, splash, splash-dark).
-스토어 등록에 쓰기 전에 그림을 확인한다.
 
 아이콘을 바꾸면 APK를 다시 빌드해야 폰에 반영된다. `npm run apk`.
 
@@ -611,8 +619,11 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - scripts/bump-apk.mjs    versionCode 올리는 스크립트. bump.mjs와 섞지 않는다
 - scripts/check_docs.mjs  DECISIONS.md 지문 재계산·대조, CLAUDE.md "현재 상태" ↔ 코드 숫자 대조,
                           제어문자 검사, audio/index.json ↔ mp3 고아·미등록 대조, 문장 필드(t:/w:/lb/tr) 수 대조. `--fix`는 지문 줄만 고친다. PR 전과 병합 전에 돈다
-- scripts/icon-layers.mjs 원본 1장에서 아이콘 전체를 다시 만든다
-- scripts/icon-verify.mjs 생성 결과 검사 (크기·배경색·아트 출처)
+- scripts/icon-layers.mjs 기준 세트 생성 (옛 원본 1장 → XML·스플래시·전 밀도 파일). icons:2g 1단계
+- scripts/icon-fg-image.mjs 적응형 전경·레거시 아이콘·play-store-512.png 덮어쓰기. icons:2g 2단계
+- scripts/icon-bg-image.mjs 적응형 배경 덮어쓰기. icons:2g 3단계
+- scripts/icon-verify.mjs 생성 결과 검사 (레이어·레거시 크기, 레거시 모서리 투명, 전경·배경·스토어 아이콘이
+                          2G 원본에서 왔는지, 배경 색 2개 이상, XML inset 16.7%)
 - scripts/tts_gen.py      프로브 오류 샘플 생성
 - scripts/prep_audio.sh   mp3 → 16kHz/16bit/mono wav
 - scripts/pa_probe.py     엔진 호출. 원본 응답을 out/raw/에 그대로 저장
