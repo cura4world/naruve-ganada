@@ -11,7 +11,7 @@
     "apk": "node scripts/bump-apk.mjs && npx cap sync android && cd android && .\\gradlew.bat assembleDebug",
     "apk:nobump": "npx cap sync android && cd android && .\\gradlew.bat assembleDebug",
     "icons:base": "node scripts/icon-layers.mjs",
-    "icons:2g": "node scripts/icon-layers.mjs && node scripts/icon-fg-image.mjs assets/icon-2g-foreground.png assets/icon-2g-background.png --scale 0.90 && node scripts/icon-bg-image.mjs assets/icon-2g-background.png",
+    "icons:2g": "node scripts/icon-layers.mjs && node scripts/icon-fg-image.mjs assets/icon-2g-foreground.png assets/icon-2g-background.png --scale 0.90 --dx -23 && node scripts/icon-bg-image.mjs assets/icon-2g-background.png",
     "icons:verify": "node scripts/icon-verify.mjs",
     "check:docs": "node scripts/check_docs.mjs"
   },

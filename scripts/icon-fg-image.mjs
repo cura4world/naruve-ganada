@@ -1,8 +1,8 @@
 /* Naruve — write the adaptive foreground layer, the legacy icons and the store icon.
 
-   Run:  node scripts/icon-fg-image.mjs <foreground.png> <background.png> [--scale s]
-         normally via  npm run icons:2g  (DECISIONS 19.7) — the scale value lives
-         there and only there
+   Run:  node scripts/icon-fg-image.mjs <foreground.png> <background.png> [--scale s] [--dx px] [--dy px]
+         normally via  npm run icons:2g  (DECISIONS 19.7) — the scale and offset
+         values live there and only there
 
    Order — step 2 of 3:
      1. node scripts/icon-layers.mjs        full baseline set (XML, splash, every density)
@@ -25,9 +25,17 @@
    background image on the logo path, or the icon goes back to one flat master.
 
    Sources, built once on a 1024 canvas:
-     mark        <foreground.png> resized to round(1024*s), centred on a
-                 transparent 1024 canvas (s = --scale, default 1, (0, 1] only)
+     shifted     <foreground.png> resized to 1024 and moved by (dx, dy) px
+                 (--dx/--dy, integers, default 0). The move happens in the
+                 original's coordinates, before scaling. If any pixel with
+                 alpha > 0 would leave the canvas, the script stops.
+     mark        shifted resized to round(1024*s), centred on a transparent
+                 1024 canvas (s = --scale, default 1, (0, 1] only)
      composite   <background.png> resized to 1024 with the mark on top
+
+   Why dx exists: the design original centres the whole mark box, including
+   the stroke of ㄱ that sticks out on the left, so the cream disc sat 23px
+   right of centre (DECISIONS 19.7).
 
    Writes:
      mipmap-<density>/ic_launcher_foreground.png   <- mark
@@ -37,10 +45,10 @@
    The background layer and the mipmap-anydpi-v26 XML are left as they are.
 
    Legacy and store icons are built from the same foreground and background
-   as the adaptive icon, so all of them show the mark at the same scale. They
-   used to come from a separate full-image original; shrinking that one left
-   a visible seam where its own gradient edge met the background (2026-09-17),
-   and it was dropped.
+   as the adaptive icon, so all of them show the mark at the same scale and
+   position. They used to come from a separate full-image original; shrinking
+   that one left a visible seam where its own gradient edge met the background
+   (2026-09-17), and it was dropped.
 
    play-store-512.png is written here and not earlier on purpose: step 1
    (icon-layers.mjs) writes it from the old master before it runs
@@ -66,14 +74,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const args = process.argv.slice(2);
-let SCALE = 1;
-let scaleArg = '1';
-const si = args.indexOf('--scale');
-if (si !== -1) {
-  scaleArg = args[si + 1];
-  SCALE = Number(scaleArg);
-  args.splice(si, 2);
-}
+const take = (flag, fallback) => {
+  const i = args.indexOf(flag);
+  if (i === -1) return fallback;
+  const v = args[i + 1];
+  args.splice(i, 2);
+  return v;
+};
+const scaleArg = take('--scale', '1');
+const dxArg = take('--dx', '0');
+const dyArg = take('--dy', '0');
+const SCALE = Number(scaleArg);
+const DX = Number(dxArg);
+const DY = Number(dyArg);
 const [FG, BG] = args;
 const RES = 'android/app/src/main/res';
 const FOREGROUND = 'ic_launcher_foreground.png';   // names written by capacitor-assets
@@ -84,8 +97,10 @@ const STORE = 'assets/play-store-512.png';
 const STORE_SIZE = 512;
 const CANVAS = 1024;
 
-if (!FG || !BG) { console.error('usage: node scripts/icon-fg-image.mjs <foreground.png> <background.png> [--scale s]'); process.exit(1); }
+if (!FG || !BG) { console.error('usage: node scripts/icon-fg-image.mjs <foreground.png> <background.png> [--scale s] [--dx px] [--dy px]'); process.exit(1); }
 if (!(SCALE > 0 && SCALE <= 1)) { console.error(`--scale must be in (0, 1], got ${scaleArg}`); process.exit(1); }
+if (!Number.isInteger(DX)) { console.error(`--dx must be an integer, got ${dxArg}`); process.exit(1); }
+if (!Number.isInteger(DY)) { console.error(`--dy must be an integer, got ${dyArg}`); process.exit(1); }
 for (const f of [FG, BG]) if (!fs.existsSync(f)) { console.error(`not found: ${f}`); process.exit(1); }
 
 const fgMeta = await sharp(FG).metadata();
@@ -103,11 +118,35 @@ if (!fgMeta.hasAlpha) {
 console.log(`foreground    ${FG}  ${fgMeta.width}x${fgMeta.height}  channels ${fgMeta.channels} (alpha)`);
 console.log(`background    ${BG}  ${bgMeta.width}x${bgMeta.height}  channels ${bgMeta.channels}${bgMeta.hasAlpha ? ' (alpha)' : ''}`);
 
+/* ---- shift in the original's coordinates, refusing to clip the mark ---- */
+let shiftedSrc = FG;
+if (DX !== 0 || DY !== 0) {
+  const base = await sharp(FG).resize(CANVAS, CANVAS, { fit: 'fill' }).ensureAlpha().raw().toBuffer();
+  let x0 = CANVAS, x1 = -1, y0 = CANVAS, y1 = -1;
+  for (let y = 0; y < CANVAS; y++) for (let x = 0; x < CANVAS; x++) {
+    if (base[(y * CANVAS + x) * 4 + 3] > 0) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x0 + DX < 0 || x1 + DX > CANVAS - 1 || y0 + DY < 0 || y1 + DY > CANVAS - 1) {
+    console.error(`--dx ${DX} --dy ${DY} would clip the mark: alpha>0 spans x ${x0}..${x1}, y ${y0}..${y1} of ${CANVAS}`);
+    process.exit(1);
+  }
+  /* two pipelines: within one, sharp runs extract before extend */
+  const padded = await sharp(base, { raw: { width: CANVAS, height: CANVAS, channels: 4 } })
+    .extend({ left: Math.max(DX, 0), right: Math.max(-DX, 0), top: Math.max(DY, 0), bottom: Math.max(-DY, 0), background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+  shiftedSrc = await sharp(padded)
+    .extract({ left: Math.max(-DX, 0), top: Math.max(-DY, 0), width: CANVAS, height: CANVAS })
+    .png()
+    .toBuffer();
+  console.log(`shift         dx ${DX}  dy ${DY}  (alpha>0 x ${x0 + DX}..${x1 + DX}, y ${y0 + DY}..${y1 + DY} after the move)`);
+}
+
 /* ---- sources on a 1024 canvas: the scaled mark, and the mark over the background ---- */
 const size = Math.round(CANVAS * SCALE);
 const off = Math.round((CANVAS - size) / 2);
 const markSrc = await sharp({ create: { width: CANVAS, height: CANVAS, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-  .composite([{ input: await sharp(FG).resize(size, size, { fit: 'fill' }).png().toBuffer(), left: off, top: off }])
+  .composite([{ input: await sharp(shiftedSrc).resize(size, size, { fit: 'fill' }).png().toBuffer(), left: off, top: off }])
   .png()
   .toBuffer();
 const compSrc = await sharp(await sharp(BG).resize(CANVAS, CANVAS, { fit: 'fill' }).ensureAlpha().png().toBuffer())
