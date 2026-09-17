@@ -117,10 +117,12 @@ npm run icons:2g       # 3단계 생성
 npm run icons:verify   # 검사. 하나라도 어긋나면 non-zero
 ```
 
-**원본은 3장이다.** 셋 다 1024 정사각이고, 나머지 아이콘 파일은 전부 파생물이다.
+**원본은 2장이다.** 둘 다 1024 정사각이고, 나머지 아이콘 파일은 전부 파생물이다.
 - `assets/icon-2g-foreground.png`  적응형 전경. 투명 바탕 위 크림 원·'가나다'·마이크
 - `assets/icon-2g-background.png`  적응형 배경. `#B3342B` 계열 그라데이션, 불투명
-- `assets/icon-2g-full.png`        합본. 레거시 아이콘(ic_launcher, ic_launcher_round)용
+
+레거시 아이콘(ic_launcher, ic_launcher_round)과 스토어 아이콘은 전경(scale 적용)을
+배경 위에 합성해 만든다. 따로 원본을 두지 않는다.
 
 `assets/GANADA고딕_icon.v5.png`는 19.7 이전 원본이다. 이력이고 되돌릴 근거라 남긴다.
 지금도 `icon-layers.mjs`의 기본 원본이라 1단계의 기준 세트를 까는 데 쓰인다.
@@ -128,8 +130,9 @@ npm run icons:verify   # 검사. 하나라도 어긋나면 non-zero
 **3단계 순서** — `npm run icons:2g`가 이 순서로 돌고 하나라도 실패하면 멈춘다.
 1. `node scripts/icon-layers.mjs` — 옛 원본으로 전체 세트를 만든다. XML·스플래시·
    모든 밀도의 파일이 여기서 깔린다. 배경은 이 단계에선 단색(#C0392F)이다
-2. `node scripts/icon-fg-image.mjs <전경> <합본>` — 각 밀도의 적응형 전경을 전경
-   원본으로, 레거시 두 장을 합본으로 덮어쓴다
+2. `node scripts/icon-fg-image.mjs <전경> <배경> --scale 0.90` — 전경을 scale 배로
+   줄여 가운데 놓은 것으로 각 밀도의 적응형 전경을, 그것을 배경 위에 합성한 것으로
+   레거시 두 장과 `assets/play-store-512.png`를 덮어쓴다
 3. `node scripts/icon-bg-image.mjs <배경>` — 각 밀도의 적응형 배경을 배경 원본으로 덮어쓴다
 
 2·3단계는 기존 파일의 픽셀 크기를 읽어 그 크기로 리사이즈한다. 밀도표는
@@ -143,7 +146,7 @@ logo 경로뿐이고, 그 경로에 배경 이미지를 넣을 인자가 없다.
 파일 세트를 깔고 그 위에 레이어를 갈아끼운다. 도구가 logo 경로에서 배경 이미지를
 받게 되거나 배경이 단색으로 돌아가기 전에는 이 구조를 지우지 않는다.
 세 스크립트의 관계: `icons:base`는 1단계만(옛 원본 세트, 단독으로는 검사에 실패한다),
-`icons:2g`는 1~3단계 전체, `icons:verify`는 그 결과를 2G 원본 3장과 대조한다.
+`icons:2g`는 1~3단계 전체, `icons:verify`는 그 결과를 2G 원본 2장과 대조한다.
 
 **assets/icon.png, icon-foreground.png, icon-background.png는 존재하면 안 된다.**
 `icon-layers.mjs`가 발견하면 지운다. 이유가 각각 다르다. 도구 버그는 그대로다.
@@ -157,8 +160,8 @@ logo 경로뿐이고, 그 경로에 배경 이미지를 넣을 인자가 없다.
 - icon.png는 logo 폴백으로 읽혀서(project.js loadLogoInputAsset) 진짜 logo.png를 이긴다.
 
 **레거시 아이콘 모양은 capacitor-assets가 만들던 그대로다.** 기존 생성물에서 실측했다.
-- `ic_launcher.png` — 합본을 (w−16)² 로 줄이고 사방 8px 투명 여백. 모서리를 둥글리지 않는다
-- `ic_launcher_round.png` — 합본을 w² 로 줄이고 반경 w/2 원형 마스크
+- `ic_launcher.png` — 합성본을 (w−16)² 로 줄이고 사방 8px 투명 여백. 모서리를 둥글리지 않는다
+- `ic_launcher_round.png` — 합성본을 w² 로 줄이고 반경 w/2 원형 마스크
 둘 다 모서리 알파가 0이다. 이 파일들은 적응형 아이콘을 모르는 런처만 쓴다.
 
 **안전 영역 이중 인셋 주의.** 생성된 ic_launcher.xml이 두 레이어를
@@ -166,29 +169,31 @@ logo 경로뿐이고, 그 경로에 배경 이미지를 넣을 인자가 없다.
 `icon-layers.mjs`는 그 인셋을 안전영역 패딩으로 보고 이미지 기준 66/72 = 91.7%에
 맞춘다(66/108 = 61.1%로 잡으면 인셋이 두 번 걸려 마크가 42dp로 작아진다).
 XML이 inset="0%"로 바뀌면 icon-layers.mjs의 SAFE를 66/108로 바꾼다.
-2G 전경·배경은 108dp를 채우도록 만들어졌고, 이 인셋이 다시 72dp로 눌러 넣는다.
-마크가 의도보다 작게 나올 것으로 보았으나 **실기에서는 반대로 크게 나왔다**
-(2026-09-17). 원인은 규명되지 않았다. 크게 나오는 쪽이 가독성에 유리하다는
-판단으로 현 상태를 유지한다 — DECISIONS 19.7 미결 항목이다. 실측 전에는
-XML을 고치지 않는다.
+**2G 표시 크기는 scale 0.90이다 (DECISIONS 19.7, 2026-09-17 확정).** 전경을 그대로 쓰면
+크림 원이 62.7dp로 안전원 66dp를 거의 채웠다. 원인은 이 인셋이 아니라 **전경 안에서
+원이 차지하는 비율**이었다(2G는 원이 마크 박스의 95%, flat은 85%). "인셋 이중 적용으로
+작아진다"고 본 것은 원 지름을 재지 않은 오판이었다. 0.90으로 줄여 원 56.6dp가 된다.
+값은 `package.json`의 `icons:2g` 한 곳에만 있고, `icons:verify`가 그 값을 읽어 대조한다.
+인셋 XML은 그대로 둔다.
 
-**`npm run icons:verify`가 검사하는 것** (인자 없으면 2G 원본 3장 기준)
+**`npm run icons:verify`가 검사하는 것** (인자 없으면 2G 원본 2장 기준)
+0. `package.json`의 `icons:2g`가 같은 원본 2장을 넘기고 `--scale`이 (0, 1]이다. scale은 여기서 읽는다
 1. 적응형 전경·배경 각 6장이 81/108/162/216/324/432
 2. 레거시 `ic_launcher.png`·`ic_launcher_round.png` 각 6장이 36/48/72/96/144/192이고
-   네 모서리 알파가 0
-3. 각 밀도의 전경이 전경 원본을 그 크기로 리사이즈한 것과 같다
+   네 모서리 알파가 0이며, 전경(scale)+배경 합성본에서 만든 것과 같다
+3. 각 밀도의 전경이 전경 원본을 scale 배로 줄여 가운데 놓고 그 크기로 리사이즈한 것과 같다
 4. 각 밀도의 배경이 배경 원본을 그 크기로 리사이즈한 것과 같고, 색이 2개 이상이다
    (그라데이션이 단색으로 뭉개지지 않았다)
 5. ic_launcher.xml·ic_launcher_round.xml의 두 레이어 inset이 16.7%
-6. `assets/play-store-512.png`가 512이고 합본 원본을 그 크기로 리사이즈한 것과 같다
+6. `assets/play-store-512.png`가 512이고 같은 합성본을 그 크기로 리사이즈한 것과 같다
 
 19.7에서 뺀 검사는 파일 머리 주석에 이유와 함께 있다 — 원본 모서리 단색 대조,
 logo.png 출처 대조, 66dp 안전원 안 여부.
 
-**`assets/play-store-512.png`는 스토어 등록용이고 2G 합본에서 온다.** 1단계가 이 파일을
+**`assets/play-store-512.png`는 스토어 등록용이고 2G 합성본에서 온다.** 1단계가 이 파일을
 옛 원본으로 먼저 만들지만(icon-layers.mjs), capacitor-assets는 이 파일명을 읽지 않으므로
-2단계 `icon-fg-image.mjs`가 합본을 512로 줄여 덮어쓴다. 옛 내용으로 되돌아가면
-`icons:verify`가 잡는다.
+2단계 `icon-fg-image.mjs`가 전경(scale)+배경 합성본을 512로 줄여 덮어쓴다. 옛 내용으로
+되돌아가면 `icons:verify`가 잡는다.
 
 assets/logo.png·icon-only.png·icon-round.png는 1단계가 **옛 원본에서** 다시 만드는
 파일이다. 2G 아이콘이 아니다. icon-round.png도 capacitor-assets가 읽지 않는 파일명이다
@@ -620,7 +625,7 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - scripts/check_docs.mjs  DECISIONS.md 지문 재계산·대조, CLAUDE.md "현재 상태" ↔ 코드 숫자 대조,
                           제어문자 검사, audio/index.json ↔ mp3 고아·미등록 대조, 문장 필드(t:/w:/lb/tr) 수 대조. `--fix`는 지문 줄만 고친다. PR 전과 병합 전에 돈다
 - scripts/icon-layers.mjs 기준 세트 생성 (옛 원본 1장 → XML·스플래시·전 밀도 파일). icons:2g 1단계
-- scripts/icon-fg-image.mjs 적응형 전경·레거시 아이콘·play-store-512.png 덮어쓰기. icons:2g 2단계
+- scripts/icon-fg-image.mjs 전경(--scale)으로 적응형 전경, 전경+배경 합성으로 레거시 아이콘·play-store-512.png 덮어쓰기. icons:2g 2단계
 - scripts/icon-bg-image.mjs 적응형 배경 덮어쓰기. icons:2g 3단계
 - scripts/icon-verify.mjs 생성 결과 검사 (레이어·레거시 크기, 레거시 모서리 투명, 전경·배경·스토어 아이콘이
                           2G 원본에서 왔는지, 배경 색 2개 이상, XML inset 16.7%)
@@ -759,4 +764,4 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 `renderL1`은 정의만 남고 호출되지 않는다. s.w에 박힌 확정 설명이라
 정밀도 65%를 넘긴 L1부터 켠다.
 
-**versionCode** 8 (`android/app/build.gradle` 실측 2026-09-17). `npm run apk`마다 +1.
+**versionCode** 11 (`android/app/build.gradle` 실측 2026-09-17). `npm run apk`마다 +1.
