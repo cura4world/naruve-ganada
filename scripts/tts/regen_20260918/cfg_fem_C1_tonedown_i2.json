@@ -1,0 +1,29 @@
+{
+  "_run": "fem_C1_tonedown_i2",
+  "_note": "B-1과 같되 강도만 최대(2.0)다.",
+  "title": "여성 안 C-1 — tonedown, intensity 2.0",
+  "model": "ssfm-v30",
+  "language": "kor",
+  "_language_note": "ISO 639-3. 한국어는 kor. ko(639-1)가 아니다.",
+  "audio_format": "mp3",
+  "emotion": {
+    "preset": "tonedown",
+    "intensity": 2
+  },
+  "audio_tempo": null,
+  "audio_pitch": null,
+  "volume": null,
+  "target_lufs": null,
+  "_tone_note": "null인 항목은 요청 본문에서 아예 뺀다(typecast_gen.py build_request). preset은 normal/happy/sad/angry/whisper/toneup/tonedown 일곱뿐이고 intensity는 0~2, audio_tempo는 0.5~2.0이다. pause·prosody·SSML에 해당하는 필드는 API에 없다(DECISIONS 9.5).",
+  "seed": null,
+  "_seed_note": "seed는 재현을 보장하지 않는다(9.3). 넣어도 복원 수단이 되지 못하므로 뺀다.",
+  "memo_key_suffix": "femC1",
+  "_memo_key_note": "청취 메모는 localStorage naruve.tts.memo.<생성날짜>[.접미어]에 담긴다. 오늘 아홉 회차가 같은 날짜를 쓰므로 접미어가 없으면 메모가 한 통에 섞인다.",
+  "concurrency": 4,
+  "_concurrency_note": "라이트 플랜 concurrency_limit 5. 429를 피해 4.",
+  "max_retries": 4,
+  "retry_base_sec": 2,
+  "timeout_sec": 120,
+  "credits_per_char": 1,
+  "_credits_note": "글자당 1크레딧(9.1). 이 회차 예상 16크레딧 (문장 16자 × 보이스 1)."
+}

@@ -1,0 +1,13 @@
+{
+  "_comment": "남성 우성 하나. 남성 회차(T1·T2)가 여성까지 생성하지 않게 가른다.",
+  "_source": "scripts/tts/voices.json",
+  "_dir_pattern": "{gender_ko}_{name}_{voice_id 뒤 6자리}",
+  "voices": [
+    {
+      "name": "우성",
+      "gender": "male",
+      "gender_ko": "남",
+      "voice_id": "tc_668f4f533ea5c6ce5e43fd48"
+    }
+  ]
+}

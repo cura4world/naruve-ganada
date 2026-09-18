@@ -1,0 +1,39 @@
+{
+  "_comment": "docs/js/data.js 문장. scripts/tts/extract_sentences.mjs 로 뽑았다. 손으로 고치지 않는다.",
+  "_id_note": "data.js에는 문장별 id가 없다(id:는 COLLECTIONS 4개뿐). 컬렉션 약칭 + data.js 배열 순서 2자리로 만들었다. 순서가 바뀌면 id도 바뀐다.",
+  "_tts_note": "k는 화면 텍스트, tts는 TTS 입력. 뽑은 직후에는 같다. 억양 손질은 tts만 바꾼다 — k를 바꾸면 해시가 바뀌어 앱이 파일을 못 찾는다.",
+  "_hash_note": "docs/js/audio.js audioName()과 같은 FNV-1a 8자리. docs/audio/{m,f}/<hash>.mp3 가 앱이 찾는 이름이다.",
+  "_credits_note": "입력 글자당 1크레딧(DECISIONS 9.1). 이 목록의 총 글자수 16.",
+  "_source": "docs/js/data.js",
+  "_generated": "2026-09-18T02:01:50Z",
+  "_filter": [
+    "675c3419",
+    "180a5143"
+  ],
+  "sentences": [
+    {
+      "id": "drm15",
+      "collection": "drama",
+      "type": "statement",
+      "form": "banmal",
+      "level": 1,
+      "situation": "Reactions",
+      "k": "그럴 줄 알았어.",
+      "tts": "그럴 줄 알았어.",
+      "hash": "675c3419",
+      "why": "Reactions · banmal"
+    },
+    {
+      "id": "drm16",
+      "collection": "drama",
+      "type": "statement",
+      "form": "banmal",
+      "level": 1,
+      "situation": "Reactions",
+      "k": "어이가 없네.",
+      "tts": "어이가 없네.",
+      "hash": "180a5143",
+      "why": "Reactions · banmal"
+    }
+  ]
+}

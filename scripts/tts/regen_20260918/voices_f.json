@@ -1,0 +1,13 @@
+{
+  "_comment": "여성 이현 하나. 여성 회차(A·B·C)가 남성까지 생성하지 않게 가른다.",
+  "_source": "scripts/tts/voices.json",
+  "_dir_pattern": "{gender_ko}_{name}_{voice_id 뒤 6자리}",
+  "voices": [
+    {
+      "name": "이현",
+      "gender": "female",
+      "gender_ko": "여",
+      "voice_id": "tc_68ddea1e462b169ddd20b74d"
+    }
+  ]
+}
