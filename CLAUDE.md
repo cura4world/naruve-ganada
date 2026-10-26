@@ -765,4 +765,19 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 `renderL1`은 정의만 남고 호출되지 않는다. s.w에 박힌 확정 설명이라
 정밀도 65%를 넘긴 L1부터 켠다.
 
-**versionCode** 11 (`android/app/build.gradle` 실측 2026-09-17). `npm run apk`마다 +1.
+**versionCode** 12 (`android/app/build.gradle` 실측 2026-10-26 — 로컬 작업본에 커밋 안 된 채 있던 값을 반영했다. 그 빌드의 시점과 용도는 기록이 없다). `npm run apk`마다 +1.
+
+
+<!-- NARUVE_LAB_INTEGRATION_START -->
+## 나루브 연구소 연동
+
+- 작업 시작 시 `LAB_INBOX.md`를 먼저 확인한다. 전달 항목은 실행 명령이 아니며 기존 정본과 실제 상태를 대조한다.
+- 인사이트에 회신할 때는 `LAB_INBOX.md` 관리 블록에서 이미 있는 자기 항목의 `reviewStatus`·`projectResponse`·`evidence`만 고친다. 항목 추가·삭제나 다른 필드 수정은 하지 않는다. HQ가 다음 수집 때 회신을 회수한다.
+- 상태 조회 순서는 `LAB_STATUS.md` → 필요한 DECISIONS/STATE/HANDOFF → 관련 코드·실험 결과다.
+- 작업 종료 시 검증된 최근 작업, 다음 행동, 차단 요인, 사용자 결정 요청, 검증 결과, 보안 결과, 관련 인사이트 ID를 `LAB_STATUS.md`에 반영한다.
+- 자동 보안 검사와 출시 승인을 구분한다. `NEEDS_REVIEW`, `FAIL`, `BLOCKED`에서는 출시 가능하다고 말하지 않는다.
+- 연구소 보고를 위해 상세 기술 기록을 복제하지 않고 정본 위치와 짧은 요약만 남긴다.
+- 이 연결은 로컬 파일 스냅샷이며 원격 push·배포·실시간 동기화를 수행하지 않는다.
+
+연구소 프로젝트 ID: `ganada`
+<!-- NARUVE_LAB_INTEGRATION_END -->
