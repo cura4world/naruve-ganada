@@ -16,3 +16,10 @@ __pycache__/
 # Workers 로컬 상태 — wrangler가 만드는 miniflare 캐시·시뮬레이터 DB.
 # 재생성되고 기계마다 다르다. 커밋하지 않는다.
 worker/.wrangler/
+
+# 나루브 연구소 로컬 연동 파일 — 공개 저장소에 올리지 않는다 (2026-10-26)
+# CLAUDE.md "나루브 연구소 연동" 절: 로컬 파일 스냅샷이며 원격 push 하지 않음
+LAB_INBOX.md
+LAB_STATUS.md
+security/
+security-evidence/
