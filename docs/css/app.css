@@ -3,7 +3,7 @@
   --paper:#FBFAF6; --rule:#DFDCD2; --sunk:#EFEDE6;
   --seal:#B3342B; --seal-deep:#9E2D25;
   --kr:'NaruveSerif','Apple SD Gothic Neo','Malgun Gothic','Nanum Gothic',serif;
-  --ui:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --ui:'Archivo','NaruveSerif',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   --tap:200ms cubic-bezier(.2,.8,.2,1);
 
   /* record button docked in the middle of the tab bar.
@@ -311,6 +311,9 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .you-best .set-note{margin-top:0}
 .you-best .set-note:empty{display:none}
 .you-best .set-best{margin-top:0}
+/* 문장은 연습 문장과 같은 글꼴·굵기, 점수 숫자는 라틴 그대로 (21.6 보강) */
+.you-best .set-best div{font-family:var(--kr);font-weight:500}
+.you-best .set-best b{font-family:var(--ui)}
 .you-col{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--rule)}
 .you-col:last-child{border-bottom:none}
 .you-col-n{flex:0 0 32%;min-width:0;font-size:12.5px;font-weight:600;color:var(--ink);

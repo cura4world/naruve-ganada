@@ -96,18 +96,6 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Google Fonts — cache first, they never change
-  if (url.hostname.endsWith('gstatic.com') || url.hostname.endsWith('googleapis.com')) {
-    e.respondWith(
-      caches.match(req).then((hit) => hit || fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy));
-        return res;
-      }))
-    );
-    return;
-  }
-
   if (url.origin !== self.location.origin) return;
 
   // HTML and version.json — always try the network first

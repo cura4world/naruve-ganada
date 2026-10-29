@@ -72,7 +72,7 @@ var UI = {
     lvPrefix:'레벨 ',
     emptyList:'아직 없어요',
 
-    tabYou:'나',
+    tabYou:'내 발음',
     /* ---- 나 화면 (22.3) ---- */
     youTitle:'내 발음',
     youSub:'원어민 기준 · 서울 표준 발음',
@@ -138,11 +138,6 @@ var UI = {
     setVersion:'앱 버전',
     setDev:'개발용',
     copied:'복사했어요',
-    settingsSoon:'설정 화면은 준비 중입니다.',
-    /* 임시 예시 음성 토글. 온보딩(P6-B)이 생기면 이 세 키와 함께 사라진다. */
-    voicePick:'예시 음성',
-    voiceMale:'남자',
-    voiceFemale:'여자',
     reloadApp:'새로고침',
     logShow:'로그 보기',
     logCopy:'복사',
@@ -296,10 +291,6 @@ var UI = {
     setVersion:'App version',
     setDev:'Developer',
     copied:'Copied',
-    settingsSoon:'Settings are on the way.',
-    voicePick:'Example voice',
-    voiceMale:'Male',
-    voiceFemale:'Female',
     reloadApp:'Reload',
     logShow:'Log',
     logCopy:'Copy',

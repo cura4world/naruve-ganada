@@ -161,7 +161,7 @@ console.log('\n7. UI (코드 확인)');
   ok('세 문항이 있다', /id="obL1"/.test(html) && /id="obLevel"/.test(html) && /id="obVoice"/.test(html));
   ok('목소리 미리듣기 버튼', /class="ob-play"/.test(html));
   ok('동의 두 줄이 같은 크기·행 전체가 탭 영역',
-    (html.match(/class="ob-consent"/g) || []).length === 2 && /\.ob-consent\{[^}]*cursor:pointer/.test(css));
+    (html.match(/class="ob-consent(\s[^"]*)?"/g) || []).length === 2 && /\.ob-consent\{[^}]*cursor:pointer/.test(css));
   ok('선택 동의는 기본 미체크 (checked 없음)',
     !/id="obExt"[^>]*checked/.test(html));
   ok('필수 미체크면 시작 못 한다', /obStart'\)\.disabled = !ok/.test(app));

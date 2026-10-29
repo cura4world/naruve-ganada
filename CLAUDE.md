@@ -688,7 +688,8 @@ README의 APK 경로가 BEL 둘로 깨진 채 몇 주를 지났다.
 - 모국어 설명은 결핍만 지적하지 않는다. 이미 가진 것을 찾아 쓴다.
   (예: 인도네시아어에는 불파 종성이 있다 — anak, sebab)
 - 색: ink #111A22 / paper #FBFAF6 / seal #B3342B (브랜드 색, DECISIONS 19.6)
-- 한글(연습하는 문장)은 NaruveSerif — 마루 부리 서브셋, 라틴(메뉴·버튼)은 Archivo (DECISIONS 21.6).
+- 한글은 어디서나 NaruveSerif — 마루 부리 서브셋, 라틴(영문·숫자)은 Archivo (DECISIONS 21.6).
+  `--ui`는 'Archivo','NaruveSerif' 순서라 한 줄 안에서도 글자 단위로 나뉜다.
   둘 다 docs/fonts에서 자체 호스팅한다. Google Fonts를 부르지 않는다
 
 ## 저작권 경계
