@@ -32,7 +32,7 @@ npx wrangler deploy
 ## 2. Secret 등록
 
 Azure 구독키는 **코드·`wrangler.toml`·커밋 어디에도 넣지 않는다.**
-`AZURE_SPEECH_KEY` 이름의 Secret으로만 들어간다. 값은 `Naruve Pronunciation\.env`의
+`AZURE_SPEECH_KEY` 이름의 Secret으로만 들어간다. 값은 `Naruve Ganada\.env`의
 `SPEECH_KEY`다(저장소 밖. `.gitignore` 대상).
 
 **방법 A — 대시보드**

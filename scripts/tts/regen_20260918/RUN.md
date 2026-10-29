@@ -28,7 +28,7 @@ API 키를 읽기 전에 끝나므로 호출이 나가지 않는다.
 ## 0. 시작 전 확인
 
 ```powershell
-cd "C:\Users\Paul Park\Desktop\Claude Work\Naruve Pronunciation"
+cd "C:\Users\Paul Park\Desktop\Claude Work\Naruve Ganada"
 python -c "import typecast; print('SDK ok')"
 ffmpeg -version | Select-Object -First 1
 ```
