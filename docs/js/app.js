@@ -639,13 +639,17 @@ function paintSettings(){
   if($('setDevRow')) $('setDevRow').hidden = !isNativeShell();
 }
 
+/* 21.3: 설정은 딤 위의 시트. 시트와 딤은 여기서만 같이 여닫는다. */
+function setSheet(open){
+  var s=$('settings'); if(!s) return;
+  s.hidden = !open;
+  if($('setDim')) $('setDim').classList.toggle('on', open);
+  if(open){ paintSettings(); s.scrollTop = 0; }
+}
 if($('tabSettings') && $('settings')){
-  $('tabSettings').addEventListener('click',function(){
-    var s=$('settings');
-    s.hidden = !s.hidden;
-    if(!s.hidden){ paintSettings(); $('stage').scrollTop = 0; }
-  });
-  if($('setClose')) $('setClose').addEventListener('click',function(){ $('settings').hidden = true; });
+  $('tabSettings').addEventListener('click',function(){ setSheet($('settings').hidden); });
+  if($('setClose')) $('setClose').addEventListener('click',function(){ setSheet(false); });
+  if($('setDim')) $('setDim').addEventListener('click',function(){ setSheet(false); });
 
   ['m','f'].forEach(function(g){
     var b=$('voice'+g.toUpperCase()); if(!b) return;
@@ -699,6 +703,10 @@ function obSelect(groupId, v, key){
   var g=$(groupId); if(!g) return;
   Array.prototype.slice.call(g.querySelectorAll('.ob-opt')).forEach(function(b){
     b.classList.toggle('on', b.getAttribute('data-v') === v);
+  });
+  /* 목소리는 '들어보기'와 한 쌍이라 쌍 테두리도 같이 켠다 (21.4) */
+  Array.prototype.slice.call(g.querySelectorAll('.ob-pair')).forEach(function(p){
+    p.classList.toggle('on', p.getAttribute('data-v') === v);
   });
   obPick[key] = v || null;
 }
@@ -788,6 +796,8 @@ if($('logBtn') && $('logView')){
       $('logText').textContent = lines.length ? lines.join('\n') : t('logEmpty');
       $('logStat').textContent = lines.length ? lines.length + '줄' : '';
       v.hidden = false;
+      /* 로그는 .stage 안에 뜬다. 시트가 덮고 있으면 보이지 않으므로 닫는다. */
+      setSheet(false);
       $('stage').scrollTop = 0;
     } else v.hidden = true;
   });

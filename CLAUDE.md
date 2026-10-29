@@ -48,9 +48,15 @@ CC 스스로 판단해 고치는 것은 여전히 없다 — 지시받은 것만
 개별 컴포넌트(.topbar, .tabs, .buildtag)에 env()를 다시 넣지 않는다.
 흩어놓으면 한쪽을 고칠 때 다른 쪽이 조용히 풀린다. 실제로 두 번 그랬다.
 
-예외는 `.update-bar` 하나다. position:fixed라서 .phone의 padding 밖으로 나가므로
-자기 오프셋에 `var(--safe-bottom)`를 더한다. env()를 직접 부르지는 않는다.
-(이 바는 boot.js가 새 서비스워커를 감지했을 때만 DOM에 넣는다.)
+예외는 셋이다. 모두 `.phone`의 padding 밖 끝에 닿는 요소라 변수를 스스로 더하고,
+셋 다 env()를 직접 부르지 않는다 — `var(--safe-*)`만 읽는다.
+- `.update-bar` — position:fixed라서 .phone의 padding 밖으로 나가므로
+  자기 오프셋에 `var(--safe-bottom)`를 더한다.
+  (이 바는 boot.js가 새 서비스워커를 감지했을 때만 DOM에 넣는다.)
+- `.onboard` — `.phone` 기준 `position:absolute; inset:0`이라 padding 상자 바깥까지 덮는다.
+  자기 padding에 `var(--safe-top)`·`var(--safe-bottom)`를 더한다.
+- `.settings`(설정 시트, 21.3) — `.phone` 기준 `position:absolute; bottom:0`이라 아래 끝이
+  시스템 바 쪽이다. 자기 padding-bottom에 `var(--safe-bottom)`를 더한다.
 
 **네이티브 (android/.../MainActivity.java)** — APK는 targetSdk 36이라
 edge-to-edge가 강제된다. WebView는 `env(safe-area-inset-*)`에 디스플레이 컷아웃만
@@ -617,7 +623,8 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - docs/js/phonemes.js  모국어 설명 표 (음소 기준, 언어 추가는 열 하나 추가)
 - docs/js/app.js       화면 제어·채점·언어 전환
 - docs/js/boot.js      서비스워커 등록, 빌드 번호 표시, 업데이트 바
-- docs/css/app.css     색·글꼴·여백. safe-area는 :root와 .phone에만 있다
+- docs/css/app.css     색·글꼴·여백. env()는 :root 두 줄에만, 여백은 .phone에서. 예외 .update-bar·.onboard·.settings는
+                      var(--safe-*)를 스스로 더한다(env() 직접 호출 없음)
 - docs/sw.js           캐시 전략 (PRECACHE 배열만 손댄다. BUILD 줄은 bump.mjs가 고친다)
 - docs/version.json    빌드번호·날짜 (bump.mjs가 고친다. 손으로 고치지 않는다)
 - data/probe_set.json     프로브 문장 (DECISIONS.md 8.5 표. 임의로 더하지 않는다)
@@ -705,7 +712,7 @@ versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로
 지메일 설정은 저장소 밖이라 빌드와 무관하다.
 
 ## 현재 상태
-빌드 0.1.28 기준.
+빌드 0.1.29 기준.
 
 **문장** 200개 (Standard 60 / Everyday 60 / Drama 50 / Sounds 30) — 배치 1 (#76, 2026-08-26).
 `t:` 태그 200개(question 84 / statement 112 / exclam 4), `w:` 200개,
@@ -755,6 +762,12 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 **언어** en·ko 완전, id는 억양 피드백 6키만.
 
 **결과 공유** `alert()` 자리표시자.
+
+**화면 디자인은 B안 "카드"다 (0.1.29, DECISIONS 21).** 연습 화면은 문장 카드(`.say-card`)와
+억양 묶음(`.say-how`), 결과는 `--sunk` 패널. 설정은 `.stage` 밖으로 나와 `.phone` 기준
+딤(`#setDim`) 위의 아래쪽 시트이고, 여닫기는 `app.js`의 `setSheet()` 한 곳이다.
+시트 아래 여백은 `calc(var(--safe-bottom) + 22px)` — `.onboard`와 같은 방식이고 env()는 부르지 않는다.
+고른 상태(`.vb.on` `.ob-opt.on`)는 먹색 채움이다(19.6 쓰임 범위).
 
 **온보딩과 설정 화면이 생겼다 (0.1.25).** 첫 실행에 온보딩 한 번 — 모국어·학습
 단계(둘 다 건너뛸 수 있다, 16.4)·따라 할 목소리, 그리고 동의 2층. 설정 탭에는

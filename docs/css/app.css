@@ -80,33 +80,51 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
   color:var(--ink-faint);display:flex;align-items:center;gap:8px;min-width:0}
 .strip .where b{color:var(--ink)}
 .strip .where .dot{width:3px;height:3px;border-radius:50%;background:var(--rule);flex:none}
-.strip .where .set{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 세트 이름은 문장처럼 읽힌다. 컬렉션 이름만 대문자 표지로 둔다. */
+.strip .where .set{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  text-transform:none;letter-spacing:.02em;font-weight:600}
 .browse-btn{flex:none;border:1px solid var(--rule);background:none;border-radius:100px;
   padding:7px 14px;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ink);cursor:pointer;min-height:34px}
 .browse-btn:active{background:var(--sunk)}
+/* 21.5: 설명 언어는 고르는 값이라 글자 버튼. 알약은 화면을 여는 Browse 만. */
+.lang-btn{border-color:transparent;color:var(--ink-soft);padding:7px 8px;letter-spacing:.06em}
+.lang-btn::after{content:' ▾';font-size:9px;color:var(--ink-faint)}
 
 /* min-height:0 lets this flex item shrink below its content height;
    without it overflow-y never engages and the column grows instead. */
 /* padding-bottom must clear what floats above the tab bar: the raised half
    of the record button (MIC_RISE) plus the hint line above it. Those three
    numbers are declared once here and reused by .mic-dock below. */
+/* scroll-padding-bottom 은 같은 높이를 scrollIntoView 에도 알려준다.
+   없으면 revealResult() 가 결과의 아래 끝을 스크롤 영역 끝에 맞춰서
+   "결과 카드 · 다음 문장" 버튼이 떠 있는 녹음 안내 뒤로 숨었다 (21.5). */
 .stage{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;
-  padding:20px 18px calc(var(--mic-rise) + var(--hint-h) + 14px);
+  padding:14px 18px calc(var(--mic-rise) + var(--hint-h) + 14px);
+  scroll-padding-bottom:calc(var(--mic-rise) + var(--hint-h) + 22px);
   -webkit-overflow-scrolling:touch}
+
+/* ---------- 21.1 문장 카드 ----------
+   무엇을 말하나(이동·타일·로마자·뜻·예시 듣기)는 한 장, 어떻게 말하나(억양
+   칩과 설명)는 그 바로 아래 한 묶음. 근접성만으로는 칩이 로마자·뜻 사이에
+   끼어 설명과 짝으로 읽히지 않았다. */
+.say-card{flex:none;background:#fff;border:1px solid var(--rule);border-radius:18px;
+  padding:12px 14px 14px;display:flex;flex-direction:column;gap:5px;
+  box-shadow:0 1px 2px rgba(17,26,34,.05)}
+.say-how{flex:none;margin:16px 4px 0;display:flex;flex-direction:column;gap:8px}
 
 /* 문장 좌우 이동. 컬렉션 안에서만 움직이고 끝에서는 멈춘다 — 컬렉션을
    넘나드는 것은 Browse 의 일이다. */
-.navrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 6px}
-.navbtn{width:38px;height:38px;flex:none;border:1px solid var(--rule);background:none;
+.navrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
+.navbtn{width:34px;height:34px;flex:none;border:1px solid transparent;background:var(--sunk);
   border-radius:50%;font-family:inherit;font-size:19px;line-height:1;color:var(--ink);
   cursor:pointer;display:grid;place-items:center}
-.navbtn:active{background:var(--sunk)}
+.navbtn:active{background:var(--rule)}
 .navbtn[disabled]{opacity:.3;cursor:default}
 .navpos{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ink-faint);
   font-variant-numeric:tabular-nums}
 
-.tiles{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px;align-items:flex-end}
+.tiles{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px;align-items:flex-end}
 .tile{position:relative;width:clamp(44px,12.6vw,54px);height:clamp(50px,14vw,60px);
   border-radius:9px;border:1px solid var(--rule);background:transparent;display:grid;place-items:center;
   font-family:var(--kr);font-weight:500;font-size:clamp(24px,6.9vw,29px);line-height:1;color:var(--ink);
@@ -130,29 +148,30 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
    0점과 "이번엔 점수가 없다"는 다른 말이다. */
 .result.noscore .score-row{display:none}
 
-.meta-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.meta-row{display:flex;flex-wrap:wrap;gap:7px;margin:0}
 .chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--rule);border-radius:100px;
   padding:5px 12px 5px 9px;font-size:11.5px;font-weight:600;color:var(--ink-soft)}
 .chip svg{display:block;flex:none}
 .chip.q{border-color:#E8C4BF;color:var(--seal)}
 
 .romanized{font-size:14.5px;font-weight:500;color:var(--ink-soft);line-height:1.4}
-.gloss{font-size:13.5px;color:var(--ink-faint);margin-top:5px;line-height:1.45}
-.toneHint{font-size:13px;color:var(--ink-soft);margin-top:7px;line-height:1.45}
+.gloss{font-size:13.5px;color:var(--ink-faint);margin-top:0;line-height:1.45}
+.toneHint{font-size:13px;color:var(--ink-soft);margin:0;line-height:1.45}
 .toneHint b{color:var(--ink);font-weight:700}
 
-.pair-link{display:none;margin-top:13px;width:100%;text-align:left;cursor:pointer;
+.pair-link{display:none;flex:none;margin-top:13px;width:100%;text-align:left;cursor:pointer;
   border:1px solid var(--rule);border-radius:11px;background:none;padding:11px 13px;font-family:inherit}
 .pair-link.show{display:block}
 .pair-link:active{background:var(--sunk)}
 .pair-link .pl-lab{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
 .pair-link .pl-txt{font-family:var(--kr);font-size:17px;font-weight:500;color:var(--ink);margin-top:4px}
 
-.listen{margin-top:14px;align-self:flex-start;display:inline-flex;align-items:center;gap:10px;
-  min-height:46px;padding:0 20px 0 16px;background:none;border:1.5px solid var(--rule);border-radius:100px;
-  font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+/* 카드 안에서는 폭을 채운다. 테두리는 투명으로 두고 재생 중에만 먹색으로. */
+.listen{margin-top:12px;align-self:stretch;display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  min-height:46px;padding:0 20px 0 16px;background:var(--sunk);border:1.5px solid transparent;border-radius:100px;
+  font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;
   transition:border-color var(--tap),color var(--tap),background-color var(--tap)}
-.listen:active{background:var(--sunk)}
+.listen:active{background:var(--rule)}
 .listen:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 /* 아이콘만 약 1.3배 (9x12 -> 12x16). 버튼 높이(min-height:46px)와 터치 영역은
    그대로다 — 아이콘이 그보다 훨씬 작아 높이를 결정하지 않는다. 선택자가
@@ -189,34 +208,71 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .ob-lab{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
 .ob-note{margin-top:4px;font-size:11.5px;line-height:1.45;color:var(--ink-faint)}
 .ob-opts{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.ob-opts.ob-pairs{gap:10px}
 .ob-opt{border:1px solid var(--rule);background:none;border-radius:100px;padding:9px 15px;
   font:inherit;font-size:13px;color:var(--ink);cursor:pointer;min-height:40px}
-.ob-opt.on{border-color:var(--seal);color:var(--seal);font-weight:700}
-.ob-skip{color:var(--ink-faint);font-size:12px}
+/* 고른 상태는 먹색 채움. 빨강은 녹음·경고의 색이다 (19.6 쓰임 범위). */
+.ob-opt.on{background:var(--ink);border-color:var(--ink);color:var(--paper);font-weight:600}
+/* "나중에"는 선택지가 아니라 건너뛰기라 글자 링크 모양. 골라도 링크로 남는다. */
+.ob-skip{border-color:transparent;color:var(--ink-faint);font-size:12px;
+  text-decoration:underline;text-underline-offset:3px;padding-left:6px;padding-right:6px}
+.ob-skip.on{background:none;border-color:transparent;color:var(--ink);font-weight:700}
 .ob-play{border:1px solid var(--rule);background:none;border-radius:100px;padding:9px 13px;
   font:inherit;font-size:11.5px;color:var(--ink-soft);cursor:pointer;min-height:40px}
+/* 목소리와 '들어보기'는 한 쌍. .on 은 app.js obSelect 가 쌍에도 단다. */
+.ob-pair{display:inline-flex;border:1px solid var(--rule);border-radius:100px;overflow:hidden}
+.ob-pair.on{border-color:var(--ink)}
+.ob-pair .ob-opt{border:none;border-radius:0;min-width:64px}
+.ob-pair .ob-play{border:none;border-left:1px solid var(--rule);border-radius:0}
+.ob-pair .ob-opt.on + .ob-play{background:var(--sunk);border-left-color:var(--ink)}
 /* 동의는 행 전체가 탭 영역이다. 체크박스만 눌러야 하면 손가락으로는 어렵고,
-   어려우면 읽지 않고 넘긴다. */
+   어려우면 읽지 않고 넘긴다. 필수는 실선, 선택은 점선 — 모양으로 갈린다. */
 .ob-consent{display:flex;gap:11px;align-items:flex-start;margin-top:16px;
   padding:12px 13px;border:1px solid var(--rule);border-radius:10px;cursor:pointer}
-.ob-consent input{width:21px;height:21px;flex:none;margin-top:1px;accent-color:var(--seal)}
+.ob-consent.req{border-color:var(--ink-soft)}
+.ob-consent.opt{background:transparent;border-style:dashed}
+.ob-consent input{width:21px;height:21px;flex:none;margin-top:1px;accent-color:var(--ink)}
 .ob-consent span{font-size:12.5px;line-height:1.5;color:var(--ink)}
 .ob-policy{display:inline-block;margin-top:12px;font-size:12px;color:var(--ink-soft)}
-.ob-warn{margin-top:10px;font-size:12px;color:var(--seal)}
+/* 동의 전 안내는 회색. 아직 아무것도 잘못하지 않았다 (21.4). */
+.ob-warn{margin-top:10px;font-size:12px;color:var(--ink-faint)}
 .ob-warn[hidden]{display:none}
 .ob-start{margin-top:16px;width:100%}
-.ob-start[disabled]{opacity:.45}
+/* .btn.primary(0,2,0)가 파일 뒤쪽에 있어 같은 우선순위로는 비활성이 덮였다 —
+   시작 버튼이 활성처럼 보였다. .btn 을 붙여 (0,3,0)으로 이긴다. */
+.btn.ob-start[disabled]{opacity:1;background:var(--sunk);border-color:var(--sunk);color:var(--ink-faint);cursor:default}
 
-/* ---------- 설정 ---------- */
-.settings{flex:none;margin:0 0 14px;padding:12px 13px;border:1px solid var(--rule);border-radius:10px}
+/* ---------- 21.3 설정: 딤 위의 시트 ----------
+   둘 다 position:absolute 이고 기준이 .phone 이다. 탭바 높이를 상수로
+   박지 않는다. .phone 의 padding-bottom 은 콘텐츠 상자에만 걸리고 절대
+   위치 요소의 bottom:0 은 그 바깥(시스템 바 쪽) 끝이라, 시트는 아래
+   여백에 --safe-bottom 을 스스로 더한다. .onboard 와 같은 방식이고
+   env() 를 직접 부르지 않는다. APK 에서는 네이티브가 이미 밀어 놓아 0이다. */
+.dim{position:absolute;inset:0;background:rgba(17,26,34,.46);z-index:28;
+  opacity:0;pointer-events:none;transition:opacity 220ms ease}
+.dim.on{opacity:1;pointer-events:auto}
+.settings{position:absolute;left:0;right:0;bottom:0;z-index:30;max-height:88%;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  background:var(--paper);border-radius:20px 20px 0 0;
+  padding:8px 16px calc(var(--safe-bottom) + 22px);
+  box-shadow:0 -8px 30px rgba(17,26,34,.18)}
 .settings[hidden]{display:none}
+.settings::before{content:'';display:block;width:38px;height:4px;border-radius:4px;
+  background:var(--rule);margin:2px auto 8px}
 .set-head{display:flex;align-items:center;justify-content:space-between;
-  padding-bottom:9px;margin-bottom:6px;border-bottom:1px solid var(--rule);font-size:13px}
+  padding-bottom:2px;font-size:17px}
+.set-head b{font-weight:700}
+.set-group{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--ink-faint);margin:18px 4px 7px}
+.set-box{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:0 13px}
 .set-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
   flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--rule)}
+/* display:flex 가 hidden 속성(UA 의 display:none)을 이긴다. #setDevRow 가
+   웹에서도 늘 보였다. hidden 을 풀면(네이티브 셸) 다시 flex 로 돌아온다. */
+.set-row[hidden]{display:none}
 .set-row:last-child{border-bottom:none}
 .set-block{padding:10px 0;border-bottom:1px solid var(--rule)}
-.set-lab{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+.set-box .set-row:last-child,.set-box .set-block:last-child{border-bottom:none}
+.set-lab{font-size:13px;font-weight:600;color:var(--ink)}
 .set-ctl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px}
 .set-row .set-ctl{margin-top:0}
 .set-state{font-size:11.5px;color:var(--ink-soft)}
@@ -225,9 +281,17 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
   color:var(--ink-soft);word-break:break-all}
 .set-best{margin-top:8px;font-size:12px;line-height:1.6;color:var(--ink-soft)}
 .set-best b{color:var(--ink);font-variant-numeric:tabular-nums}
+/* 되돌리기 어려운 동작은 맨 아래 따로 떼고 빨간 글자로 (19.6 쓰임 범위) */
+.set-danger{margin:26px 4px 0;padding-top:16px;border-top:1px solid var(--rule)}
+.settings .set-danger .vb{border:none;padding:0;min-height:0;color:var(--seal);font-weight:700;
+  text-decoration:none;font-size:13px}
+/* 버전은 맨 아래 작은 글씨. 숫자가 스스로 버전이라 이름표는 접는다. */
+.set-ver{border-bottom:none;justify-content:center;margin-top:18px}
+.set-ver .set-lab{display:none}
+.settings .set-ver .vb{border:none;font-size:11.5px;color:var(--ink-faint);text-decoration:underline}
 
 /* ---------- 후속 제안 ---------- */
-.ask{margin-top:14px;padding:11px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--sunk)}
+.ask{margin-top:14px;padding:11px 12px;border:1px solid var(--rule);border-radius:10px;background:#fff}
 .ask[hidden]{display:none}
 .ask-t{font-size:12.5px;line-height:1.5}
 .ask-b{display:flex;gap:7px;margin-top:9px}
@@ -235,8 +299,11 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .vb-lab{font-size:12px}
 .vb{border:1px solid var(--rule);background:none;border-radius:100px;
   padding:5px 13px;font:inherit;font-size:12px;color:inherit;cursor:pointer}
-.vb.on{border-color:var(--seal);color:var(--seal);font-weight:600}
+.settings .vb{min-height:36px;padding:6px 14px;font-size:12.5px}
+/* 고른 상태는 먹색 채움 (19.6 쓰임 범위) */
+.vb.on{background:var(--ink);border-color:var(--ink);color:var(--paper);font-weight:600}
 .vb-x{margin-left:auto;color:var(--ink-faint)}
+.settings .vb-x{border:none;font-size:13px;color:var(--ink-soft)}
 .vb-sep{width:1px;align-self:stretch;background:var(--rule);margin:0 2px}
 /* D: 임시 계측 창. P6-B에서 이 규칙과 index.html의 #logView를 함께 지운다.
 
@@ -257,13 +324,17 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
   letter-spacing:.04em;color:var(--seal)}
 .into-penalty.show{display:block}
 
-.result{margin-top:20px;padding-top:18px;border-top:1px solid var(--rule);
+/* 21.2: 결과는 바탕이 다른 패널. 문장 카드(흰 바탕)와 전경·배경이 갈린다. */
+.result{flex:none;margin-top:16px;padding:18px 16px 16px;background:var(--sunk);border-radius:18px;
   opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity 500ms ease,transform 500ms ease}
 .result.show{opacity:1;transform:none;pointer-events:auto}
 .score-row{display:flex;align-items:flex-end;gap:14px}
 .score-num{font-size:58px;font-weight:700;line-height:.86;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+/* 큰 숫자에 기준을 붙인다 (3.1 · 6.1). 음수 여백은 score-row 의 gap 을 줄인다. */
+.score-of{font-size:19px;font-weight:700;color:var(--ink-faint);letter-spacing:-.01em;
+  margin-left:-10px;padding-bottom:5px;font-variant-numeric:tabular-nums}
 .score-meta{padding-bottom:6px}
-.score-label{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+.score-label{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
 .score-verdict{font-size:14px;font-weight:600;margin-top:3px;line-height:1.3}
 /* the one line that says what the final contour did */
 .into-note{margin-top:13px;padding-left:11px;border-left:2.5px solid var(--rule);
@@ -287,6 +358,7 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .btn:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 .btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .btn.primary:active{background:#000}
+.result .btn:not(.primary){background:#fff}
 
 /* The dock hangs off the top edge of .tabs. bottom is expressed against
    the bar's own box (100% = its top edge), so nothing here depends on the
@@ -326,7 +398,8 @@ body.dev .micdev{display:block;flex:none;padding:0 18px 6px}
 /* The sim row always exists because .buildtag lives in it and the build
    number is how a deploy gets confirmed on the phone. Only the SIMULATE
    controls hide; body.dev brings them back. See DEV_UNLOCK in app.js. */
-.sim{flex:none;border-top:1px dashed var(--rule);padding:6px 18px 8px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+/* 21.5: 점선 위 테두리를 뺐다. 화면을 가르는 선으로 읽혀 탭바 위에 띠가 하나 더 생겼다. */
+.sim{flex:none;border-top:none;padding:6px 18px 8px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 body.dev .sim{padding:10px 18px 12px}
 .sim-label,.sim-btn{display:none}
 body.dev .sim-label{display:block}
@@ -351,6 +424,8 @@ body.dev .sim-btn{display:block}
   font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
 .tab .ico{font-family:var(--kr);font-size:17px;font-weight:500;line-height:1;letter-spacing:0;text-transform:none}
+/* 선 아이콘(설정)은 글자 아이콘과 같은 17px 줄에 앉는다. 색은 currentColor. */
+.tab .ico svg{display:block}
 /* the wider middle cell leaves each tab narrower. Clip rather than let a
    long label (English "HONORIFICS") spill across the cell boundary — it
    already did not fit before this change. */
