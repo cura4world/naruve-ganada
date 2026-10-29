@@ -337,6 +337,7 @@ UI.id = {
 };
 
 /* 설정의 언어 줄에 이 순서로 놓인다 (22.5) */
-var LANGS = ['en','id','ko'];
+/* 21.8 — en·ko를 마무리한 뒤 'id'를 되돌린다. id 열의 문구는 지우지 않는다. */
+var LANGS = ['en','ko'];
 /* 각 언어가 스스로를 부르는 이름. 번역하지 않는다. */
 var LANG_NAME = { en:'English', id:'Bahasa Indonesia', ko:'한국어' };

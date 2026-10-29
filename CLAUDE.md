@@ -687,7 +687,7 @@ README의 APK 경로가 BEL 둘로 깨진 채 몇 주를 지났다.
 - 억양 채점은 F0 분석으로 단말에서 처리 — 원가 0원이므로 무료 사용자에게도 열어준다.
 - 모국어 설명은 결핍만 지적하지 않는다. 이미 가진 것을 찾아 쓴다.
   (예: 인도네시아어에는 불파 종성이 있다 — anak, sebab)
-- 색: ink #111A22 / paper #FBFAF6 / seal #B3342B (브랜드 색, DECISIONS 19.6)
+- 색: ink #111A22 / paper #FBFAF6 / seal #A3341C (브랜드 색, DECISIONS 19.6 · 21.8)
 - 한글은 NaruveSerif(마루 부리 서브셋)가 기본이고, 제목·묶음 이름·이동 버튼의 한글만 NaruveGothic
   (학교안심 알림장 B 서브셋, `--hd`). 라틴(영문·숫자)은 어디서나 Archivo (DECISIONS 21.6 · 21.7).
   `--ui`는 'Archivo','NaruveSerif' 순서라 한 줄 안에서도 글자 단위로 나뉜다.
@@ -718,7 +718,7 @@ versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로
 지메일 설정은 저장소 밖이라 빌드와 무관하다.
 
 ## 현재 상태
-빌드 0.1.32 기준.
+빌드 0.1.33 기준.
 
 **문장** 200개 (Standard 60 / Everyday 60 / Drama 50 / Sounds 30) — 배치 1 (#76, 2026-08-26).
 `t:` 태그 200개(question 84 / statement 112 / exclam 4), `w:` 200개,
@@ -788,6 +788,7 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 한글은 NaruveGothic, 나머지 한글은 NaruveSerif, 라틴은 Archivo다(DECISIONS 21.7). 누르라는 안내
 문구는 없고 진행 상태(듣는 중 · 채점 중)만 나온다. 마이크 지름 84px. 나 화면 설정 맨 위에
 번역하지 않는 "Language · 언어" 줄이 있다.
+0.1.33에서 제목 글자를 2px 키우고, 브랜드 빨강을 #A3341C로 바꾸고, 언어 버튼을 en·ko 둘로 줄였다(DECISIONS 21.8).
 
 **오류 설명** 15.10의 세 겹뿐이다 — 총점 판정(85/70) · 낮은 단어(60 미만) · 억양 방향.
 `renderL1`은 정의만 남고 호출되지 않는다. s.w에 박힌 확정 설명이라
