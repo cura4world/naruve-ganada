@@ -41,7 +41,7 @@ var UI = {
     hintScoring:'채점 중…',
     hintAgain:'다시 하려면 누르세요',
 
-    scoreLabel:'점수',
+    scoreLabel:'원어민 기준',
     notePerfect:'모든 음절이 제자리에 놓였어요. 다음 문장으로 가세요.',
     shareBtn:'결과 카드',
     nextBtn:'다음 문장',
@@ -97,7 +97,7 @@ var UI = {
     consentBase:'채점을 위한 음성 처리와 익명 로그에 동의합니다 (필수)',
     consentExt:'내 발음을 채점 정확도 향상에 쓸게요 — 같은 모국어 학습자의 점수가 더 정확해집니다. (5년 보관, 설정에서 언제든 철회)',
     policyLink:'개인정보처리방침',
-    consentNeed:'필수 항목에 동의하셔야 시작할 수 있어요.',
+    consentNeed:'필수 항목에 동의하면 시작할 수 있어요.',
     /* ---- 후속 제안 ---- */
     askTitle:'이 발음을 채점 개선에 쓸 수 있게 해주시겠어요?',
     askYes:'네, 참여할게요',
@@ -105,6 +105,10 @@ var UI = {
     askThanks:'고마워요. 설정에서 언제든 철회할 수 있어요.',
     /* ---- 설정 ---- */
     setTitle:'설정',
+    /* 21.3 묶음 제목 */
+    setGrpLearn:'학습',
+    setGrpData:'기록과 데이터',
+    setGrpMe:'내 정보',
     setVoice:'따라 할 목소리',
     setLang:'표시 언어',
     setConsent:'채점 개선 참여',
@@ -119,6 +123,7 @@ var UI = {
     setIdNote:'이 식별자를 적어 메일로 보내시면 서버에 보관된 자료를 지워드려요.',
     setCopy:'복사',
     setMail:'삭제 요청 메일 쓰기',
+    setMailNote:'서버에 보관된 내 음성과 기록을 지워 달라고 요청합니다.',
     setVersion:'앱 버전',
     setDev:'개발용',
     copied:'복사했어요',
@@ -191,7 +196,7 @@ var UI = {
     hintScoring:'Scoring…',
     hintAgain:'Tap to try again',
 
-    scoreLabel:'Your score',
+    scoreLabel:'vs. native speech',
     notePerfect:'Every syllable landed. Try the next one.',
     shareBtn:'Share card',
     nextBtn:'Next sentence',
@@ -249,6 +254,9 @@ var UI = {
     askNo:'No thanks',
     askThanks:'Thank you. You can withdraw any time in Settings.',
     setTitle:'Settings',
+    setGrpLearn:'Learning',
+    setGrpData:'Records & data',
+    setGrpMe:'About me',
     setVoice:'Voice to imitate',
     setLang:'Display language',
     setConsent:'Helping improve scoring',
@@ -263,6 +271,7 @@ var UI = {
     setIdNote:'Send this identifier by email and we will delete what is stored on the server.',
     setCopy:'Copy',
     setMail:'Write deletion request',
+    setMailNote:'Ask us to delete the recordings and records of yours stored on the server.',
     setVersion:'App version',
     setDev:'Developer',
     copied:'Copied',

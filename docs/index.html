@@ -26,10 +26,11 @@
     <div class="credits"><b id="credits">30</b><span data-i18n="checksLeft"> checks left</span></div>
   </header>
 
+  <!-- 21.5: 설명 언어는 글자 버튼, 문장 보기만 알약 버튼. 역할이 다르다. -->
   <div class="strip">
     <div class="where"><b id="curCol">Drama</b><span class="dot"></span><span class="set" id="curSet">Reactions</span></div>
     <div style="display:flex;gap:7px;flex:none">
-      <button class="browse-btn" id="l1Btn">EN</button>
+      <button class="browse-btn lang-btn" id="l1Btn">EN</button>
       <button class="browse-btn" id="openBrowse" data-i18n="browse">Browse</button>
     </div>
   </div>
@@ -62,22 +63,28 @@
         </div>
       </div>
 
+      <!-- 21.4: 목소리와 '들어보기'는 한 쌍. 고른 쌍의 .on 은 app.js obSelect 가 단다. -->
       <div class="ob-q">
         <div class="ob-lab" data-i18n="obVoice">Voice to imitate</div>
         <div class="ob-note" data-i18n="obVoiceNote"></div>
-        <div class="ob-opts" id="obVoice">
-          <button type="button" class="ob-opt on" data-v="f" data-i18n="obFemale">Female</button>
-          <button type="button" class="ob-play" data-v="f" data-i18n="obPlay">Listen</button>
-          <button type="button" class="ob-opt" data-v="m" data-i18n="obMale">Male</button>
-          <button type="button" class="ob-play" data-v="m" data-i18n="obPlay">Listen</button>
+        <div class="ob-opts ob-pairs" id="obVoice">
+          <span class="ob-pair on" data-v="f">
+            <button type="button" class="ob-opt on" data-v="f" data-i18n="obFemale">Female</button>
+            <button type="button" class="ob-play" data-v="f" data-i18n="obPlay">Listen</button>
+          </span>
+          <span class="ob-pair" data-v="m">
+            <button type="button" class="ob-opt" data-v="m" data-i18n="obMale">Male</button>
+            <button type="button" class="ob-play" data-v="m" data-i18n="obPlay">Listen</button>
+          </span>
         </div>
       </div>
 
-      <label class="ob-consent" for="obBase">
+      <!-- 필수와 선택은 모양이 다르다 (21.4) -->
+      <label class="ob-consent req" for="obBase">
         <input type="checkbox" id="obBase">
         <span data-i18n="consentBase"></span>
       </label>
-      <label class="ob-consent" for="obExt">
+      <label class="ob-consent opt" for="obExt">
         <input type="checkbox" id="obExt">
         <span data-i18n="consentExt"></span>
       </label>
@@ -90,71 +97,6 @@
   </div>
 
   <main class="stage" id="stage">
-    <!-- 임시. 설정 화면(16.6)과 온보딩(P6-B)이 생기면 지운다.
-         .stage 안이라 열 높이에 영향이 없다 — CLAUDE.md "레이아웃과 safe-area" 참조. -->
-    <section class="settings" id="settings" hidden>
-      <div class="set-head">
-        <b data-i18n="setTitle">Settings</b>
-        <button class="vb vb-x" id="setClose" data-i18n="close">Close</button>
-      </div>
-
-      <div class="set-row">
-        <span class="set-lab" data-i18n="setVoice">Voice</span>
-        <span class="set-ctl">
-          <button class="vb" id="voiceF" data-v="f" data-i18n="obFemale">Female</button>
-          <button class="vb" id="voiceM" data-v="m" data-i18n="obMale">Male</button>
-        </span>
-      </div>
-
-      <div class="set-row">
-        <span class="set-lab" data-i18n="setLang">Language</span>
-        <span class="set-ctl">
-          <button class="vb" id="langKo" data-v="ko">한국어</button>
-          <button class="vb" id="langEn" data-v="en">English</button>
-        </span>
-      </div>
-
-      <div class="set-row">
-        <span class="set-lab" data-i18n="setConsent">Improve scoring</span>
-        <span class="set-ctl">
-          <span class="set-state" id="consentState"></span>
-          <button class="vb" id="consentToggle"></button>
-        </span>
-      </div>
-
-      <div class="set-block">
-        <div class="set-lab" data-i18n="setBest">My records</div>
-        <div class="set-note" id="bestNote"></div>
-        <div class="set-best" id="bestList"></div>
-      </div>
-
-      <div class="set-block">
-        <div class="set-lab" data-i18n="setId">My identifier</div>
-        <div class="set-note" data-i18n="setIdNote"></div>
-        <code class="set-uuid" id="myUuid"></code>
-        <div class="set-ctl">
-          <button class="vb" id="uuidCopy" data-i18n="setCopy">Copy</button>
-          <a class="vb" id="uuidMail" href="#" data-i18n="setMail">Write deletion request</a>
-          <span class="set-state" id="uuidStat"></span>
-        </div>
-      </div>
-
-      <div class="set-row">
-        <span class="set-lab" data-i18n="setVersion">Version</span>
-        <span class="set-ctl"><span class="set-state" id="setVer">—</span>
-          <a class="vb" href="./privacy/" target="_blank" rel="noopener" id="setPolicy"
-             data-i18n="policyLink">Privacy policy</a></span>
-      </div>
-
-      <div class="set-row" id="setDevRow" hidden>
-        <span class="set-lab" data-i18n="setDev">Developer</span>
-        <span class="set-ctl">
-          <button class="vb" id="reloadBtn" data-i18n="reloadApp">Reload</button>
-          <button class="vb" id="logBtn" data-i18n="logShow">Log</button>
-        </span>
-      </div>
-    </section>
-
     <!-- D: 임시 계측 창. 먹먹한 소리의 원인을 가른 뒤 지운다. -->
     <div class="logbox" id="logView" hidden>
       <div class="logbar">
@@ -164,33 +106,41 @@
       <pre class="logtext" id="logText"></pre>
     </div>
 
-    <div class="navrow">
-      <button class="navbtn" id="prevSent" aria-label="이전 문장">&#8249;</button>
-      <span class="navpos" id="navPos"></span>
-      <button class="navbtn" id="nextSent" aria-label="다음 문장">&#8250;</button>
+    <!-- 21.1: 무엇을 말하나 — 문장 이동·타일·로마자·뜻·예시 듣기가 카드 한 장 -->
+    <div class="say-card">
+      <div class="navrow">
+        <button class="navbtn" id="prevSent" aria-label="이전 문장">&#8249;</button>
+        <span class="navpos" id="navPos"></span>
+        <button class="navbtn" id="nextSent" aria-label="다음 문장">&#8250;</button>
+      </div>
+
+      <div class="tiles" id="tiles"></div>
+      <div class="romanized" id="roman"></div>
+      <div class="gloss" id="gloss"></div>
+
+      <button class="listen" id="listen">
+        <span class="tri"></span>
+        <span class="bars"><i></i><i></i><i></i></span>
+        <span id="listenLabel">Hear it spoken</span>
+      </button>
+      <div class="audio-note" id="audioNote"></div>
     </div>
 
-    <div class="tiles" id="tiles"></div>
-    <div class="meta-row" id="metaRow"></div>
-    <div class="romanized" id="roman"></div>
-    <div class="gloss" id="gloss"></div>
-    <div class="toneHint" id="toneHint"></div>
+    <!-- 어떻게 말하나 — 억양 칩과 그 설명은 한 묶음 -->
+    <div class="say-how">
+      <div class="meta-row" id="metaRow"></div>
+      <div class="toneHint" id="toneHint"></div>
+    </div>
 
     <button class="pair-link" id="pairLink">
       <div class="pl-lab" id="plLab"></div>
       <div class="pl-txt" id="plTxt"></div>
     </button>
 
-    <button class="listen" id="listen">
-      <span class="tri"></span>
-      <span class="bars"><i></i><i></i><i></i></span>
-      <span id="listenLabel">Hear it spoken</span>
-    </button>
-    <div class="audio-note" id="audioNote"></div>
-
     <section class="result" id="result" aria-live="polite">
       <div class="score-row">
         <div class="score-num" id="scoreNum">0</div>
+        <span class="score-of">/100</span>
         <div class="score-meta">
           <div class="score-label" data-i18n="scoreLabel">Your score</div>
           <div class="score-verdict" id="verdict">—</div>
@@ -247,7 +197,7 @@
     <button class="tab" aria-selected="false"><span class="ico">높</span><span data-i18n="tabHonorifics">Honorifics</span></button>
     <div class="tab-gap" aria-hidden="true"></div>
     <button class="tab" aria-selected="false"><span class="ico">나</span><span data-i18n="tabYou">You</span></button>
-    <button class="tab" id="tabSettings" aria-selected="false"><span class="ico">⚙</span><span data-i18n="tabSettings">Settings</span></button>
+    <button class="tab" id="tabSettings" aria-selected="false"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span data-i18n="tabSettings">Settings</span></button>
 
     <div class="mic-dock">
       <div class="hint" id="hint">Tap and read it aloud</div>
@@ -268,6 +218,87 @@
     <div class="b-cols" id="bCols"></div>
     <div class="b-blurb" id="bBlurb"></div>
     <div class="b-list" id="bList"></div>
+  </section>
+
+  <!-- 21.3: 설정은 딤 위의 시트. 둘 다 .phone 기준 position:absolute 라
+       열 높이에 영향이 없다. 여닫기는 app.js setSheet() 한 곳에서 같이 한다.
+       CLAUDE.md "레이아웃과 safe-area" 참조. -->
+  <div class="dim" id="setDim" aria-hidden="true"></div>
+  <section class="settings" id="settings" hidden>
+    <div class="set-head">
+      <b data-i18n="setTitle">Settings</b>
+      <button class="vb vb-x" id="setClose" data-i18n="close">Close</button>
+    </div>
+
+    <div class="set-group" data-i18n="setGrpLearn">Learning</div>
+    <div class="set-box">
+      <div class="set-row">
+        <span class="set-lab" data-i18n="setVoice">Voice</span>
+        <span class="set-ctl">
+          <button class="vb" id="voiceF" data-v="f" data-i18n="obFemale">Female</button>
+          <button class="vb" id="voiceM" data-v="m" data-i18n="obMale">Male</button>
+        </span>
+      </div>
+
+      <div class="set-row">
+        <span class="set-lab" data-i18n="setLang">Language</span>
+        <span class="set-ctl">
+          <button class="vb" id="langKo" data-v="ko">한국어</button>
+          <button class="vb" id="langEn" data-v="en">English</button>
+        </span>
+      </div>
+    </div>
+
+    <div class="set-group" data-i18n="setGrpData">Records &amp; data</div>
+    <div class="set-box">
+      <div class="set-row">
+        <span class="set-lab" data-i18n="setConsent">Improve scoring</span>
+        <span class="set-ctl">
+          <span class="set-state" id="consentState"></span>
+          <button class="vb" id="consentToggle"></button>
+        </span>
+      </div>
+
+      <div class="set-block">
+        <div class="set-lab" data-i18n="setBest">My records</div>
+        <div class="set-note" id="bestNote"></div>
+        <div class="set-best" id="bestList"></div>
+      </div>
+    </div>
+
+    <div class="set-group" data-i18n="setGrpMe">About me</div>
+    <div class="set-box">
+      <div class="set-block">
+        <div class="set-lab" data-i18n="setId">My identifier</div>
+        <div class="set-note" data-i18n="setIdNote"></div>
+        <code class="set-uuid" id="myUuid"></code>
+        <div class="set-ctl">
+          <button class="vb" id="uuidCopy" data-i18n="setCopy">Copy</button>
+          <span class="set-state" id="uuidStat"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 되돌리기 어려운 동작은 맨 아래 따로, 빨간 글자로 (19.6 쓰임 범위) -->
+    <div class="set-danger">
+      <a class="vb" id="uuidMail" href="#" data-i18n="setMail">Write deletion request</a>
+      <div class="set-note" data-i18n="setMailNote"></div>
+    </div>
+
+    <div class="set-row set-ver">
+      <span class="set-lab" data-i18n="setVersion">Version</span>
+      <span class="set-ctl"><span class="set-state" id="setVer">—</span>
+        <a class="vb" href="./privacy/" target="_blank" rel="noopener" id="setPolicy"
+           data-i18n="policyLink">Privacy policy</a></span>
+    </div>
+
+    <div class="set-row" id="setDevRow" hidden>
+      <span class="set-lab" data-i18n="setDev">Developer</span>
+      <span class="set-ctl">
+        <button class="vb" id="reloadBtn" data-i18n="reloadApp">Reload</button>
+        <button class="vb" id="logBtn" data-i18n="logShow">Log</button>
+      </span>
+    </div>
   </section>
 
 </div>
