@@ -220,6 +220,15 @@ if (state) {
   }
 }
 
+/* ---------- 검사 3 — 제어문자 ---------- */
+const CTRL = /[\x00-\x08\x0B\x0C\x0E-\x1F]/;
+for (const f of ['DECISIONS.md', 'CLAUDE.md']) {
+  const lines = read(f).split('\n');
+  const hits = [];
+  lines.forEach((l, i) => { if (CTRL.test(l)) hits.push(`${f}:${i + 1}`); });
+  row(`제어문자 ${f}`, '없어야 함', hits.length ? hits.join(' ') : '없음', hits.length === 0);
+}
+
 /* ---------- 검사 4 — 글꼴 서브셋 ↔ 앱 한글 (DECISIONS 21.6) ---------- */
 // 왜 있는가 — NaruveSerif는 앱이 쓰는 한글만 남긴 서브셋이다. 새 문장에 없던 글자가
 // 들어오면 그 글자만 시스템 글꼴로 보인다. 빈 네모는 아니라서 눈으로는 놓친다.
@@ -252,15 +261,6 @@ if (state) {
     const p = rel('docs', 'fonts', 'naruve-gothic-700.woff2');
     row('글꼴 파일 naruve-gothic-700', '있어야 함', fs.existsSync(p) ? '있음' : '없음', fs.existsSync(p));
   }
-}
-
-/* ---------- 검사 3 — 제어문자 ---------- */
-const CTRL = /[\x00-\x08\x0B\x0C\x0E-\x1F]/;
-for (const f of ['DECISIONS.md', 'CLAUDE.md']) {
-  const lines = read(f).split('\n');
-  const hits = [];
-  lines.forEach((l, i) => { if (CTRL.test(l)) hits.push(`${f}:${i + 1}`); });
-  row(`제어문자 ${f}`, '없어야 함', hits.length ? hits.join(' ') : '없음', hits.length === 0);
 }
 
 /* ---------- 출력 ---------- */
