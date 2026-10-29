@@ -238,7 +238,9 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .ob-warn{margin-top:10px;font-size:12px;color:var(--ink-faint)}
 .ob-warn[hidden]{display:none}
 .ob-start{margin-top:16px;width:100%}
-.ob-start[disabled]{opacity:1;background:var(--sunk);border-color:var(--sunk);color:var(--ink-faint);cursor:default}
+/* .btn.primary(0,2,0)가 파일 뒤쪽에 있어 같은 우선순위로는 비활성이 덮였다 —
+   시작 버튼이 활성처럼 보였다. .btn 을 붙여 (0,3,0)으로 이긴다. */
+.btn.ob-start[disabled]{opacity:1;background:var(--sunk);border-color:var(--sunk);color:var(--ink-faint);cursor:default}
 
 /* ---------- 21.3 설정: 딤 위의 시트 ----------
    둘 다 position:absolute 이고 기준이 .phone 이다. 탭바 높이를 상수로
@@ -264,6 +266,9 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .set-box{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:0 13px}
 .set-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
   flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--rule)}
+/* display:flex 가 hidden 속성(UA 의 display:none)을 이긴다. #setDevRow 가
+   웹에서도 늘 보였다. hidden 을 풀면(네이티브 셸) 다시 flex 로 돌아온다. */
+.set-row[hidden]{display:none}
 .set-row:last-child{border-bottom:none}
 .set-block{padding:10px 0;border-bottom:1px solid var(--rule)}
 .set-box .set-row:last-child,.set-box .set-block:last-child{border-bottom:none}
