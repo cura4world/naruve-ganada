@@ -36,10 +36,8 @@ var UI = {
     listen:'예시 듣기',
     listenPlaying:'재생 중',
 
-    hintTap:'눌러서 소리 내어 읽으세요',
     hintListening:'듣는 중…',
     hintScoring:'채점 중…',
-    hintAgain:'다시 하려면 누르세요',
 
     scoreLabel:'원어민 기준',
     notePerfect:'모든 음절이 제자리에 놓였어요. 다음 문장으로 가세요.',
@@ -85,9 +83,9 @@ var UI = {
     youBrowse:'문장 보기',
     youPolite:'높임말 체커',
     youSoon:'준비 중',
-    youVoiceLang:'목소리 · 표시 언어',
+    youLangRow:'Language · 언어',   /* 21.7: 번역하지 않는 이름. en과 같은 값 */
+    youVoice:'목소리',
     youDataMe:'채점 개선 참여 · 내 정보',
-    hintBack:'눌러서 연습으로 돌아가기',
     fontLicenses:'글꼴 라이선스',
     /* ---- 온보딩 (16.4) ---- */
     obTitle:'시작하기 전에',
@@ -197,10 +195,8 @@ var UI = {
     listen:'Hear it spoken',
     listenPlaying:'Playing',
 
-    hintTap:'Tap and read it aloud',
     hintListening:'Listening…',
     hintScoring:'Scoring…',
-    hintAgain:'Tap to try again',
 
     scoreLabel:'vs. native speech',
     notePerfect:'Every syllable landed. Try the next one.',
@@ -243,9 +239,9 @@ var UI = {
     youBrowse:'Browse sentences',
     youPolite:'Polite-speech checker',
     youSoon:'Coming soon',
-    youVoiceLang:'Voice · Display language',
+    youLangRow:'Language · 언어',   /* 21.7: 번역하지 않는 이름 — 어느 화면에서도 찾게 */
+    youVoice:'Voice',
     youDataMe:'Helping improve scoring · About me',
-    hintBack:'Tap to go back and read',
     fontLicenses:'Font licenses',
     obTitle:'Before we start',
     obSub:'Three quick questions. You can change these in Settings.',

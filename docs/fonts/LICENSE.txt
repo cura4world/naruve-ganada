@@ -100,6 +100,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 ===========================================================
 
+NaruveGothic (docs/fonts/naruve-gothic-700.woff2)
+Modified Version (subset, renamed) of Hakgyoansim Allimjang B.
+Source: Korea Education and Research Information Service (KERIS).
+Hakgyoansim Allimjang is a trademark of KERIS; this derivative does not use the name.
+Copyright (c) KERIS. Designed by Heumm Design.
+Distributed by KERIS under the SIL Open Font License, Version 1.1 (KERIS copyright support
+center and KOGL listing). The license text is the same OFL 1.1 reproduced above.
+
+
+===========================================================
+
 Archivo (docs/fonts/archivo-*.woff2)
 
 Copyright 2020 The Archivo Project Authors (https://github.com/Omnibus-Type/Archivo) Archivo-Italic[wdth,wght].ttf: Copyright 2020 The Archivo Project Authors (https://github.com/Omnibus-Type/Archivo)

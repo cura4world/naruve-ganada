@@ -32,13 +32,15 @@ function tcol(id){
 function colName(id){ return tcol(id).n; }
 
 /* the hint line is remembered by key, not by text, so a language switch
-   mid-recording still says the right thing */
-var hintKey='hintTap';
+   mid-recording still says the right thing. 21.7: 누르라는 안내는 없다 —
+   쉬는 동안 키는 '' 이고 줄은 비어 있다. 진행 상태(듣는 중·채점 중)만 쓴다. */
+var hintKey='';
+function hintText(k){ return k ? t(k) : ''; }
 function setHint(k,live){
-  /* 나 화면이 열려 있는 동안 안내는 hintBack 이다. 그사이 들어온 키는
+  /* 나 화면이 열려 있는 동안 안내 줄은 비어 있다. 그사이 들어온 키는
      닫을 때 되돌릴 자리에 둔다 (22.2). */
-  if(youOpen() && k!=='hintBack'){ youPrevHint={k:k,live:live}; return; }
-  hintKey=k; $('hint').textContent=t(k);
+  if(youOpen()){ youPrevHint={k:k,live:live}; return; }
+  hintKey=k; $('hint').textContent=hintText(k);
   if(live) $('hint').classList.add('live'); else $('hint').classList.remove('live');
 }
 
@@ -104,7 +106,7 @@ function paint(){
   $('intoNote').classList.remove('show');
   if($('askCard')) $('askCard').hidden = true;
   lastRes = null;
-  setHint('hintTap',false);
+  setHint('',false);
   $('audioNote').classList.remove('show');
   paintNav();
   savePos();
@@ -267,7 +269,7 @@ function run(){
                        : kind==='unsupported' ? t('micUnsupported')
                        : t('micFailed');
       note.classList.add('show');
-      setHint('hintTap',false); busy=false;
+      setHint('',false); busy=false;
     }
   });
 }
@@ -289,7 +291,7 @@ function paintNoScore(res){
   showIntoNote();
   $('note').textContent='';
   $('l1box').classList.remove('show');
-  setHint('hintAgain',false); busy=false;
+  setHint('',false); busy=false;
 }
 
 /* .stage가 유일한 스크롤러다. 결과가 마이크·탭바 뒤로 들어가지 않게 올려준다. */
@@ -343,7 +345,7 @@ function paintScore(res){
     maybeAskConsent(tt);
     showResult(tt);
     revealResult();
-    setHint('hintAgain',false); busy=false;
+    setHint('',false); busy=false;
   }, tiles.length*80+200);
 }
 
@@ -479,7 +481,7 @@ function applyLang(){
   document.documentElement.setAttribute('lang', L1);
 
   if(!$('listen').classList.contains('playing')) $('listenLabel').textContent=t('listen');
-  $('hint').textContent=t(hintKey);
+  $('hint').textContent=hintText(hintKey);
   paintCard();
   if ($('result').classList.contains('show')) showResult(lastTotal);
   if ($('browse').classList.contains('open')) { renderCols(); renderList(); }
@@ -542,7 +544,7 @@ Array.prototype.slice.call(document.querySelectorAll('.sim-btn')).forEach(functi
   b.addEventListener('click',function(){
     document.querySelectorAll('.sim-btn').forEach(function(x){x.classList.remove('on');});
     b.classList.add('on'); level=b.getAttribute('data-lv');
-    resetTiles(); $('result').classList.remove('show'); setHint('hintTap',false);
+    resetTiles(); $('result').classList.remove('show'); setHint('',false);
   });
 });
 
@@ -685,7 +687,7 @@ function setYou(open){
   y.hidden = !open;
   document.querySelector('.phone').classList.toggle('you-on', open);
   if($('tabYou')) $('tabYou').setAttribute('aria-selected', open ? 'true' : 'false');
-  if(open){ setHint('hintBack',false); paintYou(); y.scrollTop = 0; }
+  if(open){ hintKey=''; $('hint').textContent=''; $('hint').classList.remove('live'); paintYou(); y.scrollTop = 0; }
   else if(youPrevHint){ var p=youPrevHint; youPrevHint=null; setHint(p.k,p.live); }
 }
 
@@ -731,8 +733,8 @@ function paintYou(){
     }
   }
 
-  if($('youVoiceLangNow')) $('youVoiceLangNow').textContent =
-    t(Example.voice()==='m' ? 'obMale' : 'obFemale') + ' · ' + (LANG_NAME[L1] || L1);
+  if($('youLangNow')) $('youLangNow').textContent = LANG_NAME[L1] || L1;
+  if($('youVoiceNow')) $('youVoiceNow').textContent = t(Example.voice()==='m' ? 'obMale' : 'obFemale');
   if($('youVer')) $('youVer').textContent = ($('buildTag') && $('buildTag').textContent) || '—';
   if($('youPolicy')) $('youPolicy').href = (L1==='ko') ? './privacy/' : './privacy/en/';
 }
@@ -744,10 +746,17 @@ function sheetToData(){
   var s=$('settings'), g=$('grpData');
   if(s && g) s.scrollTop = Math.max(0, g.offsetTop - 8);
 }
+/* 21.7: 언어 줄은 시트를 열고 표시 언어 줄로 내린다. */
+function sheetToLang(){
+  setSheet(true);
+  var s=$('settings'), r=$('setLangRow');
+  if(s && r) s.scrollTop = Math.max(0, r.offsetTop - 8);
+}
 if($('you')){
   if($('tabYou')) $('tabYou').addEventListener('click',function(){ setYou(!youOpen()); });
   if($('youBrowse')) $('youBrowse').addEventListener('click',openBrowse);
-  if($('youVoiceLang')) $('youVoiceLang').addEventListener('click',function(){ setSheet(true); });
+  if($('youLang')) $('youLang').addEventListener('click',sheetToLang);
+  if($('youVoice')) $('youVoice').addEventListener('click',function(){ setSheet(true); });
   if($('youDataMe')) $('youDataMe').addEventListener('click',sheetToData);
   if($('youJoin')) $('youJoin').addEventListener('click',sheetToData);
 }
