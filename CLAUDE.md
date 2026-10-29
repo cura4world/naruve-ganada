@@ -625,7 +625,7 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - docs/js/boot.js      서비스워커 등록, 빌드 번호 표시, 업데이트 바
 - docs/css/app.css     색·글꼴·여백. env()는 :root 두 줄에만, 여백은 .phone에서. 예외 .update-bar·.onboard·.settings는
                       var(--safe-*)를 스스로 더한다(env() 직접 호출 없음)
-- docs/css/fonts.css   @font-face — NaruveSerif 500·700, Archivo 400~700 (DECISIONS 21.6)
+- docs/css/fonts.css   @font-face — NaruveSerif 500·700, NaruveGothic 700, Archivo 400~700 (DECISIONS 21.6 · 21.7)
 - docs/fonts/          글꼴 파일·naruve-serif.chars.txt·LICENSE.txt. 손으로 고치지 않는다 — `npm run fonts`
 - docs/sw.js           캐시 전략 (PRECACHE 배열만 손댄다. BUILD 줄은 bump.mjs가 고친다)
 - docs/version.json    빌드번호·날짜 (bump.mjs가 고친다. 손으로 고치지 않는다)
@@ -688,7 +688,8 @@ README의 APK 경로가 BEL 둘로 깨진 채 몇 주를 지났다.
 - 모국어 설명은 결핍만 지적하지 않는다. 이미 가진 것을 찾아 쓴다.
   (예: 인도네시아어에는 불파 종성이 있다 — anak, sebab)
 - 색: ink #111A22 / paper #FBFAF6 / seal #B3342B (브랜드 색, DECISIONS 19.6)
-- 한글은 어디서나 NaruveSerif — 마루 부리 서브셋, 라틴(영문·숫자)은 Archivo (DECISIONS 21.6).
+- 한글은 NaruveSerif(마루 부리 서브셋)가 기본이고, 제목·묶음 이름·이동 버튼의 한글만 NaruveGothic
+  (학교안심 알림장 B 서브셋, `--hd`). 라틴(영문·숫자)은 어디서나 Archivo (DECISIONS 21.6 · 21.7).
   `--ui`는 'Archivo','NaruveSerif' 순서라 한 줄 안에서도 글자 단위로 나뉜다.
   둘 다 docs/fonts에서 자체 호스팅한다. Google Fonts를 부르지 않는다
 
@@ -717,7 +718,7 @@ versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로
 지메일 설정은 저장소 밖이라 빌드와 무관하다.
 
 ## 현재 상태
-빌드 0.1.30 기준.
+빌드 0.1.31 기준.
 
 **문장** 200개 (Standard 60 / Everyday 60 / Drama 50 / Sounds 30) — 배치 1 (#76, 2026-08-26).
 `t:` 태그 200개(question 84 / statement 112 / exclam 4), `w:` 200개,

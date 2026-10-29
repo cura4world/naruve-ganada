@@ -248,6 +248,10 @@ if (state) {
     const p = rel('docs', 'fonts', `naruve-serif-${w}.woff2`);
     row(`글꼴 파일 naruve-serif-${w}`, '있어야 함', fs.existsSync(p) ? '있음' : '없음', fs.existsSync(p));
   }
+  {
+    const p = rel('docs', 'fonts', 'naruve-gothic-700.woff2');
+    row('글꼴 파일 naruve-gothic-700', '있어야 함', fs.existsSync(p) ? '있음' : '없음', fs.existsSync(p));
+  }
 }
 
 /* ---------- 검사 3 — 제어문자 ---------- */

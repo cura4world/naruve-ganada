@@ -4,15 +4,16 @@
   --seal:#B3342B; --seal-deep:#9E2D25;
   --kr:'NaruveSerif','Apple SD Gothic Neo','Malgun Gothic','Nanum Gothic',serif;
   --ui:'Archivo','NaruveSerif',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --hd:'Archivo','NaruveGothic','NaruveSerif',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   --tap:200ms cubic-bezier(.2,.8,.2,1);
 
   /* record button docked in the middle of the tab bar.
      sink = size/2 keeps the button exactly half over the bar; rise is the
      other half and .stage's padding-bottom is computed from it. Change
      --mic-size and the other two follow by the same halves. */
-  --mic-size:74px;      /* diameter */
-  --mic-sink:37px;      /* how deep it sits into the bar (= size/2) */
-  --mic-rise:37px;      /* = mic-size - mic-sink, the part above the bar */
+  --mic-size:84px;      /* diameter */
+  --mic-sink:42px;      /* how deep it sits into the bar (= size/2) */
+  --mic-rise:42px;      /* = mic-size - mic-sink, the part above the bar */
   --hint-h:18px;        /* the hint's own line box. Its font did not change,
                            so this stays 18 — the hint rides up with the
                            button because the dock is a flex column. */
@@ -70,13 +71,13 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .seal-mark{width:23px;height:23px;border-radius:5px;background:var(--seal);display:grid;place-items:center;
   font-family:var(--kr);font-size:13px;font-weight:700;color:#fff;line-height:1;
   user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.brand span{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+.brand span{font-family:var(--hd);font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
 .credits{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);font-variant-numeric:tabular-nums}
 .credits b{color:var(--ink);font-weight:700}
 
 .strip{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:11px 18px;border-bottom:1px solid var(--rule)}
-.strip .where{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+.strip .where{font-family:var(--hd);font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
   color:var(--ink-faint);display:flex;align-items:center;gap:8px;min-width:0}
 .strip .where b{color:var(--ink)}
 .strip .where .dot{width:3px;height:3px;border-radius:50%;background:var(--rule);flex:none}
@@ -84,7 +85,7 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .strip .where .set{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   text-transform:none;letter-spacing:.02em;font-weight:600}
 .browse-btn{flex:none;border:1px solid var(--rule);background:none;border-radius:100px;
-  padding:7px 14px;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.1em;
+  padding:7px 14px;font-family:var(--hd);font-size:11px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ink);cursor:pointer;min-height:34px}
 .browse-btn:active{background:var(--sunk)}
 
@@ -199,7 +200,7 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
   overflow-y:auto;-webkit-overflow-scrolling:touch;
   padding:calc(var(--safe-top) + 22px) 20px calc(var(--safe-bottom) + 22px)}
 .onboard[hidden]{display:none}
-.ob-title{font-size:21px;font-weight:700;letter-spacing:-.01em}
+.ob-title{font-family:var(--hd);font-size:21px;font-weight:700;letter-spacing:-.01em}
 .ob-sub{margin-top:6px;font-size:13px;line-height:1.5;color:var(--ink-soft)}
 .ob-q{margin-top:22px}
 .ob-lab{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
@@ -258,8 +259,8 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
   background:var(--rule);margin:2px auto 8px}
 .set-head{display:flex;align-items:center;justify-content:space-between;
   padding-bottom:2px;font-size:17px}
-.set-head b{font-weight:700}
-.set-group{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--ink-faint);margin:18px 4px 7px}
+.set-head b{font-family:var(--hd);font-weight:700}
+.set-group{font-family:var(--hd);font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--ink-faint);margin:18px 4px 7px}
 .set-box{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:0 13px}
 .set-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
   flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--rule)}
@@ -297,7 +298,7 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
 .you{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   padding:16px 18px calc(var(--mic-rise) + var(--hint-h) + 14px)}
 .you[hidden]{display:none}
-.you-title{font-size:20px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.you-title{font-family:var(--hd);font-size:20px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
 .you-sub{margin-top:4px;font-size:12px;line-height:1.45;color:var(--ink-faint)}
 .you-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
 .you-stat,.you-card{background:#fff;border:1px solid var(--rule);border-radius:18px;
@@ -432,6 +433,9 @@ body{background:var(--paper);color:var(--ink);font-family:var(--ui);
   /* it sits over the page, so it needs its own ground to stay legible */
   background:var(--paper);padding:0 9px;border-radius:100px}
 .hint.live{color:var(--seal)}
+/* 21.7: 누르라는 안내는 없다. 비어 있으면 종이 알약만 남으므로 감추되,
+   자리(--hint-h)는 그대로 둔다 — 진행 상태가 그 자리에 나온다. */
+.hint:empty{visibility:hidden}
 
 /* A-4 mic readout — dev only, so it can never affect the shipped layout */
 .micdev{display:none}
@@ -469,6 +473,8 @@ body.dev .sim-btn{display:block}
 .tab{flex:1;background:none;border:none;cursor:pointer;min-height:52px;font-family:inherit;font-size:10.5px;
   font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+/* 21.7: 탭 이름은 고딕. 아이콘 글자('나')는 .ico 라 그대로 --kr 이다. */
+.tab > span:not(.ico){font-family:var(--hd)}
 .tab .ico{font-family:var(--kr);font-size:17px;font-weight:500;line-height:1;letter-spacing:0;text-transform:none}
 /* 선 아이콘(문장 보기)은 글자 아이콘과 같은 줄에 앉는다. 색은 currentColor. */
 .tab .ico svg{display:block}
@@ -481,7 +487,7 @@ body.dev .sim-btn{display:block}
   transform:translateY(100%);transition:transform 320ms cubic-bezier(.2,.8,.2,1);visibility:hidden}
 .browse.open{transform:none;visibility:visible}
 .b-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px 13px;border-bottom:1px solid var(--rule)}
-.b-title{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.b-title{font-family:var(--hd);font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
 .b-close{border:none;background:none;cursor:pointer;font-size:23px;line-height:1;color:var(--ink-soft);padding:6px 10px;min-height:40px}
 /* wraps instead of scrolling: the row used to run off the right edge and
    the last collection could only be reached by dragging the screen */
