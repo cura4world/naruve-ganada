@@ -164,11 +164,14 @@ console.log('\nA-3 · A-4. 좌우 이동과 자리 복원 (코드 확인)');
 }
 
 // ---------------------------------------------------------------- A-7
-console.log('\nA-7. 탭 라벨');
+console.log('\nA-7. 탭 바 3칸 (22.2)');
 {
-  const ui = fs.readFileSync(path.join(DOCS, 'js/ui.js'), 'utf8');
-  ok("en 이 'Polite'", /tabHonorifics:'Polite'/.test(ui));
-  ok("ko 는 그대로 '높임말'", /tabHonorifics:'높임말'/.test(ui));
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const nav = (html.match(/<nav class="tabs">[\s\S]*?<\/nav>/) || [''])[0];
+  ok('탭은 나 · 문장 보기 둘', (nav.match(/class="tab"/g) || []).length === 2
+    && /id="tabYou"/.test(nav) && /id="tabBrowse"/.test(nav));
+  ok('가운데 빈 칸은 그대로', /class="tab-gap"/.test(nav));
+  ok('높임말·설정 탭은 없다', !/tabHonorifics|tabSettings/.test(html));
 }
 
 console.log('\n=== ' + pass + ' pass / ' + fail + ' fail ===');

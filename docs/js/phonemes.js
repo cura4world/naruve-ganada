@@ -57,7 +57,6 @@ var PHONEMES = {
     id:'ㅎ hilang sebelum vokal. <span class="syl">좋아</span> dibaca <b>조아</b>. Jangan berusaha melafalkan h — justru itu kesalahannya.' }
 };
 
-var L1_LABEL = { en:'EN', id:'ID', ko:'KO' };
 var L1_HEAD  = { en:'Why this happens', id:'Kenapa ini terjadi', ko:'왜 이렇게 되나요' };
 
 /* --- Hangul decomposition: derive phonemes automatically, no manual tagging --- */

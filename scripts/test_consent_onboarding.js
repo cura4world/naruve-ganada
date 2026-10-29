@@ -161,7 +161,7 @@ console.log('\n7. UI (코드 확인)');
   ok('세 문항이 있다', /id="obL1"/.test(html) && /id="obLevel"/.test(html) && /id="obVoice"/.test(html));
   ok('목소리 미리듣기 버튼', /class="ob-play"/.test(html));
   ok('동의 두 줄이 같은 크기·행 전체가 탭 영역',
-    (html.match(/class="ob-consent"/g) || []).length === 2 && /\.ob-consent\{[^}]*cursor:pointer/.test(css));
+    (html.match(/class="ob-consent(\s[^"]*)?"/g) || []).length === 2 && /\.ob-consent\{[^}]*cursor:pointer/.test(css));
   ok('선택 동의는 기본 미체크 (checked 없음)',
     !/id="obExt"[^>]*checked/.test(html));
   ok('필수 미체크면 시작 못 한다', /obStart'\)\.disabled = !ok/.test(app));
@@ -181,7 +181,7 @@ console.log('\n7. UI (코드 확인)');
   ok('이벤트 3종을 낸다', /'consent_onboarding'/.test(app) && /'consent_prompt'/.test(app)
     && /'consent_revoke'/.test(app));
   ok('내 기록은 클라이언트에만 (naruve.best)', /naruve\.best/.test(app));
-  ok('미참여자에게는 잠금 안내', /setBestLocked/.test(app));
+  ok('미참여자에게는 잠금 안내 (나 화면, 22.4)', /youBestLocked/.test(html) && /youLock'\)\.hidden = !!c\.extended/.test(app));
   ok('소진 문구는 빨강이 아니다', /classList\.toggle\('calm'/.test(app) && /\.audio-note\.calm\{color:var\(--ink-soft\)\}/.test(css));
 }
 

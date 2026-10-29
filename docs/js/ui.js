@@ -1,8 +1,8 @@
 /* =====================================================================
    UI STRINGS
-   한국어가 마스터본이다. 문구를 바꾸거나 새로 만들 때 ko를 먼저 쓰고,
-   나머지 언어는 그 뜻을 옮긴다. 영어를 먼저 쓰고 한국어로 옮기면
-   번역투가 남는다.
+   영어가 원본이다. 문구를 바꾸거나 새로 만들 때 en을 먼저 쓰고,
+   ko·id는 그 뜻을 옮긴다. 사용자 대부분이 영어 화면을 보므로 번역투가
+   남아야 한다면 옮긴 쪽에 남는다 (DECISIONS 2절, 2026-10-29).
 
    언어를 추가하면 열 하나를 더한다. 빠진 키는 en으로 폴백하므로
    부분만 채워도 화면이 비지 않는다.
@@ -72,10 +72,23 @@ var UI = {
     lvPrefix:'레벨 ',
     emptyList:'아직 없어요',
 
-    tabPractice:'연습',
-    tabHonorifics:'높임말',
-    tabYou:'나',
-    tabSettings:'설정',
+    tabYou:'내 발음',
+    /* ---- 나 화면 (22.3) ---- */
+    youTitle:'내 발음',
+    youSub:'원어민 기준 · 서울 표준 발음',
+    youScored:'채점한 문장',
+    youLeft:'남은 정밀 채점',
+    youByCol:'컬렉션별',
+    youBest:'문장별 최고점',
+    youBestLocked:'채점 개선에 참여하면 문장별 최고점이 여기에 모여요.',
+    youMenu:'메뉴',
+    youBrowse:'문장 보기',
+    youPolite:'높임말 체커',
+    youSoon:'준비 중',
+    youVoiceLang:'목소리 · 표시 언어',
+    youDataMe:'채점 개선 참여 · 내 정보',
+    hintBack:'눌러서 연습으로 돌아가기',
+    fontLicenses:'글꼴 라이선스',
     /* ---- 온보딩 (16.4) ---- */
     obTitle:'시작하기 전에',
     obSub:'세 가지만 여쭐게요. 나중에 설정에서 바꿀 수 있어요.',
@@ -116,8 +129,6 @@ var UI = {
     setConsentOff:'참여 안 함',
     setJoin:'참여하기',
     setLeave:'철회하기',
-    setBest:'내 기록',
-    setBestLocked:'채점 개선에 참여하면 열려요.',
     setBestEmpty:'아직 기록이 없어요.',
     setId:'내 식별자',
     setIdNote:'이 식별자를 적어 메일로 보내시면 서버에 보관된 자료를 지워드려요.',
@@ -127,11 +138,6 @@ var UI = {
     setVersion:'앱 버전',
     setDev:'개발용',
     copied:'복사했어요',
-    settingsSoon:'설정 화면은 준비 중입니다.',
-    /* 임시 예시 음성 토글. 온보딩(P6-B)이 생기면 이 세 키와 함께 사라진다. */
-    voicePick:'예시 음성',
-    voiceMale:'남자',
-    voiceFemale:'여자',
     reloadApp:'새로고침',
     logShow:'로그 보기',
     logCopy:'복사',
@@ -179,7 +185,7 @@ var UI = {
 
     toneRising:'Rising',
     toneExclam:'Peak then fall',
-    toneLevel:'Level',
+    toneLevel:'Flat',
 
     formHamnida:'합니다체 · formal',
     formHaeyo:'해요체 · polite',
@@ -225,10 +231,22 @@ var UI = {
     lvPrefix:'lv ',
     emptyList:'Nothing here yet',
 
-    tabPractice:'Practice',
-    tabHonorifics:'Polite',
     tabYou:'You',
-    tabSettings:'Settings',
+    youTitle:'Your pronunciation',
+    youSub:'Scored against native speech · Seoul standard',
+    youScored:'Sentences scored',
+    youLeft:'Detailed checks left',
+    youByCol:'By collection',
+    youBest:'Best score per sentence',
+    youBestLocked:'Help improve scoring and your best score for each sentence collects here.',
+    youMenu:'Menu',
+    youBrowse:'Browse sentences',
+    youPolite:'Polite-speech checker',
+    youSoon:'Coming soon',
+    youVoiceLang:'Voice · Display language',
+    youDataMe:'Helping improve scoring · About me',
+    hintBack:'Tap to go back and read',
+    fontLicenses:'Font licenses',
     obTitle:'Before we start',
     obSub:'Three quick questions. You can change these in Settings.',
     obL1:'Native language',
@@ -264,8 +282,6 @@ var UI = {
     setConsentOff:'Not participating',
     setJoin:'Join',
     setLeave:'Withdraw',
-    setBest:'My records',
-    setBestLocked:'Opens when you help improve scoring.',
     setBestEmpty:'No records yet.',
     setId:'My identifier',
     setIdNote:'Send this identifier by email and we will delete what is stored on the server.',
@@ -275,10 +291,6 @@ var UI = {
     setVersion:'App version',
     setDev:'Developer',
     copied:'Copied',
-    settingsSoon:'Settings are on the way.',
-    voicePick:'Example voice',
-    voiceMale:'Male',
-    voiceFemale:'Female',
     reloadApp:'Reload',
     logShow:'Log',
     logCopy:'Copy',
@@ -328,5 +340,7 @@ UI.id = {
   intoFallRose:'Ini kalimat berita, tetapi akhirnya Anda naikkan. Turunkan suku kata terakhir.'
 };
 
-/* toggle order */
+/* 설정의 언어 줄에 이 순서로 놓인다 (22.5) */
 var LANGS = ['en','id','ko'];
+/* 각 언어가 스스로를 부르는 이름. 번역하지 않는다. */
+var LANG_NAME = { en:'English', id:'Bahasa Indonesia', ko:'한국어' };
