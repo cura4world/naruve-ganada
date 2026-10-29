@@ -765,7 +765,7 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 `renderL1`은 정의만 남고 호출되지 않는다. s.w에 박힌 확정 설명이라
 정밀도 65%를 넘긴 L1부터 켠다.
 
-**versionCode** 12 (`android/app/build.gradle` 실측 2026-10-26 — 로컬 작업본에 커밋 안 된 채 있던 값을 반영했다. 그 빌드의 시점과 용도는 기록이 없다). `npm run apk`마다 +1.
+**versionCode** 12 (`android/app/build.gradle` 실측 2026-10-26). 2026-09-17 22:53 빌드한 `app-debug.apk`의 값이고, 이 APK가 2026-09-18 09:56 실기 폰에 설치돼 있다 — 0.1.28 실기 확인(DECISIONS 6.3)과 같은 날이다(2026-10-29 adb·SHA-256 대조). `npm run apk`마다 +1.
 
 
 <!-- NARUVE_LAB_INTEGRATION_START -->
