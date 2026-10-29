@@ -475,7 +475,7 @@ body.dev .sim-btn{display:block}
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
 /* 21.7: 탭 이름은 고딕. 아이콘 글자('나')는 .ico 라 그대로 --kr 이다. */
 .tab > span:not(.ico){font-family:var(--hd);font-size:12.5px}
-.tab .ico{font-family:var(--kr);font-size:17px;font-weight:500;line-height:1;letter-spacing:0;text-transform:none}
+.tab .ico{font-family:var(--kr);font-size:17px;font-weight:500;line-height:1;letter-spacing:0;text-transform:none;height:20px;display:flex;align-items:center;justify-content:center}
 /* 선 아이콘(문장 보기)은 글자 아이콘과 같은 줄에 앉는다. 색은 currentColor. */
 .tab .ico svg{display:block}
 /* three cells since 22.2, so labels have room. Clip anyway rather than let
