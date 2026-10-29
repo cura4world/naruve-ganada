@@ -35,12 +35,15 @@ function colName(id){ return tcol(id).n; }
    mid-recording still says the right thing */
 var hintKey='hintTap';
 function setHint(k,live){
+  /* 나 화면이 열려 있는 동안 안내는 hintBack 이다. 그사이 들어온 키는
+     닫을 때 되돌릴 자리에 둔다 (22.2). */
+  if(youOpen() && k!=='hintBack'){ youPrevHint={k:k,live:live}; return; }
   hintKey=k; $('hint').textContent=t(k);
   if(live) $('hint').classList.add('live'); else $('hint').classList.remove('live');
 }
 
 function toneSvg(t_){
-  if(t_==='question') return '<svg width="26" height="14" viewBox="0 0 26 14"><path d="M2 11 H14 C19 11 20 9 23.5 3" fill="none" stroke="#C0392F" stroke-width="2.1" stroke-linecap="round"/><path d="M20.5 3 H23.8 V6.3" fill="none" stroke="#C0392F" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  if(t_==='question') return '<svg width="26" height="14" viewBox="0 0 26 14"><path d="M2 11 H14 C19 11 20 9 23.5 3" fill="none" stroke="#B3342B" stroke-width="2.1" stroke-linecap="round"/><path d="M20.5 3 H23.8 V6.3" fill="none" stroke="#B3342B" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   if(t_==='exclam') return '<svg width="26" height="14" viewBox="0 0 26 14"><path d="M2 3 C6 3 7 11 12 11 H24" fill="none" stroke="#4A5561" stroke-width="2.1" stroke-linecap="round"/></svg>';
   return '<svg width="26" height="14" viewBox="0 0 26 14"><path d="M2 7 H24" fill="none" stroke="#4A5561" stroke-width="2.1" stroke-linecap="round"/></svg>';
 }
@@ -226,6 +229,8 @@ function paintNav(){
 /* Tap starts a real take; tap again ends it early. The take also ends
    itself on silence or at the 10s ceiling — see mic.js. */
 function run(){
+  /* 22.2: 나 화면에서 가운데 버튼은 녹음하지 않고 연습으로 돌아간다 */
+  if(youOpen()){ setYou(false); return; }
   if(Mic.isLive()){ Mic.stop(); return; }
   if(busy) return; busy=true;
   /* B-3: 예시가 울리는 중에도 녹음 버튼은 살아 있고, 누르면 재생이 즉시 멈춘다.
@@ -471,7 +476,6 @@ function applyLang(){
   Array.prototype.slice.call(document.querySelectorAll('[data-i18n-aria]')).forEach(function(el){
     var v=t(el.getAttribute('data-i18n-aria')); if(v!=null) el.setAttribute('aria-label',v);
   });
-  $('l1Btn').textContent = L1_LABEL[L1] || L1.toUpperCase();
   document.documentElement.setAttribute('lang', L1);
 
   if(!$('listen').classList.contains('playing')) $('listenLabel').textContent=t('listen');
@@ -479,8 +483,9 @@ function applyLang(){
   paintCard();
   if ($('result').classList.contains('show')) showResult(lastTotal);
   if ($('browse').classList.contains('open')) { renderCols(); renderList(); }
+  if (youOpen()) paintYou();
 }
-/* 설정 화면과 헤더 버튼이 같은 문을 쓴다. 고른 언어는 기억한다 —
+/* 언어를 바꾸는 문은 설정 화면 하나다 (22.5). 고른 언어는 기억한다 —
    설정에서 고른 것이 새로고침에 사라지면 설정이 아니다. */
 var LANG_KEY = 'naruve.lang';
 function setLang(l){
@@ -489,9 +494,6 @@ function setLang(l){
   try { localStorage.setItem(LANG_KEY, l); } catch(e){}
   applyLang();
 }
-$('l1Btn').addEventListener('click',function(){
-  setLang(LANGS[(LANGS.indexOf(L1)+1) % LANGS.length]);
-});
 
 function browsable(c){ return c.browse || (c.id==='sounds' && SHOW_SOUNDS_IN_BROWSE); }
 function renderCols(){
@@ -523,7 +525,7 @@ function renderList(){
   if(!items.length) h='<div class="b-set">'+t('emptyList')+'</div>';
   $('bList').innerHTML=h;
   Array.prototype.slice.call(document.querySelectorAll('.b-item')).forEach(function(b){
-    b.addEventListener('click',function(){idx=parseInt(b.getAttribute('data-i'),10);paint();closeBrowse();});
+    b.addEventListener('click',function(){idx=parseInt(b.getAttribute('data-i'),10);paint();closeBrowse();setYou(false);});
   });
 }
 function openBrowse(){
@@ -533,6 +535,7 @@ function openBrowse(){
 }
 function closeBrowse(){$('browse').classList.remove('open');$('browse').setAttribute('aria-hidden','true');}
 $('openBrowse').addEventListener('click',openBrowse);
+if($('tabBrowse')) $('tabBrowse').addEventListener('click',openBrowse);
 $('closeBrowse').addEventListener('click',closeBrowse);
 
 Array.prototype.slice.call(document.querySelectorAll('.sim-btn')).forEach(function(b){
@@ -604,29 +607,13 @@ function paintSettings(){
   ['m','f'].forEach(function(g){
     var b=$('voice'+g.toUpperCase()); if(b) b.classList.toggle('on', v===g);
   });
-  ['ko','en'].forEach(function(l){
-    var b=$('lang'+l.charAt(0).toUpperCase()+l.slice(1)); if(b) b.classList.toggle('on', L1===l);
+  Array.prototype.slice.call(document.querySelectorAll('#langOpts [data-v]')).forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-v') === L1);
   });
 
   var c = Identity.consent();
   if($('consentState')) $('consentState').textContent = t(c.extended ? 'setConsentOn' : 'setConsentOff');
   if($('consentToggle')) $('consentToggle').textContent = t(c.extended ? 'setLeave' : 'setJoin');
-
-  /* 기록은 참여자에게만. 미참여자에게는 무엇을 하면 열리는지 한 줄. */
-  var best = bestAll(), keys = Object.keys(best);
-  if($('bestNote')) $('bestNote').textContent =
-    !c.extended ? t('setBestLocked') : (keys.length ? '' : t('setBestEmpty'));
-  if($('bestList')){
-    if(!c.extended || !keys.length){ $('bestList').innerHTML=''; }
-    else {
-      var byK = {}; S.forEach(function(s){ byK[s.k]=1; });
-      var rows = keys.filter(function(k){ return byK[k]; })
-        .sort(function(a,b){ return best[b]-best[a]; }).slice(0,12);
-      $('bestList').innerHTML = rows.map(function(k){
-        return '<div>' + k.replace(/</g,'&lt;') + ' — <b>' + best[k] + '</b></div>';
-      }).join('');
-    }
-  }
 
   if($('myUuid')) $('myUuid').textContent = Identity.uuid();
   if($('uuidMail')){
@@ -645,9 +632,11 @@ function setSheet(open){
   s.hidden = !open;
   if($('setDim')) $('setDim').classList.toggle('on', open);
   if(open){ paintSettings(); s.scrollTop = 0; }
+  /* 나 화면 위에서 연 시트를 닫으면 나 화면으로 돌아온다. 참여를 켰으면
+     최고점이 바로 보여야 한다. */
+  else if(youOpen()) paintYou();
 }
-if($('tabSettings') && $('settings')){
-  $('tabSettings').addEventListener('click',function(){ setSheet($('settings').hidden); });
+if($('settings')){
   if($('setClose')) $('setClose').addEventListener('click',function(){ setSheet(false); });
   if($('setDim')) $('setDim').addEventListener('click',function(){ setSheet(false); });
 
@@ -657,10 +646,16 @@ if($('tabSettings') && $('settings')){
       Example.setVoice(g); Example.stop(); resetListenBtn(); paintSettings();
     });
   });
-  ['ko','en'].forEach(function(l){
-    var b=$('lang'+l.charAt(0).toUpperCase()+l.slice(1)); if(!b) return;
-    b.addEventListener('click',function(){ setLang(l); paintSettings(); });
-  });
+  /* 22.5: 언어 줄은 LANGS 전부. 이름은 각 언어가 스스로를 부르는 이름이다. */
+  if($('langOpts')){
+    $('langOpts').innerHTML = LANGS.map(function(l){
+      return '<button class="vb" data-v="' + l + '" lang="' + l + '">' + (LANG_NAME[l] || l) + '</button>';
+    }).join('');
+    $('langOpts').addEventListener('click',function(e){
+      var b=e.target.closest && e.target.closest('[data-v]'); if(!b) return;
+      setLang(b.getAttribute('data-v')); paintSettings();
+    });
+  }
 
   if($('consentToggle')) $('consentToggle').addEventListener('click',function(){
     var c = Identity.consent();
@@ -676,6 +671,85 @@ if($('tabSettings') && $('settings')){
   });
 
   if($('reloadBtn')) $('reloadBtn').addEventListener('click',function(){ location.reload(); });
+}
+
+/* ---------------- 나 화면 (22.3 · 22.4) ---------------- */
+
+/* 열리면 .phone.you-on 이 .strip·.stage 를 접고 나 화면이 그 자리를 쓴다.
+   탭 바는 그대로 보이고, 가운데 버튼은 연습으로 돌아가는 문이 된다. */
+var youPrevHint = null;
+function youOpen(){ var y=$('you'); return !!(y && !y.hidden); }
+function setYou(open){
+  var y=$('you'); if(!y || youOpen()===open) return;
+  if(open) youPrevHint = { k:hintKey, live:$('hint').classList.contains('live') };
+  y.hidden = !open;
+  document.querySelector('.phone').classList.toggle('you-on', open);
+  if($('tabYou')) $('tabYou').setAttribute('aria-selected', open ? 'true' : 'false');
+  if(open){ setHint('hintBack',false); paintYou(); y.scrollTop = 0; }
+  else if(youPrevHint){ var p=youPrevHint; youPrevHint=null; setHint(p.k,p.live); }
+}
+
+/* 채점한 문장 수는 점수가 아니라 개수다 — 18절의 진행 기록에 들지 않으므로
+   누구에게나 보인다. 세는 바탕은 bestPut 이 모두에게 남기는 naruve.best. */
+function paintYou(){
+  if(!$('you')) return;
+  var best = bestAll(), keys = Object.keys(best);
+  var open = {}; COLLECTIONS.forEach(function(c){ if(browsable(c)) open[c.id]=1; });
+  var pool = S.filter(function(s){ return open[s.c]; });
+  var inPool = {}; pool.forEach(function(s){ inPool[s.k]=1; });
+  $('youScored').textContent = keys.filter(function(k){ return inPool[k]; }).length + ' / ' + pool.length;
+  $('youLeft').textContent = Identity.unlimited() ? '∞' : Identity.credits() + ' / ' + Identity.free;
+
+  var h = '', names = [];
+  COLLECTIONS.forEach(function(c){
+    if(!browsable(c)) return;
+    var all = S.filter(function(s){ return s.c===c.id; });
+    var n = all.filter(function(s){ return s.k in best; }).length;
+    var pct = all.length ? Math.round(n/all.length*100) : 0;
+    names.push(colName(c.id));
+    h += '<div class="you-col"><span class="you-col-n">' + colName(c.id) + '</span>'
+      + '<span class="you-bar"><i style="width:' + pct + '%"></i></span>'
+      + '<span class="you-col-c">' + n + '/' + all.length + '</span></div>';
+  });
+  $('youByCol').innerHTML = h;
+  if($('youBrowseCols')) $('youBrowseCols').textContent = names.join(' · ');
+
+  /* 기록은 참여자에게만 (22.4). 미참여자에게는 무엇을 하면 열리는지 한 줄. */
+  var c = Identity.consent();
+  $('youBestBox').hidden = !c.extended;
+  $('youLock').hidden = !!c.extended;
+  if($('bestNote')) $('bestNote').textContent = (!c.extended || keys.length) ? '' : t('setBestEmpty');
+  if($('bestList')){
+    if(!c.extended || !keys.length){ $('bestList').innerHTML=''; }
+    else {
+      var byK = {}; S.forEach(function(s){ byK[s.k]=1; });
+      var rows = keys.filter(function(k){ return byK[k]; })
+        .sort(function(a,b){ return best[b]-best[a]; }).slice(0,12);
+      $('bestList').innerHTML = rows.map(function(k){
+        return '<div>' + k.replace(/</g,'&lt;') + ' — <b>' + best[k] + '</b></div>';
+      }).join('');
+    }
+  }
+
+  if($('youVoiceLangNow')) $('youVoiceLangNow').textContent =
+    t(Example.voice()==='m' ? 'obMale' : 'obFemale') + ' · ' + (LANG_NAME[L1] || L1);
+  if($('youVer')) $('youVer').textContent = ($('buildTag') && $('buildTag').textContent) || '—';
+  if($('youPolicy')) $('youPolicy').href = (L1==='ko') ? './privacy/' : './privacy/en/';
+}
+
+/* 시트를 열고 "기록과 데이터" 묶음으로 내린다. 나 화면에서 동의를 바로
+   바꾸지 않는다 — 바꾸는 곳은 시트의 토글 하나다. */
+function sheetToData(){
+  setSheet(true);
+  var s=$('settings'), g=$('grpData');
+  if(s && g) s.scrollTop = Math.max(0, g.offsetTop - 8);
+}
+if($('you')){
+  if($('tabYou')) $('tabYou').addEventListener('click',function(){ setYou(!youOpen()); });
+  if($('youBrowse')) $('youBrowse').addEventListener('click',openBrowse);
+  if($('youVoiceLang')) $('youVoiceLang').addEventListener('click',function(){ setSheet(true); });
+  if($('youDataMe')) $('youDataMe').addEventListener('click',sheetToData);
+  if($('youJoin')) $('youJoin').addEventListener('click',sheetToData);
 }
 
 /* 클립보드는 막힐 수 있다. 막히면 막혔다고 말한다. */
@@ -796,8 +870,8 @@ if($('logBtn') && $('logView')){
       $('logText').textContent = lines.length ? lines.join('\n') : t('logEmpty');
       $('logStat').textContent = lines.length ? lines.length + '줄' : '';
       v.hidden = false;
-      /* 로그는 .stage 안에 뜬다. 시트가 덮고 있으면 보이지 않으므로 닫는다. */
-      setSheet(false);
+      /* 로그는 .stage 안에 뜬다. 시트나 나 화면이 덮고 있으면 보이지 않으므로 닫는다. */
+      setSheet(false); setYou(false);
       $('stage').scrollTop = 0;
     } else v.hidden = true;
   });

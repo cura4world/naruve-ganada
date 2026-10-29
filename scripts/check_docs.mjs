@@ -220,6 +220,36 @@ if (state) {
   }
 }
 
+/* ---------- 검사 4 — 글꼴 서브셋 ↔ 앱 한글 (DECISIONS 21.6) ---------- */
+// 왜 있는가 — NaruveSerif는 앱이 쓰는 한글만 남긴 서브셋이다. 새 문장에 없던 글자가
+// 들어오면 그 글자만 시스템 글꼴로 보인다. 빈 네모는 아니라서 눈으로는 놓친다.
+// 글자 세는 규칙은 scripts/fonts_subset.py와 같다(주석 제외). 한쪽만 바꾸지 않는다.
+{
+  const HANGUL = /[가-힣ㄱ-ㆎ]/g;
+  const COMMENTS = [/\/\*[\s\S]*?\*\//g, /^[ \t]*\/\/.*$/gm, /<!--[\s\S]*?-->/g];
+  const files = [rel('docs', 'index.html'),
+    ...fs.readdirSync(rel('docs', 'js')).filter((f) => f.endsWith('.js')).sort().map((f) => rel('docs', 'js', f))];
+  const need = new Set();
+  for (const f of files) {
+    let src = fs.readFileSync(f, 'utf8');
+    for (const c of COMMENTS) src = src.replace(c, '');
+    for (const ch of src.match(HANGUL) || []) need.add(ch);
+  }
+  const listPath = rel('docs', 'fonts', 'naruve-serif.chars.txt');
+  if (!fs.existsSync(listPath)) {
+    row('글꼴 서브셋 목록', 'naruve-serif.chars.txt', '없음', false, 'npm run fonts');
+  } else {
+    const have = new Set(fs.readFileSync(listPath, 'utf8').trim());
+    const missing = [...need].filter((ch) => !have.has(ch)).sort();
+    row('글꼴에 없는 한글', 0, missing.length, missing.length === 0,
+      missing.length ? missing.slice(0, 20).join('') + (missing.length > 20 ? ` … 외 ${missing.length - 20}자` : '') + ' — npm run fonts' : '');
+  }
+  for (const w of [500, 700]) {
+    const p = rel('docs', 'fonts', `naruve-serif-${w}.woff2`);
+    row(`글꼴 파일 naruve-serif-${w}`, '있어야 함', fs.existsSync(p) ? '있음' : '없음', fs.existsSync(p));
+  }
+}
+
 /* ---------- 검사 3 — 제어문자 ---------- */
 const CTRL = /[\x00-\x08\x0B\x0C\x0E-\x1F]/;
 for (const f of ['DECISIONS.md', 'CLAUDE.md']) {

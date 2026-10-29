@@ -181,7 +181,7 @@ console.log('\n7. UI (코드 확인)');
   ok('이벤트 3종을 낸다', /'consent_onboarding'/.test(app) && /'consent_prompt'/.test(app)
     && /'consent_revoke'/.test(app));
   ok('내 기록은 클라이언트에만 (naruve.best)', /naruve\.best/.test(app));
-  ok('미참여자에게는 잠금 안내', /setBestLocked/.test(app));
+  ok('미참여자에게는 잠금 안내 (나 화면, 22.4)', /youBestLocked/.test(html) && /youLock'\)\.hidden = !!c\.extended/.test(app));
   ok('소진 문구는 빨강이 아니다', /classList\.toggle\('calm'/.test(app) && /\.audio-note\.calm\{color:var\(--ink-soft\)\}/.test(css));
 }
 

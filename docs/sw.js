@@ -3,11 +3,11 @@
      · HTML + version.json  → network first  (so a push shows up immediately)
      · css / js / icons     → stale-while-revalidate
      · audio/               → cache first, in a cache that outlives builds
-     · fonts (cross-origin) → cache first
+     · fonts/               → same origin, in PRECACHE (css/js 와 같은 길)
    skipWaiting + clients.claim means a new build takes over on the next launch,
    without the user having to close every tab.                                  */
 
-const BUILD = '0.1.29';           // replaced by scripts/bump.mjs on every push
+const BUILD = '0.1.30';           // replaced by scripts/bump.mjs on every push
 const CACHE = 'naruve-' + BUILD;
 
 /* Example audio is expensive on mobile data — Indonesia is the first market —
@@ -21,7 +21,14 @@ const KEEP = [CACHE, AUDIO_CACHE];
 const PRECACHE = [
   './',
   './index.html',
+  './css/fonts.css',
   './css/app.css',
+  './fonts/naruve-serif-500.woff2',
+  './fonts/naruve-serif-700.woff2',
+  './fonts/archivo-400.woff2',
+  './fonts/archivo-500.woff2',
+  './fonts/archivo-600.woff2',
+  './fonts/archivo-700.woff2',
   './js/ui.js',
   './js/identity.js',
   './js/api.js',

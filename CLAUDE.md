@@ -102,7 +102,7 @@ position:fixed로 되돌리지 않는다. 고정하면 탭바 높이를 상수�
 **녹음 버튼은 탭바 가운데에 얹혀 있다 (2026-08-18).** `.record-zone`은 없앴다 —
 그 행이 화면 아래 1/3을 먹어 결과가 한 화면에 안 들어왔다.
 
-- `.tabs`는 5칸이고 가운데 `.tab-gap`은 빈 칸이다. 그 자리에 `.mic-dock`이 얹힌다
+- `.tabs`는 3칸(나 · 빈 칸 · 문장 보기 — DECISIONS 22.2)이고 가운데 `.tab-gap`은 빈 칸이다. 그 자리에 `.mic-dock`이 얹힌다
 - `.mic-dock`은 `position:absolute`이고 기준은 `.tabs`다(`.tabs`가 `position:relative`).
   오프셋을 `bottom:calc(100% - var(--mic-sink))`로 쓰므로 **탭바 높이나 safe-area를
   상수로 박지 않는다.** `position:fixed`로 바꾸면 buildtag 주의사항과 같은 함정에 빠진다
@@ -213,8 +213,8 @@ UI 문구는 전부 docs/js/ui.js의 표에 있다. HTML에 영어를 직접 쓰
 바뀌지 않는 문구는 `data-i18n="키"`를 달고 applyLang()이 채운다.
 JS에서 만드는 문구는 `t('키')`로 꺼낸다.
 
-**한국어가 마스터본이다.** 새 문구는 ko를 먼저 쓰고 나머지 언어로 옮긴다.
-영어를 먼저 쓰고 한국어로 옮기면 번역투가 남는다.
+**영어가 원본이다 (DECISIONS 2절, 2026-10-29).** 새 문구는 en을 먼저 쓰고 ko·id로 옮긴다.
+사용자 대부분이 영어 화면을 보므로, 번역투가 남아야 한다면 옮긴 쪽에 남는다.
 
 빠진 키는 en으로 폴백한다. 그래서 언어를 부분만 채워도 화면이 비지 않는다.
 `LANGS = ['en','id','ko']`이고 en·ko는 전 키가 차 있다. id는 억양 피드백 6키만
@@ -612,7 +612,7 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - worker/             Cloudflare Workers 코드. Secret(AZURE_SPEECH_KEY)은 코드·toml·커밋
                       어디에도 넣지 않는다. 배포는 npx wrangler deploy
 - docs/index.html      화면 뼈대. 문구는 data-i18n으로만 넣는다
-- docs/js/ui.js        UI 문구 표 (한국어가 마스터본, 언어 추가는 열 하나 추가)
+- docs/js/ui.js        UI 문구 표 (영어가 원본, 언어 추가는 열 하나 추가)
 - docs/js/identity.js  익명 UUID·세션 ID·크레딧 캐시 (localStorage naruve.*)
 - docs/js/api.js       채점 서버 호출 한 곳. 엔드포인트 상수가 여기 하나뿐이다
 - docs/js/audio.js     예시 음성 재생 (파일 → 네이티브 TTS → Web Speech 순)
@@ -625,13 +625,16 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - docs/js/boot.js      서비스워커 등록, 빌드 번호 표시, 업데이트 바
 - docs/css/app.css     색·글꼴·여백. env()는 :root 두 줄에만, 여백은 .phone에서. 예외 .update-bar·.onboard·.settings는
                       var(--safe-*)를 스스로 더한다(env() 직접 호출 없음)
+- docs/css/fonts.css   @font-face — NaruveSerif 500·700, Archivo 400~700 (DECISIONS 21.6)
+- docs/fonts/          글꼴 파일·naruve-serif.chars.txt·LICENSE.txt. 손으로 고치지 않는다 — `npm run fonts`
 - docs/sw.js           캐시 전략 (PRECACHE 배열만 손댄다. BUILD 줄은 bump.mjs가 고친다)
 - docs/version.json    빌드번호·날짜 (bump.mjs가 고친다. 손으로 고치지 않는다)
 - data/probe_set.json     프로브 문장 (DECISIONS.md 8.5 표. 임의로 더하지 않는다)
 - scripts/bump.mjs        빌드번호(서비스워커 캐시) 올리는 스크립트
 - scripts/bump-apk.mjs    versionCode 올리는 스크립트. bump.mjs와 섞지 않는다
 - scripts/check_docs.mjs  DECISIONS.md 지문 재계산·대조, CLAUDE.md "현재 상태" ↔ 코드 숫자 대조,
-                          제어문자 검사, audio/index.json ↔ mp3 고아·미등록 대조, 문장 필드(t:/w:/lb/tr) 수 대조. `--fix`는 지문 줄만 고친다. PR 전과 병합 전에 돈다
+                          제어문자 검사, audio/index.json ↔ mp3 고아·미등록 대조, 문장 필드(t:/w:/lb/tr) 수 대조, 글꼴 서브셋 ↔ 앱 한글 대조. `--fix`는 지문 줄만 고친다. PR 전과 병합 전에 돈다
+- scripts/fonts_subset.py 글꼴 생성(`npm run fonts`, Python fonttools+brotli). check_docs가 "글꼴에 없는 한글"로 실패하면 돌린다
 - scripts/icon-layers.mjs 기준 세트 생성 (옛 원본 1장 → XML·스플래시·전 밀도 파일). icons:2g 1단계
 - scripts/icon-fg-image.mjs 전경(--scale)으로 적응형 전경, 전경+배경 합성으로 레거시 아이콘·play-store-512.png 덮어쓰기. icons:2g 2단계
 - scripts/icon-bg-image.mjs 적응형 배경 덮어쓰기. icons:2g 3단계
@@ -685,7 +688,8 @@ README의 APK 경로가 BEL 둘로 깨진 채 몇 주를 지났다.
 - 모국어 설명은 결핍만 지적하지 않는다. 이미 가진 것을 찾아 쓴다.
   (예: 인도네시아어에는 불파 종성이 있다 — anak, sebab)
 - 색: ink #111A22 / paper #FBFAF6 / seal #B3342B (브랜드 색, DECISIONS 19.6)
-- 한글은 Noto Serif KR, 라틴은 Archivo
+- 한글(연습하는 문장)은 NaruveSerif — 마루 부리 서브셋, 라틴(메뉴·버튼)은 Archivo (DECISIONS 21.6).
+  둘 다 docs/fonts에서 자체 호스팅한다. Google Fonts를 부르지 않는다
 
 ## 저작권 경계
 K-드라마·K-팝의 가사, 특정 작품의 긴 대사, 작품명·아티스트명은 절대 쓰지 않는다.
@@ -712,7 +716,7 @@ versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로
 지메일 설정은 저장소 밖이라 빌드와 무관하다.
 
 ## 현재 상태
-빌드 0.1.29 기준.
+빌드 0.1.30 기준.
 
 **문장** 200개 (Standard 60 / Everyday 60 / Drama 50 / Sounds 30) — 배치 1 (#76, 2026-08-26).
 `t:` 태그 200개(question 84 / statement 112 / exclam 4), `w:` 200개,
@@ -770,9 +774,13 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 고른 상태(`.vb.on` `.ob-opt.on`)는 먹색 채움이다(19.6 쓰임 범위).
 
 **온보딩과 설정 화면이 생겼다 (0.1.25).** 첫 실행에 온보딩 한 번 — 모국어·학습
-단계(둘 다 건너뛸 수 있다, 16.4)·따라 할 목소리, 그리고 동의 2층. 설정 탭에는
-목소리·표시 언어·채점 개선 참여·내 기록·내 식별자(복사 + 삭제 요청 메일)·방침
+단계(둘 다 건너뛸 수 있다, 16.4)·따라 할 목소리, 그리고 동의 2층. 설정 시트에는
+목소리·표시 언어·채점 개선 참여·내 식별자(복사 + 삭제 요청 메일)·방침
 링크·버전이 있고, 개발 셸에서만 Reload·Log가 더 붙는다. 임시 `.voicebar`는 지웠다.
+
+**나 화면이 생겼다 (0.1.30).** 탭 바는 나 · [마이크] · 문장 보기 3칸이다(DECISIONS 22.2).
+설정 시트는 나 화면의 설정 줄에서 연다. 내 기록(문장별 최고점)은 설정에서 나 화면으로
+옮겼다. 상단 띠의 설명 언어 버튼은 없앴고, 언어는 설정에서 en·id·ko 셋 다 고른다.
 
 **오류 설명** 15.10의 세 겹뿐이다 — 총점 판정(85/70) · 낮은 단어(60 미만) · 억양 방향.
 `renderL1`은 정의만 남고 호출되지 않는다. s.w에 박힌 확정 설명이라
