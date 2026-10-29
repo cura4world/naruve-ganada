@@ -483,7 +483,7 @@ DECISIONS.md 13절의 착수 금지 목록이 이 목록보다 우선한다.
 - ~~유료 TTS로 음성 생성~~ — 끝났다 (2026-08-19). 타입캐스트 라이트 플랜,
   문장 200 × 목소리 2 = 400개가 docs/audio/에 있다(배치 0 + 배치 1). **seed로 재현되지 않으므로
   그 파일들이 유일본이다** — 원본과 백업 두 곳(Naruve Data 폴더의 tts/ zip, R2 버킷의 tts/v1/)을 지우지 않는다.
-- **인도네시아어 UI 완성** — ui.js의 `id` 열에 억양 6키 말고 나머지를 채운다.
+- **인도네시아어 UI 완성** (en·ko 마무리 뒤, DECISIONS 21.8) — ui.js의 `id` 열에 억양 6키 말고 나머지를 채우고, `LANGS`에 'id'를 되돌린다.
   컬렉션 이름·설명(`col`)의 id 열도 같이 채운다.
 
 **다음 docs/ 변경에 얹을 것** (빌드를 따로 내지 않는다 — 데이터만이고 화면 영향 없음, 2026-08-31)
@@ -612,7 +612,7 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - worker/             Cloudflare Workers 코드. Secret(AZURE_SPEECH_KEY)은 코드·toml·커밋
                       어디에도 넣지 않는다. 배포는 npx wrangler deploy
 - docs/index.html      화면 뼈대. 문구는 data-i18n으로만 넣는다
-- docs/js/ui.js        UI 문구 표 (영어가 원본, 언어 추가는 열 하나 추가)
+- docs/js/ui.js        UI 문구 표 (영어가 원본. 언어 추가는 열 하나 + `LANGS`에 코드 추가)
 - docs/js/identity.js  익명 UUID·세션 ID·크레딧 캐시 (localStorage naruve.*)
 - docs/js/api.js       채점 서버 호출 한 곳. 엔드포인트 상수가 여기 하나뿐이다
 - docs/js/audio.js     예시 음성 재생 (파일 → 네이티브 TTS → Web Speech 순)
