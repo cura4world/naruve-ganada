@@ -626,7 +626,7 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - docs/js/boot.js      서비스워커 등록, 빌드 번호 표시, 업데이트 바
 - docs/css/app.css     색·글꼴·여백. env()는 :root 두 줄에만, 여백은 .phone에서. 예외 .update-bar·.onboard·.settings는
                       var(--safe-*)를 스스로 더한다(env() 직접 호출 없음)
-- docs/css/fonts.css   @font-face — NaruveSerif 500·700, NaruveGothic 700, Archivo 400~700 (DECISIONS 21.6 · 21.7)
+- docs/css/fonts.css   @font-face — NaruveSerif 500·700, NaruveSans 500·600·700, Archivo 400~700 (DECISIONS 21.6 · 21.9)
 - docs/fonts/          글꼴 파일·naruve-serif.chars.txt·LICENSE.txt. 손으로 고치지 않는다 — `npm run fonts`
 - docs/sw.js           캐시 전략 (PRECACHE 배열만 손댄다. BUILD 줄은 bump.mjs가 고친다)
 - docs/version.json    빌드번호·날짜 (bump.mjs가 고친다. 손으로 고치지 않는다)
@@ -689,9 +689,10 @@ README의 APK 경로가 BEL 둘로 깨진 채 몇 주를 지났다.
 - 모국어 설명은 결핍만 지적하지 않는다. 이미 가진 것을 찾아 쓴다.
   (예: 인도네시아어에는 불파 종성이 있다 — anak, sebab)
 - 색: ink #111A22 / paper #FBFAF6 / seal #A3341C (브랜드 색, DECISIONS 19.6 · 21.8)
-- 한글은 NaruveSerif(마루 부리 서브셋)가 기본이고, 제목·묶음 이름·이동 버튼의 한글만 NaruveGothic
-  (학교안심 알림장 B 서브셋, `--hd`). 라틴(영문·숫자)은 어디서나 Archivo (DECISIONS 21.6 · 21.7).
-  `--ui`는 'Archivo','NaruveSerif' 순서라 한 줄 안에서도 글자 단위로 나뉜다.
+- 한글은 역할로 갈린다 — 내용(어절 타일·문장 목록·최고점 문장·탭과 인장의 한 글자, `--kr`)은
+  NaruveSerif(마루 부리 서브셋), 조작 글자(제목·메뉴·라벨·버튼, `--ui` · `--hd`)는 NaruveSans
+  (Pretendard 서브셋). 라틴(영문·숫자)은 어디서나 Archivo (DECISIONS 21.6 · 21.9).
+  `--ui`는 'Archivo','NaruveSans' 순서라 한 줄 안에서도 글자 단위로 나뉜다.
   둘 다 docs/fonts에서 자체 호스팅한다. Google Fonts를 부르지 않는다
 
 ## 저작권 경계
@@ -719,7 +720,7 @@ versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로
 지메일 설정은 저장소 밖이라 빌드와 무관하다.
 
 ## 현재 상태
-빌드 0.1.34 기준.
+빌드 0.1.35 기준.
 
 **문장** 200개 (Standard 60 / Everyday 60 / Drama 50 / Sounds 30) — 배치 1 (#76, 2026-08-26).
 `t:` 태그 200개(question 84 / statement 112 / exclam 4), `w:` 200개,
@@ -790,6 +791,13 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 문구는 없고 진행 상태(듣는 중 · 채점 중)만 나온다. 마이크 지름 84px. 나 화면 설정 맨 위에
 번역하지 않는 "Language · 언어" 줄이 있다.
 0.1.33에서 제목 글자를 2px 키우고, 브랜드 빨강을 #A3341C로 바꾸고, 언어 버튼을 en·ko 둘로 줄였다(DECISIONS 21.8).
+
+**글자 크기·대비·탭 바를 손질했다 (0.1.35, DECISIONS 21.9).** 본문 15~17 · 최소 11~12px 체계,
+`--ink-faint` #6B7480(4.53:1). 조작 글자의 한글은 NaruveGothic 대신 NaruveSans(Pretendard 서브셋)다.
+탭 바는 흰 면 + 그림자, '나'는 아바타 동그라미, 나 화면에서 먹색 채움. 상단 띠의 '문장 보기' 알약은
+없고 위치 이름이 그 버튼이다(`#openBrowse`). 개발 줄(SIMULATE·빌드 번호)은 개발 모드에서만 보이므로
+**배포 확인은 나 화면 맨 아래 버전으로 한다.** 폰 글꼴 배율(textZoom 100 고정)은 그대로다 — 출시 APK
+재빌드 때 상한 1.3으로 따르게 하는 것이 21.9의 보류 항목이다.
 
 **오류 설명** 15.10의 세 겹뿐이다 — 총점 판정(85/70) · 낮은 단어(60 미만) · 억양 방향.
 `renderL1`은 정의만 남고 호출되지 않는다. s.w에 박힌 확정 설명이라

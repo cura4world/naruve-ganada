@@ -681,6 +681,12 @@ if($('settings')){
    탭 바는 그대로 보이고, 가운데 버튼은 연습으로 돌아가는 문이 된다. */
 var youPrevHint = null;
 function youOpen(){ var y=$('you'); return !!(y && !y.hidden); }
+/* 21.9 — 머리 밑의 선은 내용이 그 밑으로 스크롤됐을 때만 긋는다. 지금 보이는 스크롤 영역(연습 · 나)을 본다 */
+function scrollLine(){
+  var box = youOpen() ? $('you') : $('stage');
+  document.querySelector('.phone').classList.toggle('scrolled', !!box && box.scrollTop > 2);
+}
+['stage','you'].forEach(function(id){ if($(id)) $(id).addEventListener('scroll', scrollLine, {passive:true}); });
 function setYou(open){
   var y=$('you'); if(!y || youOpen()===open) return;
   if(open) youPrevHint = { k:hintKey, live:$('hint').classList.contains('live') };
@@ -689,6 +695,7 @@ function setYou(open){
   if($('tabYou')) $('tabYou').setAttribute('aria-selected', open ? 'true' : 'false');
   if(open){ hintKey=''; $('hint').textContent=''; $('hint').classList.remove('live'); paintYou(); y.scrollTop = 0; }
   else if(youPrevHint){ var p=youPrevHint; youPrevHint=null; setHint(p.k,p.live); }
+  scrollLine();
 }
 
 /* 채점한 문장 수는 점수가 아니라 개수다 — 18절의 진행 기록에 들지 않으므로
@@ -714,7 +721,8 @@ function paintYou(){
       + '<span class="you-col-c">' + n + '/' + all.length + '</span></div>';
   });
   $('youByCol').innerHTML = h;
-  if($('youBrowseCols')) $('youBrowseCols').textContent = names.join(' · ');
+  /* 21.9: 컬렉션 이름 넷은 줄을 두 줄로 꺾었다. 바로 위 '컬렉션별' 묶음에 이미 있으므로 화살표만 */
+  if($('youBrowseCols')) $('youBrowseCols').textContent = '›';
 
   /* 기록은 참여자에게만 (22.4). 미참여자에게는 무엇을 하면 열리는지 한 줄. */
   var c = Identity.consent();
@@ -728,7 +736,8 @@ function paintYou(){
       var rows = keys.filter(function(k){ return byK[k]; })
         .sort(function(a,b){ return best[b]-best[a]; }).slice(0,12);
       $('bestList').innerHTML = rows.map(function(k){
-        return '<div>' + k.replace(/</g,'&lt;') + ' — <b>' + best[k] + '</b></div>';
+        /* 21.9: 문장은 왼쪽, 점수는 오른쪽 — 줄 하나가 한 문장 */
+        return '<div><span>' + k.replace(/</g,'&lt;') + '</span><b>' + best[k] + '</b></div>';
       }).join('');
     }
   }

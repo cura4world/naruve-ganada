@@ -229,8 +229,8 @@ for (const f of ['DECISIONS.md', 'CLAUDE.md']) {
   row(`제어문자 ${f}`, '없어야 함', hits.length ? hits.join(' ') : '없음', hits.length === 0);
 }
 
-/* ---------- 검사 4 — 글꼴 서브셋 ↔ 앱 한글 (DECISIONS 21.6 · 21.7) ---------- */
-// 왜 있는가 — NaruveSerif와 NaruveGothic은 앱이 쓰는 한글만 남긴 서브셋이다(같은 글자 목록). 새 문장에 없던 글자가
+/* ---------- 검사 4 — 글꼴 서브셋 ↔ 앱 한글 (DECISIONS 21.6 · 21.9) ---------- */
+// 왜 있는가 — NaruveSerif와 NaruveSans는 앱이 쓰는 한글만 남긴 서브셋이다(같은 글자 목록). 새 문장에 없던 글자가
 // 들어오면 그 글자만 시스템 글꼴로 보인다. 빈 네모는 아니라서 눈으로는 놓친다.
 // 글자 세는 규칙은 scripts/fonts_subset.py와 같다(주석 제외). 한쪽만 바꾸지 않는다.
 {
@@ -257,9 +257,9 @@ for (const f of ['DECISIONS.md', 'CLAUDE.md']) {
     const p = rel('docs', 'fonts', `naruve-serif-${w}.woff2`);
     row(`글꼴 파일 naruve-serif-${w}`, '있어야 함', fs.existsSync(p) ? '있음' : '없음', fs.existsSync(p));
   }
-  {
-    const p = rel('docs', 'fonts', 'naruve-gothic-700.woff2');
-    row('글꼴 파일 naruve-gothic-700', '있어야 함', fs.existsSync(p) ? '있음' : '없음', fs.existsSync(p));
+  for (const w of [500, 600, 700]) {
+    const p = rel('docs', 'fonts', `naruve-sans-${w}.woff2`);
+    row(`글꼴 파일 naruve-sans-${w}`, '있어야 함', fs.existsSync(p) ? '있음' : '없음', fs.existsSync(p));
   }
 }
 

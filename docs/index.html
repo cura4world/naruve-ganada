@@ -24,12 +24,10 @@
     <div class="credits"><b id="credits">30</b><span data-i18n="checksLeft"> checks left</span></div>
   </header>
 
-  <!-- 21.5 · 22.5: 상단 띠에는 문장 보기 알약만 둔다. -->
+  <!-- 21.9: 상단 띠의 위치 이름이 곧 문장 보기 버튼이다. 따로 있던 '문장 보기' 알약은
+       탭 바의 문장 보기와 같은 일을 해서 뺐다(22절의 "같은 일을 하는 버튼 둘"). -->
   <div class="strip">
-    <div class="where"><b id="curCol">Drama</b><span class="dot"></span><span class="set" id="curSet">Reactions</span></div>
-    <div style="display:flex;gap:7px;flex:none">
-      <button class="browse-btn" id="openBrowse" data-i18n="browse">Browse</button>
-    </div>
+    <button class="where" id="openBrowse"><b id="curCol">Drama</b><span class="dot"></span><span class="set" id="curSet">Reactions</span></button>
   </div>
 
   <!-- 온보딩. 첫 실행에 한 번만. 16.4 두 문항 + 목소리 + 동의 2층. -->

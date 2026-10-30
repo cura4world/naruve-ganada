@@ -7,7 +7,7 @@
    skipWaiting + clients.claim means a new build takes over on the next launch,
    without the user having to close every tab.                                  */
 
-const BUILD = '0.1.34';           // replaced by scripts/bump.mjs on every push
+const BUILD = '0.1.35';           // replaced by scripts/bump.mjs on every push
 const CACHE = 'naruve-' + BUILD;
 
 /* Example audio is expensive on mobile data — Indonesia is the first market —
@@ -25,7 +25,9 @@ const PRECACHE = [
   './css/app.css',
   './fonts/naruve-serif-500.woff2',
   './fonts/naruve-serif-700.woff2',
-  './fonts/naruve-gothic-700.woff2',
+  './fonts/naruve-sans-500.woff2',
+  './fonts/naruve-sans-600.woff2',
+  './fonts/naruve-sans-700.woff2',
   './fonts/archivo-400.woff2',
   './fonts/archivo-500.woff2',
   './fonts/archivo-600.woff2',

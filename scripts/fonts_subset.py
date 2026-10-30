@@ -1,4 +1,4 @@
-"""앱 글꼴을 만든다 — DECISIONS 21.6 · 21.7.
+"""앱 글꼴을 만든다 — DECISIONS 21.6 · 21.7 · 21.9.
 
   python scripts/fonts_subset.py      (npm run fonts)
 
@@ -6,22 +6,21 @@
   1. 마루 부리(SemiBold·Bold)에서 앱이 쓰는 글자만 남긴 woff2를 만든다.
      MaruBuri는 네이버의 예약 글꼴 이름(RFN)이라, 잘라 낸 수정본은 이름을
      NaruveSerif로 바꾼다(OFL 3항). 저작권 표시(name ID 0)는 그대로 둔다.
-  2. 학교안심 알림장 B에서 같은 글자만 남긴 제목용 고딕을 만든다(DECISIONS 21.7).
-     "Hakgyoansim Allimjang"은 KERIS 상표라 이름을 NaruveGothic으로 바꾼다.
-     원본 TTF는 고정 커밋에서 받아 sha256을 대조한다(scripts/.font-cache, 커밋하지 않음).
+  2. Pretendard(Medium·SemiBold·Bold)에서 같은 글자만 남긴 조작용 고딕을 만든다(DECISIONS 21.9).
+     Pretendard는 예약 글꼴 이름(RFN)이라 잘라 낸 수정본은 이름을 NaruveSans로 바꾼다(OFL 3항).
+     원본은 npm pretendard(devDependency)의 woff2다. 라틴은 넣지 않는다(Archivo가 그린다).
+     ~~학교안심 알림장 B → NaruveGothic (21.7)~~ ← 21.9로 대체. 받아 둔 캐시(scripts/.font-cache)는 더 쓰지 않는다.
   3. Archivo 라틴 네 굵기를 @fontsource/archivo에서 그대로 복사한다.
   4. docs/fonts/LICENSE.txt(세 글꼴의 저작권 + OFL 전문)를 만든다.
   5. docs/fonts/naruve-serif.chars.txt에 서브셋에 넣은 한글을 적는다.
-     check_docs.mjs가 이 목록과 앱의 한글을 대조한다. 두 한글 글꼴은 같은 글자를 담는다.
+     check_docs.mjs가 이 목록과 앱의 한글을 대조한다. 두 한글 글꼴(NaruveSerif · NaruveSans)은 같은 글자를 담는다.
 
-필요한 것: Python 3 + fonttools + brotli, npm install(devDependencies), 첫 실행 때 네트워크.
+필요한 것: Python 3 + fonttools + brotli, npm install(devDependencies).
 """
-import hashlib
 import pathlib
 import re
 import shutil
 import sys
-import urllib.request
 
 from fontTools import subset
 from fontTools.ttLib import TTFont
@@ -31,17 +30,20 @@ DOCS = ROOT / "docs"
 OUT = DOCS / "fonts"
 MB_SRC = ROOT / "node_modules" / "@kfonts" / "maruburi" / "src"
 AR_SRC = ROOT / "node_modules" / "@fontsource" / "archivo"
+PR_SRC = ROOT / "node_modules" / "pretendard" / "dist"
 
 # CSS 굵기 → 원본 파일. --kr은 500과 700에만 쓰인다(app.css).
 SERIF = {500: ("MaruBuri-SemiBold.ttf", "SemiBold"), 700: ("MaruBuri-Bold.ttf", "Bold")}
+# CSS 굵기 → 원본 파일. --ui · --hd의 한글. 400 자리는 가장 가까운 500으로 그려진다.
+SANS = {500: ("Pretendard-Medium.woff2", "Medium"), 600: ("Pretendard-SemiBold.woff2", "SemiBold"),
+        700: ("Pretendard-Bold.woff2", "Bold")}
 ARCHIVO = [400, 500, 600, 700]
 FAMILY = "NaruveSerif"
-GOTHIC_FAMILY = "NaruveGothic"
-GOTHIC_URL = ("https://raw.githubusercontent.com/fonts-archive/HakgyoansimAllimjang/"
-              "d818335167906730db4fc240683c91fd323e6446/HakgyoansimAllimjang-B.ttf")
-GOTHIC_SHA256 = "6c99fc277790f100a44908e27d68cb2d2060fd56690d0085cc562c85898a149f"
-CACHE = ROOT / "scripts" / ".font-cache"
-EXTRA = "".join(chr(c) for c in range(0x20, 0x7F)) + "·×–—…→−‘’“”"
+SANS_FAMILY = "NaruveSans"
+PUNCT = "·×–—…→−‘’“”"
+EXTRA = "".join(chr(c) for c in range(0x20, 0x7F)) + PUNCT
+# NaruveSans에는 라틴을 넣지 않는다 — 라틴은 어디서나 Archivo가 먼저 그린다(--ui · --hd 순서).
+# 넣으면 Pretendard의 라틴 대체 글리프까지 딸려 와 굵기당 약 18KB가 는다(2026-10-30 실측).
 HANGUL = re.compile(r"[가-힣ㄱ-ㆎ]")
 
 NAVER_NOTICE = (
@@ -100,18 +102,6 @@ def rename(font, style, family=FAMILY, origin="MaruBuri 2.000 by NAVER", banned=
         sys.exit(f"이름이 남았다: {left}")
 
 
-def gothic_source():
-    CACHE.mkdir(parents=True, exist_ok=True)
-    src = CACHE / "HakgyoansimAllimjang-B.ttf"
-    if not src.exists():
-        print("학교안심 알림장 B 원본을 받는다 …")
-        urllib.request.urlretrieve(GOTHIC_URL, src)
-    digest = hashlib.sha256(src.read_bytes()).hexdigest()
-    if digest != GOTHIC_SHA256:
-        src.unlink()
-        sys.exit(f"학교안심 알림장 원본 sha256 불일치: {digest}")
-    return src
-
 
 def subset_to(font, text):
     opts = subset.Options()
@@ -126,7 +116,7 @@ def subset_to(font, text):
 
 
 def main():
-    if not MB_SRC.is_dir() or not AR_SRC.is_dir():
+    if not MB_SRC.is_dir() or not AR_SRC.is_dir() or not PR_SRC.is_dir():
         sys.exit("node_modules에 글꼴 원본이 없다 — npm install 먼저")
     OUT.mkdir(parents=True, exist_ok=True)
 
@@ -140,16 +130,14 @@ def main():
         font.save(dst)
         print(f"{dst.relative_to(ROOT)}  {dst.stat().st_size // 1024}KB")
 
-    font = subset_to(TTFont(gothic_source()), text)
-    # 원본 0번 칸은 저작권 표시라 그대로 둔다. OFL 근거와 출처는 LICENSE.txt에 적는다.
-    rename(font, "Bold", family=GOTHIC_FAMILY, origin="Hakgyoansim Allimjang B by KERIS",
-           banned=("Hakgyoansim", "Allimjang", "학교안심", "알림장"))
-    for nid in (7, 8, 9, 11):  # 상표·제작사 칸은 rename이 이미 비웠다. 남아 있으면 지운다
-        font["name"].removeNames(nameID=nid)
-    font.flavor = "woff2"
-    dst = OUT / "naruve-gothic-700.woff2"
-    font.save(dst)
-    print(f"{dst.relative_to(ROOT)}  {dst.stat().st_size // 1024}KB")
+    for weight, (src, style) in SANS.items():
+        font = subset_to(TTFont(PR_SRC / "web" / "static" / "woff2" / src), hangul + PUNCT)
+        rename(font, style, family=SANS_FAMILY, origin="Pretendard 1.3.9 by Kil Hyung-jin",
+               banned=("Pretendard", "프리텐다드"))
+        font.flavor = "woff2"
+        dst = OUT / f"naruve-sans-{weight}.woff2"
+        font.save(dst)
+        print(f"{dst.relative_to(ROOT)}  {dst.stat().st_size // 1024}KB")
 
     (OUT / "naruve-serif.chars.txt").write_text(hangul + "\n", encoding="utf-8")
     print(f"한글 {len(hangul)}자")
@@ -174,18 +162,18 @@ def main():
         "https://openfontlicense.org\n\n\n"
         + ofl_body
     )
-    gothic_part = (
-        "NaruveGothic (docs/fonts/naruve-gothic-700.woff2)\n"
-        "Modified Version (subset, renamed) of Hakgyoansim Allimjang B.\n"
-        "Source: Korea Education and Research Information Service (KERIS).\n"
-        "Hakgyoansim Allimjang is a trademark of KERIS; this derivative does not use the name.\n"
-        "Copyright (c) KERIS. Designed by Heumm Design.\n"
-        "Distributed by KERIS under the SIL Open Font License, Version 1.1 (KERIS copyright support\n"
-        "center and KOGL listing). The license text is the same OFL 1.1 reproduced above.\n"
+    pr_license = (PR_SRC / "LICENSE.txt").read_text(encoding="utf-8").replace("\r\n", "\n")
+    sans_part = (
+        "NaruveSans (docs/fonts/naruve-sans-*.woff2)\n"
+        "Modified Version (subset, renamed) of Pretendard 1.3.9.\n"
+        "Pretendard is a Reserved Font Name; this derivative does not use it.\n\n"
+        + pr_license.split("\n\n")[0] + "\n\n"
+        "This Font Software is licensed under the SIL Open Font License, Version 1.1.\n"
+        "The license text is the same OFL 1.1 reproduced above.\n"
     )
     archivo_part = "Archivo (docs/fonts/archivo-*.woff2)\n\n" + ar_license
     (OUT / "LICENSE.txt").write_text(
-        serif_part.rstrip() + "\n\n\n" + "=" * 59 + "\n\n" + gothic_part.rstrip() + "\n\n\n"
+        serif_part.rstrip() + "\n\n\n" + "=" * 59 + "\n\n" + sans_part.rstrip() + "\n\n\n"
         + "=" * 59 + "\n\n" + archivo_part.rstrip() + "\n",
         encoding="utf-8", newline="\n")
     print("docs/fonts/LICENSE.txt")
