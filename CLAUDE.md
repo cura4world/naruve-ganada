@@ -608,6 +608,7 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 
 ## 파일 담당
 - DECISIONS.md        결정 기록. 단일 출처. 승인 없이 고치지 않는다
+- HANDOFF.md          세션 인계 요약 (지금 어디까지 / 다음 할 일 / 출시까지 남은 것). 정본은 아니다 — 세션 종료 루틴 참조
 - PROBE.md            발음평가 프로브 실행 순서 (루트다. docs/에 두지 않는다)
 - worker/             Cloudflare Workers 코드. Secret(AZURE_SPEECH_KEY)은 코드·toml·커밋
                       어디에도 넣지 않는다. 배포는 npx wrangler deploy
@@ -810,3 +811,16 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 
 연구소 프로젝트 ID: `ganada`
 <!-- NARUVE_LAB_INTEGRATION_END -->
+
+## 세션 종료 루틴 (Naruve Studio 통일 규칙, 2026-10-30)
+작업을 끝낼 때 이 순서로 한다. 시작할 때는 HANDOFF.md를 읽는다.
+
+1. **HANDOFF.md 갱신** — 지금 어디까지 / 다음 할 일 / 출시까지 남은 것. 정본(DECISIONS.md·이 파일)을
+   복제하지 않고 가리킨다. 이 저장소는 공개라서 **보안 상세는 쓰지 않는다**
+2. **상태가 바뀌었으면 LAB_STATUS.md 갱신** — 로컬 전용이라 **커밋하지 않는다** (.gitignore 대상).
+   `priority` 필드는 폐지됐다(쓰지 않는다). `phase`는 아이디어 / 개발 / 출시 준비 / 출시 / 운영 / 보관 중 하나
+3. **커밋**
+4. **push** — 작업 브랜치로 push하고 PR을 연다. main에 직접 푸시하지 않는다(위 "절대 규칙").
+   docs/를 고쳤으면 커밋 전에 `npm run bump`
+
+HQ에 물을 것은 LAB_STATUS.md의 `decisionRequests`에만 적는다. 다른 곳에 질문을 흩어 두지 않는다.
