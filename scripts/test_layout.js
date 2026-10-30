@@ -52,28 +52,28 @@ ok('sink 가 탭바 안쪽 높이보다 작다', sink < 70, String(sink));
 const gapMin = decl('.tab-gap', 'min-width');
 const gapExtra = gapMin ? parseFloat((gapMin.match(/\+\s*(\d+)px/) || [])[1]) : NaN;
 console.log(`  .tab-gap min-width = ${gapMin}  →  ${size + gapExtra}px`);
-// 버튼은 지름 + 종이 링 5px씩
-ok('가운데 칸이 버튼 + 링(5px x2)을 담는다', size + gapExtra >= size + 10,
+// 버튼은 지름 + 양옆 여유 5px씩 (21.9부터 종이 테 대신 그림자 — 여유는 그대로 둔다)
+ok('가운데 칸이 버튼 + 여유(5px x2)를 담는다', size + gapExtra >= size + 10,
   `여유 ${gapExtra - 10}px`);
 
 // ---------------------------------------------------------------- 2
 console.log('\n2. 360x740 세로 예산 (safe-area 0 기준)');
 const H = 740;
-const tb = pad(decl('.topbar', 'padding'));            // 15 18 13
-const st = pad(decl('.strip', 'padding'));             // 11 18
-const sm = pad(decl('.sim', 'padding'));               // 6 18 8
-const tabs = pad(decl('.tabs', 'padding'));            // 7 0 11
-const seal = px(decl('.seal-mark', 'height'));         // 23
-const browse = px(decl('.browse-btn', 'min-height'));  // 34
-const tabH = px(decl('.tab', 'min-height'));           // 52
+// 21.9: 머리·상단 띠·탭 바의 선을 걷었다(테두리 0). 개발 줄(.sim)은 개발 모드에서만 보여 0이다.
+const tb = pad(decl('.topbar', 'padding'));            // 16 20 4
+const st = pad(decl('.strip', 'padding'));             // 0 20
+const tabs = pad(decl('.tabs', 'padding'));            // 8 0 12
+const seal = px(decl('.seal-mark', 'height'));         // 28
+const where = px(decl('.strip .where', 'min-height')); // 44 — 위치 이름이 곧 문장 보기 버튼
+const tabH = px(decl('.tab', 'min-height'));           // 56
 const stagePad = pad((decl('.stage', 'padding') || '').replace(/calc\([^)]*\)/, '0'));
-const BUILDTAG = 11;   // .buildtag 9px 글꼴의 줄상자. 유일한 어림값이다.
+ok('.sim 은 개발 모드에서만 보인다', decl('.sim', 'display') === 'none');
 
 const rows = [
-  ['.topbar', tb[0] + seal + tb[2] + 1],
-  ['.strip',  st[0] + browse + st[0] + 1],
-  ['.sim',    1 + sm[0] + BUILDTAG + sm[2]],
-  ['.tabs',   1 + tabs[0] + tabH + tabs[2]],
+  ['.topbar', tb[0] + seal + tb[2]],
+  ['.strip',  st[0] + where + (st.length > 2 ? st[2] : st[0])],
+  ['.sim',    0],
+  ['.tabs',   tabs[0] + tabH + tabs[2]],
 ];
 const chrome = rows.reduce((a, r) => a + r[1], 0);
 const stageBox = H - chrome;
