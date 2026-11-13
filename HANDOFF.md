@@ -4,7 +4,7 @@
 작업 규칙과 현재 상태 상세는 CLAUDE.md가 정본이고, 여기는 그쪽을 가리키기만 한다.
 이 저장소는 공개라서 **보안 상세는 여기에 쓰지 않는다** (로컬 전용 파일에서 관리).
 
-최종 갱신: 2026-10-30 (빌드 0.1.34 기준, 비공개 테스트 요건 정정 반영)
+최종 갱신: 2026-11-13 (빌드 0.1.36 기준, Kata kata 정책 페이지 임시 게시 반영)
 
 ## 정본 위치
 
@@ -30,6 +30,10 @@
   `app.naruve.ganada`를 고정했다 (DECISIONS 19.2, 변경 이력 2026-09-17). 플레이 계정은
   조직 계정, 표시명 Naruve Studio (DECISIONS 1절). **AAB를 올린 기록은 이 저장소에 없다.**
 - **결과 카드 공유**는 `alert()` 자리표시자다.
+- **Kata kata 정책 페이지 임시 게시** (2026-11-13, 빌드 0.1.36): `docs/apps/kata-kata/{privacy,terms,delete}/index.html`
+  → naruve.app/apps/kata-kata/… . 이 앱의 일이 아니라 Naruve Studio 사이트 일이다. naruve.app 루트를 홈페이지로
+  옮길 때 홈페이지가 같은 경로를 이어받고 주소는 바꾸지 않는다. 문구 정본은 idkr-buddy 저장소
+  (release/public e9d9494)이고 여기서 고치지 않는다. 근거는 DECISIONS 12절 예외.
 
 ## 다음 할 일
 
