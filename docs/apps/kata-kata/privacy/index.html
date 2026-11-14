@@ -31,10 +31,12 @@
   <table>
     <tr><th>항목</th><th>수집 방법</th><th>이용 목적</th><th>보관 기간</th></tr>
     <tr><td>Google 계정 식별자, 이메일, 이름, 프로필 사진 주소</td><td>Google 로그인 시</td><td>회원 식별, 로그인 유지, 문의 응대</td><td>계정 삭제 시까지</td></tr>
-    <tr><td>로그인 세션 정보(암호화된 값)</td><td>로그인 시 자동 생성</td><td>로그인 유지</td><td>최대 60일 또는 로그아웃·삭제 시</td></tr>
+    <tr><td>가입 시각, 마지막 로그인 시각</td><td>로그인 시 자동 생성</td><td>계정 관리, 부정 사용 방지</td><td>계정 삭제 시까지</td></tr>
+    <tr><td>로그인 세션 정보(해시로 바꾼 값)</td><td>로그인 시 자동 생성</td><td>로그인 유지</td><td>최대 60일 또는 로그아웃·삭제 시</td></tr>
     <tr><td>기능 사용 횟수(AI 풀이·음성) — 날짜별·월별 횟수, 그날 들은 이야기·회화의 구분값, 무료 체험 기간의 합계</td><td>이용 시 자동 생성</td><td>무료·구독별 이용 한도 관리, 비용 관리</td><td>날짜별 3일, 월별 최대 40일, 무료 체험 합계 최대 400일</td></tr>
     <tr><td>구독 정보(상품, 만료 시각, Google Play 구매 토큰)</td><td>구독 구매·복원 시</td><td>구독 확인과 혜택 제공, 부정 사용 방지</td><td>계정 삭제 시까지 (구매 토큰 연결 정보는 최대 400일)</td></tr>
     <tr><td>신고 내용(이용자가 보낸 사유, 검색어, AI 결과 일부)</td><td>"풀이가 이상합니다"를 누를 때</td><td>AI 결과 품질 개선, 부적절한 내용 대응</td><td>180일 (계정 삭제 시 계정 연결은 즉시 삭제)</td></tr>
+    <tr><td>IP 주소, 접속 일시, 기기·브라우저 정보</td><td>서비스 이용 시 통신 과정에서 자동 생성</td><td>서비스 제공, 장애 대응, 부정 이용 방지</td><td>회사는 이 정보를 따로 모아 저장하지 않습니다. 통신을 처리하는 업체(3번 표)의 접속 기록에 각 업체의 기본 보관 기간 동안 남을 수 있습니다</td></tr>
   </table>
   <p>앱은 광고·분석용 추적 도구를 쓰지 않습니다. 결제 수단 정보는 Google Play가 처리하며 회사는 받지 않습니다.</p>
   <p><b>마이크(음성 검색)</b>: 검색창의 마이크 단추를 누를 때만 마이크를 씁니다. 말한 소리는 기기의 음성 인식 서비스(기기 설정에 따라 Google 등)가 글자로 바꾸며, 회사 서버로 보내지 않고 앱이나 서버에 저장하지 않습니다. 글자로 바뀐 검색어는 직접 입력한 검색어와 똑같이 다룹니다. 마이크 권한은 기기 설정에서 언제든 끌 수 있습니다.</p>
@@ -43,13 +45,13 @@
   <p>단어장, 찾아본 단어, 검색 기록, 학습 점수, 음성 캐시, 글자 크기 같은 설정은 이용자의 기기 안(앱 저장소)에만 저장되며 회사 서버로 보내지 않습니다. 앱을 삭제하면 함께 지워집니다. 백업 파일을 직접 저장한 경우 그 파일은 이용자가 관리합니다.</p>
 
   <h2>3. AI 기능과 정보 처리 위탁</h2>
-  <p>사전 풀이, 이야기, 소리 내어 읽기는 Google의 Gemini API로 만듭니다. 이용자가 입력한 단어·문장과 읽을 글은 회사 서버를 거쳐 Google에 전달되어 결과를 만드는 데만 쓰이며, 회사는 이 내용을 저장하지 않습니다(신고한 경우 제외).</p>
+  <p>사전 풀이, 단어 뜻 풀이와 자동 채우기, 문장 해설, 이야기, 회화집의 대화 만들기, 생활 정보, 소리 내어 읽기는 Google의 Gemini API로 만듭니다. 이용자가 입력한 단어·문장과 읽을 글은 회사 서버를 거쳐 Google에 전달되어 결과를 만드는 데만 쓰이며, 회사는 이 내용을 저장하지 않습니다(신고한 경우 제외).</p>
   <table>
-    <tr><th>받는 곳</th><th>위탁 업무</th><th>국가</th></tr>
-    <tr><td>Google LLC</td><td>로그인(Google 계정), AI 생성(Gemini API), 결제(Google Play), AI 요청 중계 서버(Google Cloud Run, 서울 리전)</td><td>미국 등 (서버는 서울 리전 포함)</td></tr>
-    <tr><td>Cloudflare, Inc.</td><td>회원·사용량·구독 정보를 저장하는 서버 운영(Workers, KV)</td><td>미국 등 전 세계 데이터센터</td></tr>
-    <tr><td>GitHub, Inc.</td><td>앱 화면 파일 제공(GitHub Pages)</td><td>미국</td></tr>
-    <tr><td>Wikimedia Foundation</td><td>지도 사진 제공 (기기가 직접 받아 옴)</td><td>미국</td></tr>
+    <tr><th>받는 곳</th><th>위탁 업무</th><th>국가</th><th>개인정보 문의처</th></tr>
+    <tr><td>Google LLC</td><td>로그인(Google 계정), AI 생성(Gemini API), 결제(Google Play), AI 요청 중계 서버(Google Cloud Run, 서울 리전)</td><td>미국 등 (서버는 서울 리전 포함)</td><td>googlekrsupport@google.com</td></tr>
+    <tr><td>Cloudflare, Inc.</td><td>회원·사용량·구독 정보를 저장하는 서버 운영(Workers, KV)</td><td>미국 등 전 세계 데이터센터</td><td>privacyquestions@cloudflare.com</td></tr>
+    <tr><td>GitHub, Inc.</td><td>앱 화면 파일 제공(GitHub Pages)</td><td>미국</td><td>privacy@github.com</td></tr>
+    <tr><td>Wikimedia Foundation</td><td>지도 사진 제공 (기기가 직접 받아 옴)</td><td>미국</td><td>privacy@wikimedia.org</td></tr>
   </table>
 
   <h2>4. 국외 이전</h2>
@@ -57,7 +59,7 @@
 
   <h2>5. 이용자의 권리</h2>
   <ul>
-    <li>앱의 <b>내 정보</b> 탭 맨 아래 "계정 삭제"로 언제든 계정과 서버 기록을 지울 수 있습니다. 앱 밖에서는 <a href="https://naruve.app/apps/kata-kata/delete">계정 삭제 안내</a>를 보세요.</li>
+    <li>앱의 <b>내 정보</b> 탭 맨 아래 "계정 삭제"로 언제든 계정과 서버 기록을 지울 수 있습니다. 앱 밖에서는 <a href="https://naruve.app/apps/kata-kata/delete/">계정 삭제 안내</a>를 보세요.</li>
     <li>열람·정정·삭제·처리 정지는 아래 연락처로 요청할 수 있으며 지체 없이 처리합니다.</li>
     <li>구독 결제는 계정 삭제와 별개로 Google Play에서 해지해야 합니다.</li>
   </ul>
@@ -76,6 +78,9 @@
   <h2>9. 변경</h2>
   <p>이 방침이 바뀌면 시행 7일 전에 앱 또는 이 페이지에서 알립니다.</p>
 
+  <h2>10. 개인정보의 파기 절차와 방법</h2>
+  <p>보관 기간이 끝났거나 계정을 삭제하면 해당 정보를 지체 없이 파기합니다(1번 표에 따로 기간을 적은 항목은 그 기간까지). 서버에 전자적으로 저장된 정보는 복구할 수 없도록 삭제하며, 보관 기간이 정해진 기록(로그인 세션, 사용 횟수, 신고 내용 등)은 기간이 지나면 저장소에서 자동으로 삭제됩니다. 회사는 개인정보를 종이 문서로 보관하지 않습니다.</p>
+
   <hr>
 
   <h1 id="en">Kata kata Privacy Policy</h1>
@@ -86,10 +91,12 @@
   <table>
     <tr><th>Data</th><th>Purpose</th><th>Retention</th></tr>
     <tr><td>Google account ID, email, name, profile photo URL (at Google sign-in)</td><td>Account and sign-in</td><td>Until you delete your account</td></tr>
+    <tr><td>Sign-up time and last sign-in time (generated at sign-in)</td><td>Account management, preventing misuse</td><td>Until you delete your account</td></tr>
     <tr><td>Sign-in session (stored only as a hash)</td><td>Keep you signed in</td><td>Up to 60 days</td></tr>
     <tr><td>Usage counts (AI lookups, audio): daily and monthly counts, identifiers of the stories/dialogues you listened to that day, and free-trial totals</td><td>Free/subscription limits, cost control</td><td>Daily: 3 days · monthly: up to 40 days · free-trial totals: up to 400 days</td></tr>
     <tr><td>Subscription status and Google Play purchase token</td><td>Verify subscriptions, prevent misuse</td><td>Until account deletion (purchase-token link up to 400 days)</td></tr>
-    <tr><td>Reports you send about AI results</td><td>Improve AI quality</td><td>180 days (unlinked from you on account deletion)</td></tr>
+    <tr><td>Reports you send about AI results (the reason you chose, your search term and part of the AI result)</td><td>Improve AI quality, respond to inappropriate content</td><td>180 days (unlinked from you on account deletion)</td></tr>
+    <tr><td>IP address, access time, device and browser information (generated automatically in transit)</td><td>Providing the service, troubleshooting, preventing misuse</td><td>We do not collect or store this separately. It may remain in the access logs of the providers in section 3 for each provider's default retention period</td></tr>
   </table>
   <p>We use no advertising or analytics trackers. Payment details are handled by Google Play; we never receive them.</p>
   <p><b>Microphone (voice search)</b>: the microphone is used only while you tap the microphone button in the search box. Your speech is converted to text by your device's speech recognition service (for example Google, depending on your device settings); it is not sent to our servers and is not stored by the app or by us. The resulting text is handled like a typed search. You can turn off the microphone permission in your device settings at any time.</p>
@@ -98,19 +105,36 @@
   <p>Your wordbooks, lookup history, scores, audio cache and settings stay on your device and are not sent to us.</p>
 
   <h2>3. AI and service providers</h2>
-  <p>Dictionary explanations, stories and read-aloud audio are generated with Google's Gemini API. What you type and the text to be read are passed through our server to Google only to produce the result; we do not store it (except in reports you send). Providers: Google LLC (sign-in, Gemini API, Google Play billing, Cloud Run relay in Seoul), Cloudflare, Inc. (account/usage/subscription storage), GitHub, Inc. (app hosting), Wikimedia Foundation (map photos, fetched by your device). These providers may process data outside your country, including the United States.</p>
+  <p>Dictionary explanations, word meanings and auto-fill, sentence notes, stories, dialogues, tips and read-aloud audio are generated with Google's Gemini API. What you type and the text to be read are passed through our server to Google only to produce the result; we do not store it (except in reports you send).</p>
+  <table>
+    <tr><th>Recipient</th><th>Task</th><th>Country</th><th>Privacy contact</th></tr>
+    <tr><td>Google LLC</td><td>Sign-in (Google account), AI generation (Gemini API), billing (Google Play), AI request relay server (Google Cloud Run, Seoul region)</td><td>United States and others (servers include the Seoul region)</td><td>googlekrsupport@google.com</td></tr>
+    <tr><td>Cloudflare, Inc.</td><td>Operating the server that stores account, usage and subscription data (Workers, KV)</td><td>United States and data centres worldwide</td><td>privacyquestions@cloudflare.com</td></tr>
+    <tr><td>GitHub, Inc.</td><td>Serving the app's screen files (GitHub Pages)</td><td>United States</td><td>privacy@github.com</td></tr>
+    <tr><td>Wikimedia Foundation</td><td>Map photos (fetched directly by your device)</td><td>United States</td><td>privacy@wikimedia.org</td></tr>
+  </table>
+  <p><b>International transfer</b>: these providers are located abroad or use servers abroad. The data transferred is the data in the table in section 1 and the learning content you type; it is sent over the network when you use the service and kept for the periods in section 1. If you do not want your data transferred abroad, you can stop the transfer by deleting your account, but you will then be unable to use the app.</p>
 
   <h2>4. Your rights</h2>
-  <p>Delete your account and server data any time in the app's My Info tab → Delete account (at the bottom), or see <a href="https://naruve.app/apps/kata-kata/delete">how to delete your account</a>. You may also request access, correction or deletion by email. Cancel subscriptions separately in Google Play.</p>
+  <p>Delete your account and server data any time in the app's My Info tab → Delete account (at the bottom), or see <a href="https://naruve.app/apps/kata-kata/delete/">how to delete your account</a>. You may also request access, correction or deletion by email. Cancel subscriptions separately in Google Play.</p>
 
   <h2>5. Children</h2>
   <p>The app is intended for users aged 14 and over. We do not knowingly collect data from children under 14.</p>
 
-  <h2>6. Contact</h2>
+  <h2>6. Security</h2>
+  <p>Sign-in session values are stored only as hashes, server keys are kept only in server secret settings, and all communication is encrypted with HTTPS. Access is limited to the operator.</p>
+
+  <h2>7. Deletion of data</h2>
+  <p>When a retention period ends or you delete your account, we delete the data without delay (items with their own period in the table in section 1 are kept until that period ends). Data stored electronically on our servers is deleted so that it cannot be recovered, and records with a fixed period (sign-in sessions, usage counts, reports) are removed from storage automatically when the period passes. We keep no personal data on paper.</p>
+
+  <h2>8. Changes</h2>
+  <p>If this policy changes, we will give notice in the app or on this page 7 days before it takes effect.</p>
+
+  <h2>9. Contact</h2>
   <p>Privacy officer: Park Chang Hong · Email: <a href="mailto:support@naruve.app">support@naruve.app</a> · Naruve Studio, Business Registration No. 216-09-73358</p>
 
   <hr>
-  <p class="meta"><a href="https://naruve.app/apps/kata-kata/privacy">개인정보처리방침 · Privacy Policy</a> · <a href="https://naruve.app/apps/kata-kata/terms">이용약관 · Terms of Service</a> · <a href="https://naruve.app/apps/kata-kata/delete">계정 삭제 · Delete account</a></p>
+  <p class="meta"><a href="https://naruve.app/apps/kata-kata/privacy/">개인정보처리방침 · Privacy Policy</a> · <a href="https://naruve.app/apps/kata-kata/terms/">이용약관 · Terms of Service</a> · <a href="https://naruve.app/apps/kata-kata/delete/">계정 삭제 · Delete account</a></p>
 </main>
 </body>
 </html>
