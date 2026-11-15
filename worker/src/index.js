@@ -21,9 +21,13 @@
  * 엔드포인트·쿼리·헤더 이름·PA 헤더의 Base64 JSON 구성이 같다.
  */
 
-// 첫 버전은 웹 origin 하나뿐이다. capacitor://localhost 와 http://localhost 는
-// APK에서 실제로 무엇이 오는지 실측한 뒤 추가한다. 추측으로 넣지 않는다.
-const ALLOWED_ORIGIN = "https://naruve.app";
+// 허용 origin 목록. 요청의 Origin이 이 목록에 있을 때만 그 값을 그대로 돌려준다.
+// naruve.app 루트가 Naruve Studio 홈페이지가 되고 가나다 웹이 ganada.naruve.app 으로
+// 옮겨가는 동안(HQ 결정 2026-11-15) 두 주소가 모두 채점을 부를 수 있어야 한다.
+// 전환이 끝난 뒤 https://naruve.app 을 뺄지는 그때 따로 정한다.
+// capacitor://localhost 와 http://localhost 는 APK에서 실제로 무엇이 오는지
+// 실측한 뒤 추가한다. 추측으로 넣지 않는다.
+const ALLOWED_ORIGINS = ["https://naruve.app", "https://ganada.naruve.app"];
 
 // mic.js가 16kHz/16bit/mono로 만들고 상한이 10초다 → 320KB. 여유를 두고 400KB.
 const MAX_BODY = 400 * 1024;
@@ -91,8 +95,10 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // R2 키 조각으로 그대로 들어가므로 경로 구분자·상위 이동을 막는다.
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
-const CORS = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+// Origin과 무관한 CORS 헤더. Allow-Origin은 요청마다 달라서 corsFor()가 붙인다.
+// Vary: Origin은 허용이든 거절이든 항상 붙인다 — 캐시가 한 origin의 응답을
+// 다른 origin에 내주지 않게 한다.
+const CORS_BASE = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, X-Naruve-UUID, X-Naruve-Session, X-Naruve-Recording, X-Naruve-Ref, X-Naruve-Consent",
@@ -100,10 +106,24 @@ const CORS = {
   Vary: "Origin",
 };
 
+/**
+ * 요청의 Origin이 허용 목록에 있으면 그 값을 Allow-Origin으로 돌려준다.
+ * 목록 밖이거나 Origin이 없으면 Allow-Origin을 아예 주지 않는다 — 브라우저가
+ * 응답을 거절한다. 와일드카드("*")나 요청 Origin 무조건 반사는 하지 않는다.
+ */
+function corsFor(request) {
+  const origin = request.headers.get("Origin");
+  const headers = { ...CORS_BASE };
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
+  return headers;
+}
+
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8", ...CORS },
+    headers: { "Content-Type": "application/json; charset=utf-8" },
   });
 }
 
@@ -335,35 +355,44 @@ async function handleScore(request, env) {
   return json({ credits, r2Key, tier, azure: summarize(parsed) });
 }
 
+/** 경로 분기. CORS 헤더는 여기서 붙이지 않는다 — fetch()가 한 곳에서 붙인다. */
+async function route(request, env) {
+  const { pathname } = new URL(request.url);
+
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204 });
+  }
+
+  if (pathname === "/health") {
+    if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
+    // 키 값은 절대 돌려주지 않는다. Secret이 꽂혔는지만 boolean으로 알린다.
+    // DEV_UUIDS도 값이 아니라 몇 개 들어 있는지만 — 목록을 흘리면 아무나
+    // 그 UUID를 헤더에 넣어 무제한으로 쓸 수 있다.
+    const devCount = env.DEV_UUIDS
+      ? String(env.DEV_UUIDS).split(",").map((s) => s.trim()).filter(Boolean).length
+      : 0;
+    return json({
+      ok: true,
+      region: env.AZURE_REGION,
+      hasKey: !!env.AZURE_SPEECH_KEY,
+      devUuids: devCount,
+    });
+  }
+
+  if (pathname === "/score") {
+    if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+    return handleScore(request, env);
+  }
+
+  return json({ error: "not_found" }, 404);
+}
+
 export default {
   async fetch(request, env) {
-    const { pathname } = new URL(request.url);
-
-    if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: CORS });
-    }
-
-    if (pathname === "/health") {
-      if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
-      // 키 값은 절대 돌려주지 않는다. Secret이 꽂혔는지만 boolean으로 알린다.
-      // DEV_UUIDS도 값이 아니라 몇 개 들어 있는지만 — 목록을 흘리면 아무나
-      // 그 UUID를 헤더에 넣어 무제한으로 쓸 수 있다.
-      const devCount = env.DEV_UUIDS
-        ? String(env.DEV_UUIDS).split(",").map((s) => s.trim()).filter(Boolean).length
-        : 0;
-      return json({
-        ok: true,
-        region: env.AZURE_REGION,
-        hasKey: !!env.AZURE_SPEECH_KEY,
-        devUuids: devCount,
-      });
-    }
-
-    if (pathname === "/score") {
-      if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
-      return handleScore(request, env);
-    }
-
-    return json({ error: "not_found" }, 404);
+    const res = await route(request, env);
+    // 모든 응답(오류·402·OPTIONS 포함)에 같은 규칙으로 CORS를 붙인다.
+    // route()의 응답은 전부 여기서 만든 Response라 헤더가 가변이다.
+    for (const [k, v] of Object.entries(corsFor(request))) res.headers.set(k, v);
+    return res;
   },
 };
