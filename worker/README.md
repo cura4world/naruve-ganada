@@ -252,7 +252,12 @@ npx wrangler kv key delete "{UUID}:credits" --namespace-id=7bba6faac92e4a2c9f40e
 
 ## 4. CORS
 
-`Access-Control-Allow-Origin`은 첫 버전에 `https://naruve.app` 하나뿐이다.
+허용 origin은 `index.js`의 `ALLOWED_ORIGINS` 목록이다 — `https://naruve.app`,
+`https://ganada.naruve.app` (2026-11-15, naruve.app 루트가 Naruve Studio 홈페이지가 되고
+가나다 웹이 서브도메인으로 옮겨가는 전환 기간 동안 둘 다 받는다).
+요청의 `Origin`이 목록에 있을 때만 **그 값을 그대로** `Access-Control-Allow-Origin`에 돌려준다.
+목록 밖이거나 `Origin`이 없으면 이 헤더를 주지 않아 브라우저가 거절한다. `*`나 무조건 반사는 하지 않는다.
+`Vary: Origin`은 항상 붙는다. 헤더는 `fetch()` 한 곳에서 모든 응답에 붙인다.
 Capacitor 앱의 origin(`capacitor://localhost`, `http://localhost`)은 **APK로 실측한 뒤**
 추가한다. 지금 추측으로 넣지 않는다.
 
