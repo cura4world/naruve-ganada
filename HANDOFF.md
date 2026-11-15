@@ -4,7 +4,7 @@
 작업 규칙과 현재 상태 상세는 CLAUDE.md가 정본이고, 여기는 그쪽을 가리키기만 한다.
 이 저장소는 공개라서 **보안 상세는 여기에 쓰지 않는다** (로컬 전용 파일에서 관리).
 
-최종 갱신: 2026-11-15 (빌드 0.1.40 기준 — 전환 브랜치 기준. main은 0.1.39, ganada.naruve.app 이전 준비 반영)
+최종 갱신: 2026-11-15 (빌드 0.1.41 기준 — 전환 브랜치 기준. main은 0.1.39, ganada.naruve.app 이전 준비 반영)
 
 ## 정본 위치
 
@@ -48,7 +48,7 @@
   HQ decisions/2026-11-15-site-go-live.md · 저장소 밖). Worker는 naruve.app·ganada.naruve.app 두 origin을
   이미 받는다(PR #112, 배포 완료). 전환 브랜치(CNAME · `server.url` · CLAUDE.md/DECISIONS.md 주소)는 push만 했고
   **PR은 열지 않았다 — 열면 바로 자동 병합·배포된다.** 전환 때 같이 처리할 것: ① `docs/js/identity.js`의
-  `isDevShell()`이 `hostname === 'naruve.app'`만 개발 셸로 본다(새 APK의 UUID 고정이 풀린다) ② 설치된 dev APK는
+  `isDevShell()`이 `hostname === 'naruve.app'`만 보던 것을 두 호스트 목록으로 고쳤다 ② 설치된 dev APK는
   옛 `server.url`을 품고 있어 `npm run apk` 재빌드·재설치 필요 ③ `docs/apps/kata-kata/` 정책 페이지와
   naruve.app/privacy 는 Studio 홈페이지가 같은 경로를 먼저 제공해야 한다 ④ naruve.app에 남을 옛 서비스워커 정리
   ⑤ localStorage는 origin별이라 기존 naruve.app 사용자는 UUID·동의·기록이 새로 시작된다.

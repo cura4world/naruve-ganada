@@ -123,6 +123,18 @@ const FIXED = '00000000-0000-4000-8000-000000000001';
   ok('저장소에도 그 값이 남는다', a.store.get('naruve.uuid') === FIXED, a.store.get('naruve.uuid'));
 }
 {
+  // 전환 기간(2026-11-15 HQ) — 새 APK 는 ganada.naruve.app 을 띄운다
+  const g = bootIdentity({ native: true, host: 'ganada.naruve.app' });
+  ok('ganada.naruve.app 도 개발 셸이면 고정 UUID', g.Identity.uuid() === FIXED, g.Identity.uuid());
+  ok('ganada.naruve.app 저장소에도 그 값이 남는다', g.store.get('naruve.uuid') === FIXED, g.store.get('naruve.uuid'));
+  const gw = bootIdentity({ native: false, host: 'ganada.naruve.app' });
+  ok('ganada.naruve.app 브라우저는 영향 없음 (무작위)', gw.Identity.uuid() !== FIXED, gw.Identity.uuid());
+  for (const h of ['evil.naruve.app', 'naruve.app.evil.example', 'www.naruve.app']) {
+    const x = bootIdentity({ native: true, host: h });
+    ok('목록 밖 호스트는 고정하지 않는다: ' + h, x.Identity.uuid() !== FIXED, x.Identity.uuid());
+  }
+}
+{
   const w = bootIdentity({ native: false, host: 'naruve.app' });
   ok('브라우저는 영향 없음 (무작위)', w.Identity.uuid() !== FIXED, w.Identity.uuid());
   ok('UUID 꼴은 지킨다', /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
