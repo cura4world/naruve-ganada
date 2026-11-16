@@ -4,7 +4,7 @@
 작업 규칙과 현재 상태 상세는 CLAUDE.md가 정본이고, 여기는 그쪽을 가리키기만 한다.
 이 저장소는 공개라서 **보안 상세는 여기에 쓰지 않는다** (로컬 전용 파일에서 관리).
 
-최종 갱신: 2026-11-15 (빌드 0.1.41 기준 — 전환 브랜치 기준. main은 0.1.39, ganada.naruve.app 이전 준비 반영)
+최종 갱신: 2026-11-16 (빌드 0.1.41 기준 — ganada.naruve.app 전환 완료, 개발판 APK versionCode 13)
 
 ## 정본 위치
 
@@ -19,13 +19,14 @@
 
 ## 지금 어디까지
 
-- **웹(PWA)**: 빌드 0.1.34가 naruve.app(GitHub Pages, main의 /docs)에 라이브. 문장 200개
+- **웹(PWA)**: 빌드 0.1.41이 **ganada.naruve.app**(GitHub Pages, main의 /docs)에 라이브 (2026-11-16 전환, PR #113). 문장 200개
   (Standard 60 / Everyday 60 / Drama 50 / Sounds 30), 예시 음성 mp3 400개, UI 언어 en·ko.
 - **채점**: 억양(단말 F0, 원가 0)과 발음(Worker → Azure) 둘 다 실측. 무료 30회는 서버가 센다.
   억양 임계값은 잠정값이다.
 - **화면**: 디자인 B안 "카드", 나 화면, 온보딩(동의 2층 포함), 설정 시트까지 들어갔다.
-- **Android**: Capacitor 껍데기(dev 빌드, `server.url`로 naruve.app을 띄움). 폰 설치본
-  versionCode 12, 웹은 0.1.28 때 실기 확인했다. **0.1.34는 실기 확인 전이다.**
+- **Android**: Capacitor 껍데기(dev 빌드, `server.url`로 ganada.naruve.app을 띄움). 폰(S21)
+  설치본 versionCode 13 (2026-11-16 23:13 빌드·설치, 실행 시 Capacitor가 ganada.naruve.app을 로드하는 것까지 logcat으로 확인).
+  **핵심 경로(녹음 → 채점 → 결과)의 실기 확인은 아직이다** — 0.1.28 이후 한 번도 안 했다.
 - **Play Console**: 앱이 만들어져 있다. 2026-09-17 "앱 만들기"에서 패키지명
   `app.naruve.ganada`를 고정했다 (DECISIONS 19.2, 변경 이력 2026-09-17). 플레이 계정은
   조직 계정, 표시명 Naruve Studio (DECISIONS 1절). **AAB를 올린 기록은 이 저장소에 없다.**
@@ -44,14 +45,14 @@
   2026-11-14(빌드 0.1.39): 정본이 다시 바뀌어 두 파일을 다시 받았다(idkr-buddy release/public `56f2fdb` 의
   `docs/release/policy-final/`) — 신고 버튼 이름이 둘이 되어("풀이가 이상합니다"·"내용이 이상합니다")
   개인정보처리방침 1절 표의 수집 시점 한 칸과 이용약관의 AI 결과 신고 안내(한국어·영문)를 두 이름으로. 계정 삭제 안내는 그대로.
-- **ganada.naruve.app 이전 준비 — 전환은 HQ 신호 후 `ganada-subdomain-cutover` PR** (2026-11-15,
-  HQ decisions/2026-11-15-site-go-live.md · 저장소 밖). Worker는 naruve.app·ganada.naruve.app 두 origin을
-  이미 받는다(PR #112, 배포 완료). 전환 브랜치(CNAME · `server.url` · CLAUDE.md/DECISIONS.md 주소)는 push만 했고
-  **PR은 열지 않았다 — 열면 바로 자동 병합·배포된다.** 전환 때 같이 처리할 것: ① `docs/js/identity.js`의
-  `isDevShell()`이 `hostname === 'naruve.app'`만 보던 것을 두 호스트 목록으로 고쳤다 ② 설치된 dev APK는
-  옛 `server.url`을 품고 있어 `npm run apk` 재빌드·재설치 필요 ③ `docs/apps/kata-kata/` 정책 페이지와
-  naruve.app/privacy 는 Studio 홈페이지가 같은 경로를 먼저 제공해야 한다 ④ naruve.app에 남을 옛 서비스워커 정리
-  ⑤ localStorage는 origin별이라 기존 naruve.app 사용자는 UUID·동의·기록이 새로 시작된다.
+- **ganada.naruve.app 전환 완료** (2026-11-16, PR #113 병합 `7c5dfe0`, HQ decisions/2026-11-15-site-go-live.md · 저장소 밖).
+  Pages 사용자 지정 도메인 ganada.naruve.app, 인증서 approved(2027-02-14 만료), Enforce HTTPS 켬.
+  version.json 0.1.41 · 서비스워커 활성 · Worker CORS가 이 origin을 허용하는 것을 확인했다. 개발판 APK는
+  새 `server.url`로 재빌드해 폰에 설치했다(versionCode 13). **남은 것**: ① `docs/apps/kata-kata/`는 같은 경로를
+  naruve.app 홈페이지가 이미 제공하는지 HQ 쪽 확인 후 이 저장소 사본을 정리할지 정한다(이 앱의 일이 아니다)
+  ② naruve.app에 남은 옛 서비스워커 정리는 Studio 홈페이지 쪽 ③ **localStorage는 origin별이라 기존 naruve.app
+  사용자와 이 폰의 기존 테스트 기록은 UUID·동의·기록이 새로 시작된다.** 무료 30회는 서버가 UUID로 세므로 UUID가
+  바뀌면 새로 30회가 열리고, `DEV_UUIDS`에 올린 테스터 UUID는 새 UUID로 다시 올려야 한다(worker/README.md 2-1).
 
 ## 다음 할 일
 

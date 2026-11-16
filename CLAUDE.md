@@ -811,7 +811,9 @@ docs/audio/{m,f}/ 에 mp3 400개(33.3 MB), 배치 1 #77,
 `renderL1`은 정의만 남고 호출되지 않는다. s.w에 박힌 확정 설명이라
 정밀도 65%를 넘긴 L1부터 켠다.
 
-**versionCode** 12 (`android/app/build.gradle` 실측 2026-10-26). 2026-09-17 22:53 빌드한 `app-debug.apk`의 값이고, 이 APK가 2026-09-18 09:56 실기 폰에 설치돼 있다 — 0.1.28 실기 확인(DECISIONS 6.3)과 같은 날이다(2026-10-29 adb·SHA-256 대조). `npm run apk`마다 +1.
+**versionCode** 13 (`android/app/build.gradle` 실측 2026-11-16). 2026-11-16 23:13 빌드한 `app-debug.apk`의 값이고, 같은 시각 실기 폰(S21)에 `adb install -r`로 설치했다. 이 APK의 `server.url`은 https://ganada.naruve.app/ 이다(전환 PR #113). 직전 12는 2026-09-17 빌드로 옛 naruve.app을 가리켰다. `npm run apk`마다 +1.
+
+**Windows에서 `npm run apk`가 "Unable to establish loopback connection"으로 죽으면** TEMP가 8.3 짧은 이름 경로(`C:\Users\PAULPA~1\...`)여서다. Gradle(JDK 21)의 내부 파이프가 그 경로의 유닉스 소켓에 못 붙는다. PowerShell에서 `$env:TEMP='C:\Temp'; $env:TMP='C:\Temp'`를 주고 다시 돌리면 된다(2026-11-16 실측, `npm run apk:nobump` — 번호는 이미 올라가 있다).
 
 
 <!-- NARUVE_LAB_INTEGRATION_START -->
