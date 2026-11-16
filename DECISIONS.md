@@ -9,8 +9,8 @@
 - 뒤집힌 결정은 지우지 말고 취소선으로 남기고 아래에 새 결정을 적는다
 - 새 항목은 해당 절 맨 아래에 날짜와 함께 추가한다
 
-최종 갱신: 2026-11-13
-문서 지문: 총 2885행 / 변경 이력 43건
+최종 갱신: 2026-11-15
+문서 지문: 총 2891행 / 변경 이력 44건
 
 ---
 
@@ -85,7 +85,7 @@
 | 항목 | 값 |
 |---|---|
 | 상호 | Naruve Studio / 나루브스튜디오 |
-| 도메인 | naruve.app (구매 완료) |
+| 도메인 | naruve.app (구매 완료). 루트는 Naruve Studio 홈페이지, 가나다 웹은 ganada.naruve.app (2026-11-15, 12절) |
 | 앱 가칭 | 가나다라 (정식 미정) |
 | 사업자 | 개인사업자, 본인 명의, 자택, 주업종 722000 |
 | 플레이 계정 | 조직 계정, 표시명 Naruve Studio |
@@ -1568,13 +1568,18 @@ Timestamp TTS(단어 정렬)는 나중에 "낮은 단어만 잘라 듣기"를 �
   프로젝트 지식에만 둔다. 한 번 커밋하면 나중에 지워도
   커밋 히스토리에 남는다. (2026-08-06)
 - 예외: Naruve Studio 다른 앱의 정책 페이지(docs/apps/<앱>/)는 naruve.app 루트를 회사 홈페이지로 옮길 때까지 임시로 둔다. 문구 정본은 각 앱 저장소. (HQ decisions/2026-11-12-naruve-studio-site-content.md 7-2, 2026-11-13)
+- **가나다 웹 주소는 ganada.naruve.app이다** (2026-11-15, HQ decisions/2026-11-15-site-go-live.md · 저장소 밖, Arga 승인).
+  naruve.app 루트는 Naruve Studio 홈페이지가 되고 가나다 웹은 GitHub Pages 그대로 서브도메인으로 옮긴다
+  (docs/CNAME). naruve.app의 /privacy·/privacy/en은 앞으로 Naruve Studio 홈페이지가 제공한다.
+  채점 Worker는 두 주소를 모두 허용한다(17.1 표). 전환 작업은 `ganada-subdomain-cutover` 브랜치에 준비하고
+  HQ 신호 뒤에 PR을 연다 — 이 줄은 전환 뒤 주소의 정본이다.
 - **측정값은 화면이 아니라 응답 JSON에서 읽는다.** Speech Studio 화면과 JSON이
   다른 값을 보인 사례가 있다(3.2). 화면에서 읽은 숫자를 이 문서에 옮기지 않는다.
   (2026-08-09)
 - **auto-merge에 병합 전 검사 추가** (2026-08-24, Arga 승인·Claude 위임 결정).
   검사: docs/index.html·docs/privacy 존재, docs/*.js 문법. 실패 시 병합 중단.
   기각: 사람 리뷰 요구(1인이라 형식화), 유료 브랜치 보호(auto-merge와 충돌).
-  목적은 침해 방어가 아니라 실수 방어다 — 깨진 빌드가 naruve.app에 나가는 것을 막는다.
+  목적은 침해 방어가 아니라 실수 방어다 — 깨진 빌드가 ganada.naruve.app(전환 전에는 naruve.app)에 나가는 것을 막는다.
 - **병합 전 검사에 `scripts/check_docs.mjs` 추가** (2026-08-31, Arga 승인).
   DECISIONS.md 지문 줄(행 수·변경 이력 건수) 재계산·대조, CLAUDE.md "현재 상태"의
   빌드·문장 수·컬렉션 수·mp3 수·versionCode를 코드와 대조, 두 문서 제어문자 검사. 실패 시 병합 중단.
@@ -1954,7 +1959,7 @@ Azure 원가($1.32/h)에 비하면 오차 범위. 전략서 6장 원가 모델�
 | `NBestPhonemeCount: 5` | 8.7의 2순위 음소 점수. **요청해야 온다** |
 | 참조 텍스트 **120자 상한**, 초과 시 400 | R2 `customMetadata` 총량이 약 2KB다. 상한이 없으면 긴 헤더 하나가 Azure 호출을 태우고 R2 put에서 터진다 — 실제로 그렇게 터졌다 |
 | 본문 400KB 초과 시 **413 `too_large`** | mic.js가 16kHz/16bit/mono·10초 상한이라 320KB가 최대다. 헤더로 먼저 거른다 |
-| CORS 허용 origin은 `https://naruve.app` **하나** | 추측으로 늘리지 않는다. APK에서 실제로 무엇이 오는지 실측한 뒤 더한다 |
+| CORS 허용 origin은 `https://naruve.app`·`https://ganada.naruve.app` **둘** (2026-11-15 · 그전에는 naruve.app 하나) | 요청 Origin이 목록에 있을 때만 그 값을 돌려주고 목록 밖은 헤더를 주지 않는다. 가나다 웹이 서브도메인으로 옮겨가는 전환 기간(12절)에 둘 다 받는다. 그 밖은 추측으로 늘리지 않는다 — APK에서 실제로 무엇이 오는지 실측한 뒤 더한다 |
 | **402는 Azure 호출 전에 돌려준다** | 소진 상태에서 서버를 불러도 Azure 비용이 0이다. 실측 0.41초(Azure 경로는 1~3초). 17.3이 이 성질에 기댄다 |
 
 ### 17.3 사용자 식별 — 익명 UUID
@@ -2041,7 +2046,7 @@ koreacentral도 포함된다(Microsoft 문서). 키는 리전 종속이므로
 *번호는 17.6이 아니라 17.10이다. 17.6~17.9가 이미 쓰이고 있어 다시 번호를 매기면
 CLAUDE.md와 코드 주석의 참조가 어긋난다.*
 
-개발 중 APK는 **껍데기**다. Capacitor `server.url = https://naruve.app/` 로 두고
+개발 중 APK는 **껍데기**다. Capacitor `server.url = https://ganada.naruve.app/`(2026-11-15 전 naruve.app, 12절) 로 두고
 WebView가 배포된 웹을 그대로 띄운다.
 
 - `appName` **"Naruve 가나다 (dev)"**, **debug 서명**. `appId`는 `app.naruve.ganada` 그대로 둔다
@@ -2883,3 +2888,4 @@ Label 12). ② `--ink-faint` #8A939C가 종이 위 2.99:1로 AA(4.5:1)에 못 �
 - 2026-10-30 — 17절(17.7 · 12개월 추정 · S0 앞당김 문단)·18절(월 1,500회 문단 · 18.1)의 "비공개 테스트 14일" 전제 정정: 조직 계정이라 요건 없음(Arga Play Console 확인). S0 전환 기준 시점을 "외부 사용자에게 처음 열리는 날 하루 전"으로 바꿈
 - 2026-10-30 — 21.9 신설(글자 크기 체계 · `--ink-faint` 4.53:1 · 흰 탭 바와 아바타 '나' · 머리 선 걷기와 '문장 보기' 알약 제거 · 조작 글자 NaruveSans(Pretendard 서브셋), 2·3안과 먹색 머리 기각, 폰 글꼴 배율은 출시 APK 재빌드 때로 보류 — Arga 선택). 21.5 개정(알약 제거) · 21.7 개정(NaruveGothic 대체) · 21.8 보강(+2px 흡수)
 - 2026-11-13 — 12절 예외 한 줄 추가: 다른 앱의 정책 페이지(docs/apps/<앱>/)는 naruve.app 루트가 회사 홈페이지로 옮겨지기 전까지 임시로 둔다 (HQ decisions/2026-11-12-naruve-studio-site-content.md 7-2, Arga 승인 2026-11-12)
+- 2026-11-15 — 12절 신설 한 줄(가나다 웹 주소 ganada.naruve.app, naruve.app 루트는 Naruve Studio 홈페이지·/privacy 제공). 17.1 표 CORS 허용 origin 하나 → 둘. 2절 도메인 행·12절 병합 전 검사 문구·17.10 server.url 주소 갱신 (HQ decisions/2026-11-15-site-go-live.md, Arga 승인 2026-11-15 · 저장소 밖). 적용은 `ganada-subdomain-cutover` 브랜치가 HQ 신호 뒤 병합될 때

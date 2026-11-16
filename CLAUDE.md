@@ -10,7 +10,8 @@ CC 스스로 판단해 고치는 것은 여전히 없다 — 지시받은 것만
 
 ## 프로젝트
 한국어 학습자용 발음·억양 점수 앱. PWA로 만들고 나중에 Capacitor로 Android 앱화.
-회사: Naruve Studio / 도메인: naruve.app (GitHub Pages에 연결. docs/CNAME이 지정한다)
+회사: Naruve Studio / 가나다 웹 도메인: ganada.naruve.app (GitHub Pages에 연결. docs/CNAME이 지정한다).
+naruve.app 루트는 Naruve Studio 홈페이지다 (HQ 결정 2026-11-15 · 저장소 밖 decisions/2026-11-15-site-go-live.md)
 
 ## 절대 규칙
 - 로컬 작업 시작 전 항상 `git fetch` 후 origin/main과의 차이를 확인한다.
@@ -500,7 +501,10 @@ docs/ 밖의 파일(worker/, scripts/, android/, data/, .github/, 루트의 .md�
 뒤집어 말하면 docs/ 안의 파일은 전부 공개 URL로 접근된다.
 무엇을 docs/에 두고 무엇을 루트에 두는지는 DECISIONS.md 12절 참조.
 
-도메인은 naruve.app이고 docs/CNAME이 지정한다. **Settings > Pages의 custom
+가나다 웹 도메인은 ganada.naruve.app이고 docs/CNAME이 지정한다. naruve.app 루트는
+Naruve Studio 홈페이지가 가지며, naruve.app의 /privacy·/privacy/en도 그 홈페이지가 제공한다
+(HQ 결정 2026-11-15, 저장소 밖). 이 저장소의 docs/privacy는 앱 안 링크(상대경로)용으로 남는다.
+**Settings > Pages의 custom
 domain 칸은 쓰지 않는다** — 거기에 입력하면 GitHub이 docs/CNAME을 main에 직접
 커밋해 브랜치와 PR을 건너뛴다. 도메인을 바꿀 때는 docs/CNAME을 PR로 고친다.
 그 칸 말고 나머지 Pages 설정(Enforce HTTPS 등)은 파일을 건드리지 않으므로
@@ -514,7 +518,7 @@ domain 칸은 쓰지 않는다** — 거기에 입력하면 GitHub이 docs/CNAME
 시스템 설정을 무시하는 선택이라 앱 안의 글꼴 크기 설정이 P6-B 이후 후보다.
 
 **android/ 빌드는 네이티브를 고쳤을 때만이다. 웹 수정은 Pages로 나간다.**
-capacitor.config.json에 server 블록이 있어 APK는 https://naruve.app/ 를 띄우는
+capacitor.config.json에 server 블록이 있어 APK는 https://ganada.naruve.app/ 를 띄우는
 껍데기다. `docs/`를 고쳤으면 push → Pages 배포 → 앱에서 새로고침(설정 탭의
 임시 바에 버튼이 있다)이나 앱 재실행으로 끝난다. APK를 다시 만들어야 하는 것은
 android/·capacitor.config.json·플러그인을 건드렸을 때뿐이고, 그때 `npm run apk`다.
@@ -723,7 +727,7 @@ versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로
 지메일 설정은 저장소 밖이라 빌드와 무관하다.
 
 ## 현재 상태
-빌드 0.1.39 기준.
+빌드 0.1.41 기준.
 
 **문장** 200개 (Standard 60 / Everyday 60 / Drama 50 / Sounds 30) — 배치 1 (#76, 2026-08-26).
 `t:` 태그 200개(question 84 / statement 112 / exclam 4), `w:` 200개,
@@ -750,7 +754,8 @@ versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로
 **개발자·테스터는 예외다** — Worker Secret `DEV_UUIDS`(콤마 구분 목록)에 오른
 UUID는 KV를 읽지도 깎지도 않고 402도 맞지 않는다. 응답 `credits`가 `-1`이고
 헤더에 `∞`로 뜬다. R2 저장과 로그는 그대로다. 등록 절차는 worker/README.md 2-1.
-Worker의 CORS 허용 origin이 `https://naruve.app` 하나뿐이라
+Worker의 CORS 허용 origin이 `https://naruve.app`·`https://ganada.naruve.app` 두 개뿐이라
+(`worker/src/index.js`의 `ALLOWED_ORIGINS`, 2026-11-15)
 로컬(`npm run serve`)에서는 채점만 막힌다 — 화면·녹음·억양은 확인된다.
 
 **엔진 프로브** 하네스는 준비됐고 아직 한 번도 돌지 않았다. 키와 egress가

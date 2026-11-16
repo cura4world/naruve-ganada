@@ -3,7 +3,7 @@
   "appName": "Naruve 가나다 (dev)",
   "webDir": "docs",
   "server": {
-    "url": "https://naruve.app/",
+    "url": "https://ganada.naruve.app/",
     "androidScheme": "https",
     "cleartext": false
   }

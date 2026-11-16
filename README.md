@@ -30,7 +30,7 @@ git push -u origin main
 실제 주소는 이것이다:
 
 ```
-https://naruve.app
+https://ganada.naruve.app
 ```
 
 (`docs/CNAME`이 없으면 `https://<아이디>.github.io/naruve-ganada/`가 된다.
@@ -96,7 +96,7 @@ npm run serve
 
 ## 개발용 Android 앱 (껍데기 APK)
 
-APK는 **껍데기**다. 안에 웹이 들어 있지 않고 WebView가 `https://naruve.app/` 를
+APK는 **껍데기**다. 안에 웹이 들어 있지 않고 WebView가 `https://ganada.naruve.app/` 를
 그대로 띄운다. 그래서 흐름이 이렇게 갈린다.
 
 | 무엇을 고쳤나 | 폰에 반영하는 법 |
@@ -243,10 +243,10 @@ worker/                   Cloudflare Workers 채점 프록시 (배포물 아님)
 `https://naruve-ganada-score.cura4world.workers.dev`로 WAV를 보내고,
 Worker가 Azure를 부른 뒤 단어 점수를 돌려준다. 자세한 규격은 `worker/README.md`.
 
-**Worker의 CORS 허용 origin은 `https://naruve.app` 하나뿐이다.**
+**Worker의 CORS 허용 origin은 `https://naruve.app`·`https://ganada.naruve.app` 두 개뿐이다.**
 그래서 `npm run serve`(localhost)에서는 채점 호출이 CORS로 막힌다 —
 화면·녹음·억양(F0)까지는 로컬에서 확인되고 점수만 안 나온다. 의도된 상태이고
-로컬용 우회를 넣지 않는다. 실제 채점 확인은 배포된 https://naruve.app 에서 한다.
+로컬용 우회를 넣지 않는다. 실제 채점 확인은 배포된 https://ganada.naruve.app 에서 한다.
 
 억양(F0)은 단말에서 계산하므로 서버 없이도 동작한다.
 
@@ -264,7 +264,7 @@ Worker가 Azure를 부른 뒤 단어 점수를 돌려준다. 자세한 규격은
 ## 규칙
 
 **경로는 반드시 상대경로(`./`)로 쓴다.**
-지금은 `https://naruve.app` 루트에 있어 하위 경로 문제는 없다(`docs/CNAME`).
+지금은 `https://ganada.naruve.app` 루트에 있어 하위 경로 문제는 없다(`docs/CNAME`).
 그래도 이 규칙이 필요한 이유는 출시 때다 — `capacitor.config.json`의 `server`
 블록을 빼고 `docs/`를 APK에 번들하면(CLAUDE.md "출시 전 반드시 할 일")
 페이지가 더 이상 https 오리진에서 열리지 않는다. 그때 절대경로는 전부 깨진다.
