@@ -9,8 +9,8 @@
 - 뒤집힌 결정은 지우지 말고 취소선으로 남기고 아래에 새 결정을 적는다
 - 새 항목은 해당 절 맨 아래에 날짜와 함께 추가한다
 
-최종 갱신: 2026-11-15
-문서 지문: 총 2891행 / 변경 이력 44건
+최종 갱신: 2026-11-18
+문서 지문: 총 2896행 / 변경 이력 45건
 
 ---
 
@@ -1567,7 +1567,11 @@ Timestamp TTS(단어 정렬)는 나중에 "낮은 단어만 잘라 듣기"를 �
   개인정보·사업자 정보·가족이나 조직에 관한 판단은 저장소에 올리지 않고
   프로젝트 지식에만 둔다. 한 번 커밋하면 나중에 지워도
   커밋 히스토리에 남는다. (2026-08-06)
-- 예외: Naruve Studio 다른 앱의 정책 페이지(docs/apps/<앱>/)는 naruve.app 루트를 회사 홈페이지로 옮길 때까지 임시로 둔다. 문구 정본은 각 앱 저장소. (HQ decisions/2026-11-12-naruve-studio-site-content.md 7-2, 2026-11-13)
+- ~~예외: Naruve Studio 다른 앱의 정책 페이지(docs/apps/<앱>/)는 naruve.app 루트를 회사 홈페이지로 옮길 때까지 임시로 둔다. 문구 정본은 각 앱 저장소. (HQ decisions/2026-11-12-naruve-studio-site-content.md 7-2, 2026-11-13)~~
+- **다른 앱의 정책 페이지는 이 저장소에 두지 않는다** (2026-11-18, 위 예외를 대체). 정본은 각 앱 저장소, 게시는 naruve-studio-site(naruve.app)다.
+  docs/apps/kata-kata/는 빌드 0.1.43에서 삭제했다. 가나다 자신의 방침 docs/privacy/{,en/}는 계속 이 저장소의 정본이고,
+  naruve-studio-site의 sync-legal이 가져가 naruve.app/privacy/ 로 게시한다. 이 저장소의 두 파일은 canonical로 naruve.app을 가리킨다(빌드 0.1.42).
+  (HQ decisions/2026-11-16-katakata-report-telegram.md 4항 · 저장소 밖, Arga 승인 2026-11-18)
 - **가나다 웹 주소는 ganada.naruve.app이다** (2026-11-15, HQ decisions/2026-11-15-site-go-live.md · 저장소 밖, Arga 승인).
   naruve.app 루트는 Naruve Studio 홈페이지가 되고 가나다 웹은 GitHub Pages 그대로 서브도메인으로 옮긴다
   (docs/CNAME). naruve.app의 /privacy·/privacy/en은 앞으로 Naruve Studio 홈페이지가 제공한다.
@@ -2889,3 +2893,4 @@ Label 12). ② `--ink-faint` #8A939C가 종이 위 2.99:1로 AA(4.5:1)에 못 �
 - 2026-10-30 — 21.9 신설(글자 크기 체계 · `--ink-faint` 4.53:1 · 흰 탭 바와 아바타 '나' · 머리 선 걷기와 '문장 보기' 알약 제거 · 조작 글자 NaruveSans(Pretendard 서브셋), 2·3안과 먹색 머리 기각, 폰 글꼴 배율은 출시 APK 재빌드 때로 보류 — Arga 선택). 21.5 개정(알약 제거) · 21.7 개정(NaruveGothic 대체) · 21.8 보강(+2px 흡수)
 - 2026-11-13 — 12절 예외 한 줄 추가: 다른 앱의 정책 페이지(docs/apps/<앱>/)는 naruve.app 루트가 회사 홈페이지로 옮겨지기 전까지 임시로 둔다 (HQ decisions/2026-11-12-naruve-studio-site-content.md 7-2, Arga 승인 2026-11-12)
 - 2026-11-15 — 12절 신설 한 줄(가나다 웹 주소 ganada.naruve.app, naruve.app 루트는 Naruve Studio 홈페이지·/privacy 제공). 17.1 표 CORS 허용 origin 하나 → 둘. 2절 도메인 행·12절 병합 전 검사 문구·17.10 server.url 주소 갱신 (HQ decisions/2026-11-15-site-go-live.md, Arga 승인 2026-11-15 · 저장소 밖). 적용은 `ganada-subdomain-cutover` 브랜치가 HQ 신호 뒤 병합될 때
+- 2026-11-18 — 12절: 2026-11-13 예외(다른 앱 정책 페이지 임시 게시)를 취소선 처리하고 "다른 앱 정책 페이지는 이 저장소에 두지 않는다"로 대체. docs/apps/kata-kata/ 삭제(빌드 0.1.43), docs/privacy ko·en에 canonical(naruve.app) 추가(빌드 0.1.42) (HQ decisions/2026-11-16-katakata-report-telegram.md 4항 · 저장소 밖, Arga 승인 2026-11-18)
