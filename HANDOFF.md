@@ -4,12 +4,13 @@
 작업 규칙과 현재 상태 상세는 CLAUDE.md가 정본이고, 여기는 그쪽을 가리키기만 한다.
 이 저장소는 공개라서 **보안 상세는 여기에 쓰지 않는다** (로컬 전용 파일에서 관리).
 
-최종 갱신: 2026-11-17 (빌드 0.1.42 기준 — ganada.naruve.app 전환 완료, 개발판 APK versionCode 13)
+최종 갱신: 2026-11-18 (빌드 0.1.43 기준 — ganada.naruve.app 전환 완료, 개발판 APK versionCode 13)
 
 **정책 페이지 중복 정리 (HQ 2026-11-17 알림 · decisions/2026-11-16-katakata-report-telegram.md 4항, 저장소 밖)**:
 `docs/privacy/{,en/}index.html`에 `<link rel="canonical">`(naruve.app/privacy/ · /privacy/en/)을 넣었다(빌드 0.1.42).
 바이트가 바뀌었으므로 naruve-studio-site에서 sync-legal 재실행이 필요하다(HQ가 지시).
-`docs/apps/kata-kata/` 내리기는 DECISIONS 12절 예외(Arga 승인 2026-11-12)를 뒤집는 일이라 Arga 확인 대기 중.
+`docs/apps/kata-kata/`는 Arga 승인(2026-11-18)으로 삭제했다(빌드 0.1.43). **DECISIONS 12절 예외 줄(2026-11-13 추가)은
+아직 남아 있다 — 승인 전이라 고치지 않았다. 수정안을 Arga에게 올려 승인받아야 한다.**
 
 ## 정본 위치
 
@@ -36,25 +37,14 @@
   `app.naruve.ganada`를 고정했다 (DECISIONS 19.2, 변경 이력 2026-09-17). 플레이 계정은
   조직 계정, 표시명 Naruve Studio (DECISIONS 1절). **AAB를 올린 기록은 이 저장소에 없다.**
 - **결과 카드 공유**는 `alert()` 자리표시자다.
-- **Kata kata 정책 페이지 임시 게시** (2026-11-13, 빌드 0.1.36): `docs/apps/kata-kata/{privacy,terms,delete}/index.html`
-  → naruve.app/apps/kata-kata/… . 이 앱의 일이 아니라 Naruve Studio 사이트 일이다. naruve.app 루트를 홈페이지로
-  옮길 때 홈페이지가 같은 경로를 이어받고 주소는 바꾸지 않는다. 문구 정본은 idkr-buddy 저장소
-  (release/public e9d9494)이고 여기서 고치지 않는다. 근거는 DECISIONS 12절 예외.
-  2026-11-14(빌드 0.1.37): 정본이 바뀌어 세 파일을 다시 받았다(idkr-buddy release/public `17c44a7` 의
-  `docs/release/policy-final/`) — 계정 삭제 경로를 실제 화면대로(내 정보 탭 → 맨 아래 계정 삭제),
-  개인정보처리방침에 마이크(음성 검색) 문단과 사용량 보관 기간(3일·40일·400일).
-  2026-11-14(빌드 0.1.38): 정본이 다시 바뀌어 세 파일을 다시 받았다(idkr-buddy release/public `b24740f` 의
-  `docs/release/policy-final/`) — 개인정보처리방침에 자동으로 생기는 정보(IP·접속 기록), 가입·로그인 시각,
-  파기 절차, 국외 이전받는 업체의 개인정보 문의처, AI 기능 목록, 영문 보강. 이용약관은 이용 한도 표현(하루·한 달),
-  지도 사진 출처 표시 위치, 영문을 조항 단위로. 안쪽 링크는 끝에 `/` 를 붙인 주소로 통일.
-  2026-11-14(빌드 0.1.39): 정본이 다시 바뀌어 두 파일을 다시 받았다(idkr-buddy release/public `56f2fdb` 의
-  `docs/release/policy-final/`) — 신고 버튼 이름이 둘이 되어("풀이가 이상합니다"·"내용이 이상합니다")
-  개인정보처리방침 1절 표의 수집 시점 한 칸과 이용약관의 AI 결과 신고 안내(한국어·영문)를 두 이름으로. 계정 삭제 안내는 그대로.
+- **Kata kata 정책 페이지는 이 저장소에서 내렸다** (2026-11-18, 빌드 0.1.43, Arga 승인). 2026-11-13(0.1.36)에 임시 게시했던
+  `docs/apps/kata-kata/{privacy,terms,delete}/` 세 경로를 삭제했다. 정본은 idkr-buddy, 게시는 naruve-studio-site다
+  (HQ decisions/2026-11-16-katakata-report-telegram.md 4항 · 저장소 밖). 이 저장소에는 대체 안내 페이지를 두지 않았다.
+  옛 내용의 이력은 git log(빌드 0.1.36~0.1.39)에 있다.
 - **ganada.naruve.app 전환 완료** (2026-11-16, PR #113 병합 `7c5dfe0`, HQ decisions/2026-11-15-site-go-live.md · 저장소 밖).
   Pages 사용자 지정 도메인 ganada.naruve.app, 인증서 approved(2027-02-14 만료), Enforce HTTPS 켬.
   version.json 0.1.41 · 서비스워커 활성 · Worker CORS가 이 origin을 허용하는 것을 확인했다. 개발판 APK는
-  새 `server.url`로 재빌드해 폰에 설치했다(versionCode 13). **남은 것**: ① `docs/apps/kata-kata/`는 같은 경로를
-  naruve.app 홈페이지가 이미 제공하는지 HQ 쪽 확인 후 이 저장소 사본을 정리할지 정한다(이 앱의 일이 아니다)
+  새 `server.url`로 재빌드해 폰에 설치했다(versionCode 13). **남은 것**: ① (처리됨 — kata-kata 사본은 삭제, 위 항목)
   ② naruve.app에 남은 옛 서비스워커 정리는 Studio 홈페이지 쪽 ③ **localStorage는 origin별이라 기존 naruve.app
   사용자와 이 폰의 기존 테스트 기록은 UUID·동의·기록이 새로 시작된다.** 무료 30회는 서버가 UUID로 세므로 UUID가
   바뀌면 새로 30회가 열리고, `DEV_UUIDS`에 올린 테스터 UUID는 새 UUID로 다시 올려야 한다(worker/README.md 2-1).
