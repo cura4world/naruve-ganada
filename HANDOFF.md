@@ -4,7 +4,12 @@
 작업 규칙과 현재 상태 상세는 CLAUDE.md가 정본이고, 여기는 그쪽을 가리키기만 한다.
 이 저장소는 공개라서 **보안 상세는 여기에 쓰지 않는다** (로컬 전용 파일에서 관리).
 
-최종 갱신: 2026-11-16 (빌드 0.1.41 기준 — ganada.naruve.app 전환 완료, 개발판 APK versionCode 13)
+최종 갱신: 2026-11-17 (빌드 0.1.42 기준 — ganada.naruve.app 전환 완료, 개발판 APK versionCode 13)
+
+**정책 페이지 중복 정리 (HQ 2026-11-17 알림 · decisions/2026-11-16-katakata-report-telegram.md 4항, 저장소 밖)**:
+`docs/privacy/{,en/}index.html`에 `<link rel="canonical">`(naruve.app/privacy/ · /privacy/en/)을 넣었다(빌드 0.1.42).
+바이트가 바뀌었으므로 naruve-studio-site에서 sync-legal 재실행이 필요하다(HQ가 지시).
+`docs/apps/kata-kata/` 내리기는 DECISIONS 12절 예외(Arga 승인 2026-11-12)를 뒤집는 일이라 Arga 확인 대기 중.
 
 ## 정본 위치
 
