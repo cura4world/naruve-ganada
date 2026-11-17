@@ -634,9 +634,9 @@ Play는 versionCode가 **단조 증가**하기만 하면 되므로, 빌드가 �
 - docs/fonts/          글꼴 파일·naruve-serif.chars.txt·LICENSE.txt. 손으로 고치지 않는다 — `npm run fonts`
 - docs/sw.js           캐시 전략 (PRECACHE 배열만 손댄다. BUILD 줄은 bump.mjs가 고친다)
 - docs/version.json    빌드번호·날짜 (bump.mjs가 고친다. 손으로 고치지 않는다)
-- docs/apps/<앱>/      Naruve Studio 다른 앱의 정책 페이지(privacy·terms·delete, 각 index.html). 앱 화면이 아니라 PRECACHE에 넣지 않는다.
-                      naruve.app 루트가 홈페이지로 옮겨지면 같은 경로를 이어받는다 — 주소는 바꾸지 않는다 (DECISIONS 12절 예외).
-                      문구 정본은 각 앱 저장소다 — 여기서 고치지 않는다
+- docs/apps/           **없다 (2026-11-18 삭제, 빌드 0.1.43).** Kata kata 정책 페이지 사본이 있던 곳이다. 다른 앱의 정책 페이지는
+                      이 저장소에 두지 않는다 — 정본은 각 앱 저장소, 게시는 naruve-studio-site(naruve.app)다.
+                      DECISIONS 12절의 예외 줄은 정리 승인 전이라 아직 남아 있다
 - data/probe_set.json     프로브 문장 (DECISIONS.md 8.5 표. 임의로 더하지 않는다)
 - scripts/bump.mjs        빌드번호(서비스워커 캐시) 올리는 스크립트
 - scripts/bump-apk.mjs    versionCode 올리는 스크립트. bump.mjs와 섞지 않는다
@@ -727,7 +727,7 @@ versionCode는 그 빌드에서 자동으로 오른다. versionName은 손으로
 지메일 설정은 저장소 밖이라 빌드와 무관하다.
 
 ## 현재 상태
-빌드 0.1.42 기준.
+빌드 0.1.43 기준.
 
 **문장** 200개 (Standard 60 / Everyday 60 / Drama 50 / Sounds 30) — 배치 1 (#76, 2026-08-26).
 `t:` 태그 200개(question 84 / statement 112 / exclam 4), `w:` 200개,
