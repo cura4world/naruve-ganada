@@ -709,12 +709,14 @@ K-드라마·K-팝의 가사, 특정 작품의 긴 대사, 작품명·아티스�
 지금은 전부 개발값이 맞다. 출시 직전에 한 번에 바꾼다.
 **출시 기준과 전체 고칠 것 목록의 정본은 DECISIONS 23절이다** (2026-11-28). 아래는 그중 개발값을 되돌리는 항목이다.
 
-- **capacitor.config.json의 server 블록 제거.** 원격 URL만 띄우는 앱은 플레이
+- ~~**capacitor.config.json의 server 블록 제거.** 원격 URL만 띄우는 앱은 플레이
   심사에서 반려될 수 있다. 제거 후에는 docs/ 내용이 APK에 번들되며,
-  그때부터 웹 수정마다 APK 재빌드가 필요하다.
-- **capacitor.config.json의 `appName`을 정식 명칭으로.** 지금은
-  "Naruve 가나다 (dev)"다. 스토어에 올릴 이름은 DECISIONS.md 19.4에 있다.
-  **`appId`는 바꾸지 않는다** — 최초 AAB 업로드에서 영구 고정된다 (19.2).
+  그때부터 웹 수정마다 APK 재빌드가 필요하다.~~ ← 보류 (2026-11-28, DECISIONS 23.5).
+  비공개 테스트는 server 블록을 둔 채(원격) 한다. 정식 출시는 Kata kata 심사 결과로 — 통과하면 그대로 두고, 반려되면 제거(번들)
+- **런처 이름(아이콘 아래 글자)을 `Ganada`로** (DECISIONS 23.2 M2). `capacitor.config.json`의 `appName`은
+  `cap add` 때만 `strings.xml`에 반영되고 `sync`는 다시 쓰지 않으므로, release 빌드의
+  `android/app/src/release/res/values/strings.xml`로 덮는다. 개발판 이름 "Naruve 가나다 (dev)"는 그대로.
+  스토어 제목은 별개다(19.4). **`appId`는 바꾸지 않는다** — 2026-09-17 Play 앱 생성 때 고정됐다 (19.2).
 - **app.js의 `DEV_UNLOCK`을 false로.** 코드도 DOM도 지우지 않는다.
 - **app.js의 `SHOW_SOUNDS_IN_BROWSE`를 false로.** 단, 진단 기능이 생긴 뒤다.
   진단이 없는데 숨기면 Sounds 8개에 아예 도달할 수 없다.
