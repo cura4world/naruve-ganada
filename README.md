@@ -146,6 +146,8 @@ npm run apk
 
 ### 출시할 때 (지금은 하지 않는다)
 
+> 2026-11-28: 아래 번들 절차는 보류다. 출시 셸은 DECISIONS 23.5가 정한다(테스트는 원격, 정식 출시는 Kata kata 심사 결과로).
+
 개발용은 remote, 출시용은 bundled로 **이원화**한다.
 
 1. `capacitor.config.json`의 `server` 블록 제거
@@ -207,7 +209,7 @@ docs/                     ← GitHub Pages가 서빙하는 폴더
   version.json            빌드 번호
   css/app.css
   js/
-    ui.js                 UI 문구 표 (한국어가 마스터본, 언어 추가는 열 하나 추가)
+    ui.js                 UI 문구 표 (영어가 원본 — DECISIONS 2절, 언어 추가는 열 하나 + LANGS)
     identity.js           익명 UUID·세션·크레딧 캐시
     api.js                채점 서버 호출 한 곳
     audio.js              예시 음성 재생 (파일 → 네이티브 TTS → Web Speech 순)
@@ -219,7 +221,7 @@ docs/                     ← GitHub Pages가 서빙하는 폴더
     app.js                화면 제어
     boot.js               서비스워커 등록, 빌드 표시
   icons/
-  audio/{m,f}/            예시 음성 mp3 100개 (문장 50 × 목소리 2)
+  audio/{m,f}/            예시 음성 mp3 (개수는 CLAUDE.md "현재 상태")
 scripts/                  빌드·아이콘·프로브·회귀 검사
   bump.mjs                빌드번호(서비스워커 캐시) 올리는 스크립트
   bump-apk.mjs            versionCode 올리는 스크립트. bump.mjs와 섞지 않는다
@@ -274,27 +276,8 @@ Worker가 Azure를 부른 뒤 단어 점수를 돌려준다. 자세한 규격은
 
 ---
 
-## 지금 상태
+## 지금 상태 · 다음 할 일
 
-- 문장 50개 (Standard 15 · Everyday 15 · Drama 12 · Sounds 8)
-- 마이크 녹음 동작. 무음 절단·10초 상한·무음 take 무과금
-- **채점 두 층 다 실측이다** — 억양은 단말 F0, 발음은 Worker를 거친 Azure
-- 타일은 어절 단위. 총점은 Azure PronScore
-- 무료 30회는 서버가 센다. 소진하면 듣기·녹음·억양만 남는다
-- **예시 음성은 파일이다** — 타입캐스트 API(라이트 플랜, `ssfm-v30`), 2026-08-19 생성,
-  목소리 우성(남)·이현(여). 파일이 없거나 로드에 실패하면 폰 내장 TTS로 떨어진다
-- 예시 음성 음량을 정규화했다 — ffmpeg loudnorm 2-pass, 목표 −16 LUFS / TP −1.5 dBTP
-- **첫 실행에 온보딩 한 번** — 모국어·학습 단계(둘 다 건너뛸 수 있다)·따라 할 목소리
-- **동의는 두 층이다** — 필수(채점을 위한 음성 처리와 익명 로그)와
-  선택(모델 개선을 위한 보관). 선택에 동의하지 않은 녹음은 7일 뒤 저장소가 스스로 지운다
-- **설정 화면**(⚙) — 목소리 · 표시 언어 · 채점 개선 참여 · 내 기록 ·
-  내 식별자(복사와 삭제 요청 메일) · 방침 링크 · 버전
-- 모국어 설명은 영어 · 인도네시아어
-
-각 항목의 사정은 `CLAUDE.md`의 "현재 상태" 절에 있다.
-
-## 다음 할 일
-
-1. 이벤트 로그 저장 (16.1) — 지금은 `docs/js/identity.js`의 `Identity.event()`가
-   메모리 배열에 쌓고 콘솔에 찍기만 한다. 서버로 보내는 경로가 없다
-2. 결과 카드 이미지 생성
+여기에 적지 않는다 — 낡은 상태표는 없느니만 못하다(CLAUDE.md 절대 규칙).
+- 현재 상태: `CLAUDE.md` "현재 상태"(코드와 숫자 대조는 `scripts/check_docs.mjs`)
+- 다음 할 일 · 출시 기준: `HANDOFF.md`, `DECISIONS.md` 23절
