@@ -9,8 +9,8 @@
 - 뒤집힌 결정은 지우지 말고 취소선으로 남기고 아래에 새 결정을 적는다
 - 새 항목은 해당 절 맨 아래에 날짜와 함께 추가한다
 
-최종 갱신: 2026-11-18
-문서 지문: 총 2896행 / 변경 이력 45건
+최종 갱신: 2026-11-27
+문서 지문: 총 2900행 / 변경 이력 46건
 
 ---
 
@@ -2318,9 +2318,12 @@ ChatGPT 교차 검증을 거쳤다.
 
 ### 19.5 연락 이메일 support@naruve.app (확정)
 
-Play 스토어에 표시되는 연락처다. 지금은 **수신 전용**이고
+Play 스토어에 표시되는 연락처다. ~~지금은 **수신 전용**이고
 (Spaceship 포워딩 → 개인 지메일) 발신 설정은 아직 없다.
-출시 전 할 일에 있다 — CLAUDE.md "출시 전 반드시 할 일".
+출시 전 할 일에 있다 — CLAUDE.md "출시 전 반드시 할 일".~~
+← 사실 정정 (2026-11-27). 수신은 Cloudflare Email Routing → 개인 지메일이고,
+발신은 지메일 "다른 주소에서 메일 보내기"(Brevo SMTP)로 2026-11-12 설정을 마쳤다.
+정본은 저장소 밖 COMPANY.md 5절이다. 연락처 결정 자체는 그대로다.
 
 ### 19.6 브랜드 색 ~~#B3342B~~ → #A3341C (2026-09-17 확정 · 2026-10-29 개정)
 
@@ -2894,3 +2897,4 @@ Label 12). ② `--ink-faint` #8A939C가 종이 위 2.99:1로 AA(4.5:1)에 못 �
 - 2026-11-13 — 12절 예외 한 줄 추가: 다른 앱의 정책 페이지(docs/apps/<앱>/)는 naruve.app 루트가 회사 홈페이지로 옮겨지기 전까지 임시로 둔다 (HQ decisions/2026-11-12-naruve-studio-site-content.md 7-2, Arga 승인 2026-11-12)
 - 2026-11-15 — 12절 신설 한 줄(가나다 웹 주소 ganada.naruve.app, naruve.app 루트는 Naruve Studio 홈페이지·/privacy 제공). 17.1 표 CORS 허용 origin 하나 → 둘. 2절 도메인 행·12절 병합 전 검사 문구·17.10 server.url 주소 갱신 (HQ decisions/2026-11-15-site-go-live.md, Arga 승인 2026-11-15 · 저장소 밖). 적용은 `ganada-subdomain-cutover` 브랜치가 HQ 신호 뒤 병합될 때
 - 2026-11-18 — 12절: 2026-11-13 예외(다른 앱 정책 페이지 임시 게시)를 취소선 처리하고 "다른 앱 정책 페이지는 이 저장소에 두지 않는다"로 대체. docs/apps/kata-kata/ 삭제(빌드 0.1.43), docs/privacy ko·en에 canonical(naruve.app) 추가(빌드 0.1.42) (HQ decisions/2026-11-16-katakata-report-telegram.md 4항 · 저장소 밖, Arga 승인 2026-11-18)
+- 2026-11-27 — 19.5 사실 정정: support@naruve.app 수신 경로(Cloudflare Email Routing)와 발신 설정 완료(2026-11-12, 저장소 밖 COMPANY.md 5절) 반영. 결정 불변
